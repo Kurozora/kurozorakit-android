@@ -2,7 +2,7 @@ package kurozora.kit.data.models.song
 
 import kotlinx.serialization.Serializable
 import kurozora.kit.data.models.IdentityResource
-import kurozora.kit.data.models.LibraryAttributes
+import kurozora.kit.data.models.library.LibraryAttributes
 import kurozora.kit.data.models.game.GameIdentityResponse
 import kurozora.kit.data.models.media.Media
 import kurozora.kit.data.models.media.MediaStat

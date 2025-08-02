@@ -5,7 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kurozora.kit.data.models.IdentityResource
-import kurozora.kit.data.models.LibraryAttributes
+import kurozora.kit.data.models.library.LibraryAttributes
 import kurozora.kit.data.models.game.GameIdentityResponse
 import kurozora.kit.data.models.literature.LiteratureIdentityResponse
 import kurozora.kit.data.models.media.Media

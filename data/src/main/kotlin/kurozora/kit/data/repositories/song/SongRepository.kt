@@ -12,11 +12,13 @@ import kurozora.kit.data.models.search.filters.SongFilter
 import kurozora.kit.data.models.show.Show
 import kurozora.kit.data.models.show.ShowResponse
 import kurozora.kit.data.models.song.Song
+import kurozora.kit.data.models.song.SongIdentity
+import kurozora.kit.data.models.song.SongIdentityResponse
 import kurozora.kit.data.models.song.SongResponse
 import java.util.Base64
 
 interface SongRepository {
-    suspend fun getSongs(next: String? = null, limit: Int = 20, filter: SongFilter?): Result<List<Song>>
+    suspend fun getSongs(next: String? = null, limit: Int = 20, filter: SongFilter?): Result<List<SongIdentity>>
     suspend fun getSong(songId: String, relationships: List<String> = emptyList<String>()): Result<Song>
     // Related content
     suspend fun getSongShows(songId: String, next: String? = null, limit: Int = 20): Result<List<Show>>
@@ -30,7 +32,7 @@ open class SongRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : SongRepository {
 
-    override suspend fun getSongs(next: String?, limit: Int, filter: SongFilter?): Result<List<Song>> {
+    override suspend fun getSongs(next: String?, limit: Int, filter: SongFilter?): Result<List<SongIdentity>> {
         var parameters: MutableMap<String, String> = mutableMapOf()
         if (next == null) {
             parameters = mutableMapOf("limit" to limit.toString())
@@ -47,7 +49,7 @@ open class SongRepositoryImpl(
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Songs.Index
-        return apiClient.get<SongResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<SongIdentityResponse>(endpoint, parameters).map { it.data }
     }
 
     override suspend fun getSong(songId: String, relationships: List<String>): Result<Song> {

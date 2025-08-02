@@ -29,11 +29,11 @@ interface AuthRepository {
     suspend fun signIn(email: String, password: String): Result<SignInResponse>
     suspend fun signInWithApple(identityToken: String, authorizationCode: String): Result<OAuthResponse>
     suspend fun resetPassword(email: String): Result<Unit>
-    suspend fun getFollowList(userId: String, followList: UsersListType, next: String? = null, limit: Int = 25): Result<List<UserIdentity>>
-    suspend fun followUser(userId: String): Result<FollowUpdate>
-    suspend fun blockUser(userId: String): Result<BlockUpdate>
+    suspend fun getFollowList(userId: String, followList: UsersListType, next: String? = null, limit: Int = 25): Result<UserIdentityResponse>
+    suspend fun updateFollowStatus(userId: String): Result<FollowUpdate>
+    suspend fun updateBlockStatus(userId: String): Result<BlockUpdate>
     // User operations
-    suspend fun getBlockingUsers(userId: String, next: String? = null, limit: Int = 20): Result<List<User>>
+    suspend fun getBlockedUsers(userId: String, next: String? = null, limit: Int = 20): Result<List<UserIdentity>>
     suspend fun getUserFeedMessages(userId: String, next: String? = null, limit: Int = 20): Result<List<FeedMessage>>
     suspend fun getUserFollowers(userId: String, next: String? = null, limit: Int = 20): Result<List<User>>
     suspend fun getUserFollowing(userId: String, next: String? = null, limit: Int = 20): Result<List<User>>
@@ -111,7 +111,7 @@ open class AuthRepositoryImpl(
         followList: UsersListType,
         next: String?,
         limit: Int
-    ): Result<List<UserIdentity>> {
+    ): Result<UserIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = if (next != null) {
             KKEndpoint.Url(next)
@@ -121,23 +121,23 @@ open class AuthRepositoryImpl(
                 UsersListType.followers -> KKEndpoint.Auth.Followers(userId)
             }
         }
-        return apiClient.get<UserIdentityResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<UserIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun followUser(userId: String): Result<FollowUpdate> {
-        return apiClient.post<FollowUpdateResponse, Map<String, Boolean>>(KKEndpoint.Auth.Follow(userId), emptyMap()).map { it.data }
+    override suspend fun updateFollowStatus(userId: String): Result<FollowUpdate> {
+        return apiClient.post<FollowUpdateResponse, Map<String, Boolean>>(KKEndpoint.Auth.Follow(userId), emptyMap())
     }
 
-    override suspend fun blockUser(userId: String): Result<BlockUpdate> {
-        return apiClient.post<BlockUpdateResponse, Map<String, Boolean>>(KKEndpoint.Auth.Block(userId), emptyMap()).map { it.data }
+    override suspend fun updateBlockStatus(userId: String): Result<BlockUpdate> {
+        return apiClient.post<BlockUpdateResponse, Map<String, Boolean>>(KKEndpoint.Auth.Block(userId), emptyMap())
     }
 
-    override suspend fun getBlockingUsers(userId: String, next: String?, limit: Int): Result<List<User>> {
+    override suspend fun getBlockedUsers(userId: String, next: String?, limit: Int): Result<List<UserIdentity>> {
         val parameters = mapOf(
             "limit" to limit.toString()
         )
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Blocking(userId)
-        return apiClient.get<UserResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<UserIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserFavorites(userId: String, libraryKind: KKLibrary.Kind, next: String?, limit: Int): Result<FavoriteLibrary> {
@@ -146,7 +146,7 @@ open class AuthRepositoryImpl(
             "limit" to limit.toString()
         )
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Favorites(userId)
-        return apiClient.get<FavoriteLibraryResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<FavoriteLibraryResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserLibrary(userId: String, libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, sortType: KKLibrary.SortType, sortOption: KKLibrary.Option, next: String?, limit: Int): Result<Library> {
@@ -160,7 +160,7 @@ open class AuthRepositoryImpl(
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Library(userId)
-        return apiClient.get<LibraryResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<LibraryResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserFeedMessages(userId: String, next: String?, limit: Int): Result<List<FeedMessage>> {
@@ -168,7 +168,7 @@ open class AuthRepositoryImpl(
             "limit" to limit.toString()
         )
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.FeedMessages(userId)
-        return apiClient.get<FeedMessageResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<FeedMessageResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserFollowers(userId: String, next: String?, limit: Int): Result<List<User>> {
@@ -176,7 +176,7 @@ open class AuthRepositoryImpl(
             "limit" to limit.toString()
         )
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Followers(userId)
-        return apiClient.get<UserResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<UserResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserFollowing(userId: String, next: String?, limit: Int): Result<List<User>> {
@@ -184,11 +184,11 @@ open class AuthRepositoryImpl(
             "limit" to limit.toString()
         )
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Following(userId)
-        return apiClient.get<UserResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<UserResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserProfile(userId: String): Result<User> {
-        return apiClient.get<UserResponse>(KKEndpoint.Auth.Profile(userId)).map { it.data.first() }
+        return apiClient.get<UserResponse>(KKEndpoint.Auth.Profile(userId))
     }
 
     override suspend fun getUserReviews(userId: String, next: String?, limit: Int): Result<List<Review>> {
@@ -196,15 +196,11 @@ open class AuthRepositoryImpl(
             "limit" to limit.toString()
         )
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Reviews(userId)
-        return apiClient.get<ReviewResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<ReviewResponse>(endpoint, parameters)
     }
 
     override suspend fun searchUsers(username: String): Result<List<User>> {
-//        val parameters = mapOf(
-//            "limit" to limit.toString()
-//        )
-        // val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Library(userId)
-        return apiClient.get<UserResponse>(KKEndpoint.Auth.Search(username)).map { it.data }
+        return apiClient.get<UserResponse>(KKEndpoint.Auth.Search(username))
     }
 
     override suspend fun deleteUser(password: String): Result<Unit> {

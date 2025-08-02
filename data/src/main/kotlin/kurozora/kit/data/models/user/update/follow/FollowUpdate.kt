@@ -6,7 +6,6 @@ import kurozora.kit.data.enums.FollowStatus
 
 @Serializable
 data class FollowUpdate(
-    @SerialName("isFollowed")
     private var isFollowed: Boolean? = null,
     @SerialName("_followStatus")
     private var _followStatus: FollowStatus? = null

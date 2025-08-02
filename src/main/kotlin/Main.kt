@@ -21,10 +21,14 @@ suspend fun main() {
 
     val show1 = kurozoraKit.show().getShow("1")
     show1.onSuccess { show ->
-        println(show)
+        println(show.attributes.title)
     }
 
     kurozoraKit.show().getShows().onSuccess { shows ->
+        println(shows.size)
+    }
+
+    kurozoraKit.show().getUpcomingShows().onSuccess { shows ->
         println(shows.size)
     }
 }

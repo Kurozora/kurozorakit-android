@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonNames
 import kurozora.kit.data.models.IdentityResource
-import kurozora.kit.data.models.LibraryAttributes
+import kurozora.kit.data.models.library.LibraryAttributes
 import kurozora.kit.data.models.LocalDateSerializer
 import kurozora.kit.data.models.character.CharacterIdentityResponse
 import kurozora.kit.data.models.country.Country

@@ -14,7 +14,7 @@ interface EpisodeRepository {
     suspend fun getEpisode(episodeId: String, relationships: List<String> = emptyList<String>()): Result<Episode>
     suspend fun getEpisodeSuggestions(episodeId: String, limit: Int = 20): Result<List<Episode>>
     suspend fun updateEpisodeWatchStatus(episodeId: String): Result<EpisodeUpdate>
-    suspend fun rateEpisode(episodeId: String, rating: Double, review: String? = null): Result<Episode>
+    suspend fun rateEpisode(episodeId: String, rating: Double, review: String? = null): Result<Unit>
     suspend fun getEpisodeReviews(episodeId: String, next: String? = null, limit: Int = 20): Result<List<Review>>
 }
 
@@ -41,7 +41,7 @@ open class EpisodeRepositoryImpl(
         return apiClient.post<EpisodeUpdateResponse, Map<String, String>>(KKEndpoint.Episodes.Watched(episodeId), emptyMap()).map { it.data }
     }
 
-    override suspend fun rateEpisode(episodeId: String, rating: Double, review: String?): Result<Episode> {
+    override suspend fun rateEpisode(episodeId: String, rating: Double, review: String?): Result<Unit> {
         val body = mapOf(
             "rating" to rating,
             "description" to review

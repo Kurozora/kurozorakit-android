@@ -2,28 +2,29 @@ package kurozora.kit.data.repositories.cast
 
 import kurozora.kit.api.KKEndpoint
 import kurozora.kit.api.KurozoraApiClient
+import kurozora.kit.data.models.show.cast.Cast
+import kurozora.kit.data.models.show.cast.CastResponse
 import kurozora.kit.shared.Result
-import kurozora.kit.data.models.staff.Staff
 
 interface CastRepository {
-    suspend fun getShowCast(castId: String): Result<Staff>
-    suspend fun getLiteratureCast(castId: String): Result<Staff>
-    suspend fun getGameCast(castId: String): Result<Staff>
+    suspend fun getShowCast(castId: String): Result<List<Cast>>
+    suspend fun getLiteratureCast(castId: String): Result<List<Cast>>
+    suspend fun getGameCast(castId: String): Result<List<Cast>>
 }
 
 open class CastRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : CastRepository {
 
-    override suspend fun getShowCast(castId: String): Result<Staff> {
-        return apiClient.get<Staff>(KKEndpoint.Cast.ShowCast(castId))
+    override suspend fun getShowCast(castId: String): Result<List<Cast>> {
+        return apiClient.get<CastResponse>(KKEndpoint.Cast.ShowCast(castId)).map { it.data }
     }
 
-    override suspend fun getLiteratureCast(castId: String): Result<Staff> {
-        return apiClient.get<Staff>(KKEndpoint.Cast.LiteratureCast(castId))
+    override suspend fun getLiteratureCast(castId: String): Result<List<Cast>> {
+        return apiClient.get<CastResponse>(KKEndpoint.Cast.LiteratureCast(castId)).map { it.data }
     }
 
-    override suspend fun getGameCast(castId: String): Result<Staff> {
-        return apiClient.get<Staff>(KKEndpoint.Cast.GameCast(castId))
+    override suspend fun getGameCast(castId: String): Result<List<Cast>> {
+        return apiClient.get<CastResponse>(KKEndpoint.Cast.GameCast(castId)).map { it.data }
     }
 }

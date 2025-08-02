@@ -20,7 +20,7 @@ interface FeedRepository {
     suspend fun getFeedMessageReplies(messageId: String, next: String? = null, limit: Int = 20): Result<List<FeedMessage>>
     suspend fun heartFeedMessage(messageId: String): Result<FeedMessage>
     suspend fun pinFeedMessage(messageId: String): Result<FeedMessage>
-    suspend fun updateFeedMessage(messageId: String, update: FeedMessageUpdate): Result<FeedMessage>
+    suspend fun updateFeedMessage(messageId: String, update: FeedMessageUpdate): Result<FeedMessageUpdate>
     suspend fun deleteFeedMessage(messageId: String): Result<Unit>
 }
 
@@ -74,8 +74,8 @@ open class FeedRepositoryImpl(
         return apiClient.post<FeedMessageResponse, Map<String, Boolean>>(KKEndpoint.Feed.Messages.Pin(messageId), emptyMap()).map { it.data.first() }
     }
 
-    override suspend fun updateFeedMessage(messageId: String, update: FeedMessageUpdate): Result<FeedMessage> {
-        return apiClient.put<FeedMessageResponse, FeedMessageUpdate>(KKEndpoint.Feed.Messages.Update(messageId), update).map { it.data.first() }
+    override suspend fun updateFeedMessage(messageId: String, update: FeedMessageUpdate): Result<FeedMessageUpdate> {
+        return apiClient.put<FeedMessageUpdateResponse, FeedMessageUpdate>(KKEndpoint.Feed.Messages.Update(messageId), update).map { it.data }
     }
 
     override suspend fun deleteFeedMessage(messageId: String): Result<Unit> {

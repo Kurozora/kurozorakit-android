@@ -6,14 +6,13 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonNames
 import kurozora.kit.data.models.IdentityResource
-import kurozora.kit.data.models.LibraryAttributes
+import kurozora.kit.data.models.library.LibraryAttributes
 import kurozora.kit.data.models.character.CharacterIdentityResponse
 import kurozora.kit.data.models.country.Country
 import kurozora.kit.data.models.language.Language
 import kurozora.kit.data.models.media.Media
 import kurozora.kit.data.models.media.MediaStat
 import kurozora.kit.data.models.person.PersonIdentityResponse
-import kurozora.kit.data.models.season.SeasonIdentityResponse
 import kurozora.kit.data.models.show.attributes.AdaptationSource
 import kurozora.kit.data.models.show.attributes.AiringStatus
 import kurozora.kit.data.models.show.attributes.MediaType
@@ -22,8 +21,6 @@ import kurozora.kit.data.models.show.cast.CastIdentityResponse
 import kurozora.kit.data.models.show.related.RelatedGameResponse
 import kurozora.kit.data.models.show.related.RelatedLiteratureResponse
 import kurozora.kit.data.models.show.related.RelatedShowResponse
-import kurozora.kit.data.models.show.song.ShowSongResponse
-import kurozora.kit.data.models.song.SongIdentityResponse
 import kurozora.kit.data.models.staff.StaffIdentityResponse
 import kurozora.kit.data.models.studio.StudioIdentityResponse
 
