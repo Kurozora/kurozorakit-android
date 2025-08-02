@@ -7,3 +7,4 @@ rootProject.name = "KurozoraKit"
 include("core")
 include("api")
 include("data")
+include("shared")

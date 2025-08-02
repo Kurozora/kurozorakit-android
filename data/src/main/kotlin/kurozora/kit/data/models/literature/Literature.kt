@@ -104,9 +104,6 @@ data class Literature(
         val relatedShows: RelatedShowResponse? = null,
         val relatedGames: RelatedGameResponse? = null,
         val relatedLiteratures: RelatedLiteratureResponse? = null,
-        val seasons: SeasonIdentityResponse? = null,
-        val showSongs: ShowSongResponse? = null,
-        val songs: SongIdentityResponse? = null,
         val staff: StaffIdentityResponse? = null,
         val studios: StudioIdentityResponse? = null,
     )

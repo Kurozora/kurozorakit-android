@@ -4,5 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ReviewResponse(
-    val data: Review
+    val data: List<Review>,
+    val next: String?
 )

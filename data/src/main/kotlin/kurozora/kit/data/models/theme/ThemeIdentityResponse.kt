@@ -4,5 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ThemeIdentityResponse(
-    val data: ThemeIdentity
+    val data: List<ThemeIdentity>,
+    val next: String? = null,
 )

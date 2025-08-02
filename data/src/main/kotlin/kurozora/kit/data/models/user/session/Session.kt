@@ -2,8 +2,8 @@ package kurozora.kit.data.models.user.session
 
 import kotlinx.serialization.Serializable
 import kurozora.kit.data.models.IdentityResource
-import kurozora.kit.data.models.session.location.LocationResponse
-import kurozora.kit.data.models.session.platform.PlatformResponse
+import kurozora.kit.data.models.user.session.location.LocationResponse
+import kurozora.kit.data.models.user.session.platform.PlatformResponse
 
 @Serializable
 data class Session(

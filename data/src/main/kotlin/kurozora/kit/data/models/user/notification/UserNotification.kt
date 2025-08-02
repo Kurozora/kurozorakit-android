@@ -33,15 +33,12 @@ data class UserNotification(
 
     @Serializable
     data class Payload(
-        // Session
         val ip: String? = null,
         val sessionID: String? = null,
-
         // Follower
         val userID: String? = null,
         val username: String? = null,
         val profileImageURL: String? = null,
-
         // FeedMessage
         val feedMessageID: String? = null
     )

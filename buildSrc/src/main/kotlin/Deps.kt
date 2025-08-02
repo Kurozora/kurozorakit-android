@@ -13,5 +13,6 @@ object Deps {
         const val logging = "io.ktor:ktor-client-logging:${Versions.ktor}"
         const val auth = "io.ktor:ktor-client-auth:${Versions.ktor}"
         const val mock = "io.ktor:ktor-client-mock:${Versions.ktor}"
+        const val cio = "io.ktor:ktor-client-cio:${Versions.ktor}"
     }
 }

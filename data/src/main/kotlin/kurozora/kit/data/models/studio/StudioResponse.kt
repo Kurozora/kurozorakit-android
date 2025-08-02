@@ -1,4 +1,6 @@
 package kurozora.kit.data.models.studio
 
-class StudioResponse {
-}
+data class StudioResponse(
+    val data: List<Studio>,
+    val next: String?,
+)

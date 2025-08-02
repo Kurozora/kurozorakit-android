@@ -6,17 +6,12 @@ import kurozora.kit.data.models.media.MediaRelation
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-// A root object that stores information about a related literature resource.
 @Serializable
 data class RelatedLiterature @OptIn(ExperimentalUuidApi::class) constructor(
-    // The id of the related literature.
     val id: Uuid = Uuid.random(),
-    // The literature related to the parent literature.
     val literature: Literature,
-    // The attributes belonging to the related literature.
     var attributes: Attributes,
 ) {
-    // MARK: - Functions
     @OptIn(ExperimentalUuidApi::class)
     override fun equals(other: Any?): Boolean {
         return (other is RelatedLiterature) && this.id == other.id
@@ -27,10 +22,8 @@ data class RelatedLiterature @OptIn(ExperimentalUuidApi::class) constructor(
         return id.hashCode()
     }
 
-    // MARK: - Attributes
     @Serializable
     data class Attributes(
-        /// The relation between the literature.
         val relation: MediaRelation,
     )
 }

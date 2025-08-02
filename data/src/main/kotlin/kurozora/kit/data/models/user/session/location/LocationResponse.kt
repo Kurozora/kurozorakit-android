@@ -4,5 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class LocationResponse(
-    val data: Location
+    val data: List<Location>
 )

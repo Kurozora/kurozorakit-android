@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RecapResponse(
     val data: List<Recap>,
-    val links: PaginationLinks? = null
+    val next: String?
 )

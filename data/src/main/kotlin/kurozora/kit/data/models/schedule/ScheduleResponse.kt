@@ -4,5 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ScheduleResponse(
-    val data: Schedule
+    val data: List<Schedule>,
+    val next: String?
 )

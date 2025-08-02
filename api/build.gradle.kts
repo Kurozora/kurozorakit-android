@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":core"))
+    implementation(project(":shared"))
     implementation(Deps.Kotlin.stdlib)
     implementation(Deps.Kotlin.coroutinesCore)
     implementation(Deps.Kotlin.serialization)
@@ -13,4 +13,5 @@ dependencies {
     implementation(Deps.Ktor.json)
     implementation(Deps.Ktor.logging)
     implementation(Deps.Ktor.auth)
+    implementation(Deps.Ktor.cio)
 }

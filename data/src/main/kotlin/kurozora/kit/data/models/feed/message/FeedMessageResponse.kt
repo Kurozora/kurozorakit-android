@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FeedMessageResponse(
-    val data: FeedMessage,
+    val data: List<FeedMessage>,
     val next: String?
 )

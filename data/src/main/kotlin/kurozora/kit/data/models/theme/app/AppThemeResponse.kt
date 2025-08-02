@@ -4,5 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AppThemeResponse(
-    val data: AppTheme,
+    val data: List<AppTheme>,
 )

@@ -51,7 +51,7 @@ data class Game(
 ) : IdentityResource {
     @Serializable
     data class Attributes(
-        val igdb: Int? = null,
+        val igdbID: Int? = null,
         val igdbSlug: String? = null,
         val slug: String,
         val poster: Media? = null,

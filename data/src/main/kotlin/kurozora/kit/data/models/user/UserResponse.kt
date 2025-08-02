@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserResponse(
-    val data: User,
+    val data: List<User>,
     val next: String?
 )

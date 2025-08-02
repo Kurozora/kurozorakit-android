@@ -1,8 +1,8 @@
 package kurozora.kit.data.models.user.update.block
 
-import enums.BlockStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kurozora.kit.data.enums.BlockStatus
 
 @Serializable
 data class BlockUpdate(

@@ -33,3 +33,9 @@ subprojects {
         jvmToolchain(24)
     }
 }
+
+dependencies {
+    implementation(project(":core"))
+    implementation(project(":data"))
+    implementation(project(":shared"))
+}

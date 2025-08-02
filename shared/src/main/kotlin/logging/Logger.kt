@@ -1,4 +1,4 @@
-package kurozora.kit.core.logging
+package kurozora.kit.shared.logging
 
 import kotlinx.datetime.Clock
 

@@ -1,4 +1,4 @@
-package kurozora.kit.core
+package kurozora.kit.shared
 
 /**
  * A sealed class representing the result of an operation that can either succeed or fail.

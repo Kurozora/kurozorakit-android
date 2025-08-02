@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SessionIdentity(
     val id: String,
-    val type: String = "seasons",
+    val type: String = "sessions",
     val href: String = "",
 ) {
     override fun equals(other: Any?): Boolean {

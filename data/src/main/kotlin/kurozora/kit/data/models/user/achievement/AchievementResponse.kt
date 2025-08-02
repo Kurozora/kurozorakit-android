@@ -4,6 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AchievementResponse(
-    val data: Achievement,
-    val next: String? = null
+    val data: List<Achievement>
 )

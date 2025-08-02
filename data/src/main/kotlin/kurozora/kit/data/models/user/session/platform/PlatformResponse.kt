@@ -4,5 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PlatformResponse(
-    val data: Platform
+    val data: List<Platform>
 )

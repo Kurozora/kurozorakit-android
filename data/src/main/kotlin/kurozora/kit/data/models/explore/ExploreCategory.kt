@@ -5,10 +5,13 @@ import kurozora.kit.data.models.IdentityResource
 import kurozora.kit.data.models.character.CharacterIdentityResponse
 import kurozora.kit.data.models.episode.EpisodeIdentityResponse
 import kurozora.kit.data.models.game.GameIdentityResponse
+import kurozora.kit.data.models.genre.GenreIdentityResponse
 import kurozora.kit.data.models.literature.LiteratureIdentityResponse
 import kurozora.kit.data.models.person.PersonIdentityResponse
+import kurozora.kit.data.models.recap.RecapResponse
 import kurozora.kit.data.models.show.ShowIdentityResponse
 import kurozora.kit.data.models.show.song.ShowSongResponse
+import kurozora.kit.data.models.theme.ThemeIdentityResponse
 
 @Serializable
 data class ExploreCategory(
@@ -37,5 +40,8 @@ data class ExploreCategory(
         val people: PersonIdentityResponse? = null,
         val showSongs: ShowSongResponse? = null,
         val shows: ShowIdentityResponse? = null,
+        val genres: GenreIdentityResponse? = null,
+        val themes: ThemeIdentityResponse? = null,
+        val recaps: RecapResponse? = null,
     )
 }

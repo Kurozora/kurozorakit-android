@@ -1,6 +1,7 @@
 package kurozora.kit.api
 
 sealed class KKEndpoint(val path: String) {
+    data class Url(val url: String): KKEndpoint(url)
     sealed class Explore(path: String): KKEndpoint(path) {
         object Index : Explore("explore")
         class Details(id: String) : Explore("explore/$id")
@@ -23,7 +24,11 @@ sealed class KKEndpoint(val path: String) {
         class Characters(showId: String) : Show("anime/${showId}/characters")
         class People(showId: String) : Show("anime/${showId}/people")
         class Reviews(showId: String) : Show("anime/${showId}/reviews")
-        class Seasons(showId: String) : Show("anime/${showId}/seasons")
+        class Seasons(showId: String) : Show("anime/${showId}/seasons") {
+            class Details(seasonId: String) : KKEndpoint("seasons/$seasonId")
+            class Episodes(seasonId: String) : KKEndpoint("seasons/$seasonId/episodes")
+            class Watched(seasonId: String) : KKEndpoint("seasons/$seasonId/watched")
+        }
         class Songs(showId: String) : Show("anime/${showId}/songs")
         class Studios(showId: String) : Show("anime/${showId}/studios")
         class MoreByStudio(showId: String) : Show("anime/${showId}/more-by-studio")
@@ -60,19 +65,19 @@ sealed class KKEndpoint(val path: String) {
         class Reviews(gameId: String) : Game("game/$gameId/reviews")
         class Studios(gameId: String) : Game("game/$gameId/studios")
         class MoreByStudio(gameId: String) : Game("game/$gameId/more-by-studio")
-        class RelatedAnimes(gameId: String) : Game("game/$gameId/related-shows")
-        class RelatedMangas(gameId: String) : Game("game/$gameId/related-literatures")
+        class RelatedShows(gameId: String) : Game("game/$gameId/related-shows")
+        class RelatedLiteratures(gameId: String) : Game("game/$gameId/related-literatures")
         class RelatedGames(gameId: String) : Game("game/$gameId/related-games")
         object Upcoming : Game("game/upcoming")
         class Rate(gameId: String) : Game("game/$gameId/studios")
     }
 
     sealed class Character(path: String) : KKEndpoint(path) {
-        object All : Character("characters")
+        object Index : Character("characters")
         class Details(characterId: String) : Character("characters/$characterId")
         class People(characterId: String) : Character("characters/$characterId/people")
-        class Animes(characterId: String) : Character("characters/$characterId/anime")
-        class Mangas(characterId: String) : Character("characters/$characterId/literatures")
+        class Shows(characterId: String) : Character("characters/$characterId/anime")
+        class Literatures(characterId: String) : Character("characters/$characterId/literatures")
         class Games(characterId: String) : Character("characters/$characterId/games")
         class Reviews(characterId: String) : Character("characters/$characterId/reviews")
         class Rate(characterId: String) : Character("characters/$characterId/rate")
@@ -80,11 +85,11 @@ sealed class KKEndpoint(val path: String) {
     }
 
     sealed class Person(path: String) : KKEndpoint(path) {
-        object All : Person("people")
+        object Index : Person("people")
         class Details(peopleId: String) : Person("people/$peopleId")
-        class Anime(peopleId: String) : Person("people/$peopleId/anime")
+        class Show(peopleId: String) : Person("people/$peopleId/anime")
         class Game(peopleId: String) : Person("people/$peopleId/games")
-        class Manga(peopleId: String) : Person("people/$peopleId/literatures")
+        class Literature(peopleId: String) : Person("people/$peopleId/literatures")
         class Characters(peopleId: String) : Person("people/$peopleId/characters")
         class Reviews(peopleId: String) : Person("people/$peopleId/reviews")
         class Rate(peopleId: String) : Person("people/$peopleId/rate")

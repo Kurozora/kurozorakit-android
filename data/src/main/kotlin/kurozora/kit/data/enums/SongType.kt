@@ -37,6 +37,12 @@ enum class SongType(val value: Int) {
         }
 }
 
+enum class Color {
+    Blue,
+    Red,
+    Yellow
+}
+
 class SongTypeSerializer : EnumIntSerializer<SongType>(SongType.entries)
 open class EnumIntSerializer<T : Enum<T>>(
     private val entries: EnumEntries<T>,

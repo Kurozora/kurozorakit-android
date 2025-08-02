@@ -12,10 +12,9 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonNamingStrategy
-import kurozora.kit.core.KurozoraError
-import kurozora.kit.core.logging.KurozoraLogger
-import kurozora.kit.core.Result
+import kurozora.kit.shared.KurozoraError
+import kurozora.kit.shared.logging.KurozoraLogger
+import kurozora.kit.shared.Result
 
 /**
  * Client for making requests to the Kurozora API.
@@ -24,7 +23,7 @@ class KurozoraApiClient(
     val baseUrl: String,
     private val apiKey: String,
     private val userAgent: String,
-    private val tokenProvider: TokenProvider
+    private val tokenProvider: TokenProvider? = null
 ) {
     /**
      * The HTTP client used for making requests.
@@ -43,7 +42,7 @@ class KurozoraApiClient(
         install(Logging) {
             logger = object : Logger {
                 override fun log(message: String) {
-                    KurozoraLogger.debug("KurozoraApiClient", message)
+                    KurozoraLogger.debug("[KurozoraApiClient]", message)
                 }
             }
             level = LogLevel.INFO
@@ -52,7 +51,7 @@ class KurozoraApiClient(
         install(Auth) {
             bearer {
                 loadTokens {
-                    val token = tokenProvider.getToken()
+                    val token = tokenProvider?.getToken()
                     if (token != null) {
                         BearerTokens(token, "")
                     } else {
@@ -60,7 +59,7 @@ class KurozoraApiClient(
                     }
                 }
                 refreshTokens {
-                    val newToken = tokenProvider.refreshToken()
+                    val newToken = tokenProvider?.refreshToken()
                     if (newToken != null) {
                         BearerTokens(newToken, "")
                     } else {
@@ -136,7 +135,7 @@ class KurozoraApiClient(
         parameters: Map<String, String> = emptyMap()
     ): Result<T> {
         return try {
-            KurozoraLogger.debug("KurozoraApiClient", "GET request to ${endpoint.path}")
+            KurozoraLogger.debug("[KurozoraApiClient]", "GET request to ${endpoint.path}")
             val response = httpClient.get("$baseUrl/${endpoint.path}") {
                 parameters.forEach { (key, value) ->
                     parameter(key, value)
@@ -144,10 +143,10 @@ class KurozoraApiClient(
             }
             Result.Success(response.body())
         } catch (e: KurozoraError) {
-            KurozoraLogger.error("KurozoraApiClient", "Error in GET request to ${endpoint.path}", e)
+            KurozoraLogger.error("[KurozoraApiClient]", "Error in GET request to ${endpoint.path}", e)
             Result.Error(e)
         } catch (e: Exception) {
-            KurozoraLogger.error("KurozoraApiClient", "Unknown error in GET request to ${endpoint.path}", e)
+            KurozoraLogger.error("[KurozoraApiClient]", "Unknown error in GET request to ${endpoint.path}", e)
             Result.Error(KurozoraError.UnknownError(e.message ?: "Unknown error", e))
         }
     }
@@ -161,7 +160,7 @@ class KurozoraApiClient(
         parameters: Map<String, String> = emptyMap()
     ): Result<T> {
         return try {
-            KurozoraLogger.debug("KurozoraApiClient", "POST request to ${endpoint.path}")
+            KurozoraLogger.debug("[KurozoraApiClient]", "POST request to ${endpoint.path}")
             val response = httpClient.post("$baseUrl/${endpoint.path}") {
                 parameters.forEach { (key, value) ->
                     parameter(key, value)
@@ -170,10 +169,10 @@ class KurozoraApiClient(
             }
             Result.Success(response.body())
         } catch (e: KurozoraError) {
-            KurozoraLogger.error("KurozoraApiClient", "Error in POST request to ${endpoint.path}", e)
+            KurozoraLogger.error("[KurozoraApiClient]", "Error in POST request to ${endpoint.path}", e)
             Result.Error(e)
         } catch (e: Exception) {
-            KurozoraLogger.error("KurozoraApiClient", "Unknown error in POST request to ${endpoint.path}", e)
+            KurozoraLogger.error("[KurozoraApiClient]", "Unknown error in POST request to ${endpoint.path}", e)
             Result.Error(KurozoraError.UnknownError(e.message ?: "Unknown error", e))
         }
     }
@@ -187,7 +186,7 @@ class KurozoraApiClient(
         parameters: Map<String, String> = emptyMap()
     ): Result<T> {
         return try {
-            KurozoraLogger.debug("KurozoraApiClient", "PUT request to ${endpoint.path}")
+            KurozoraLogger.debug("[KurozoraApiClient]", "PUT request to ${endpoint.path}")
             val response = httpClient.put("$baseUrl/${endpoint.path}") {
                 parameters.forEach { (key, value) ->
                     parameter(key, value)
@@ -196,10 +195,10 @@ class KurozoraApiClient(
             }
             Result.Success(response.body())
         } catch (e: KurozoraError) {
-            KurozoraLogger.error("KurozoraApiClient", "Error in PUT request to ${endpoint.path}", e)
+            KurozoraLogger.error("[KurozoraApiClient]", "Error in PUT request to ${endpoint.path}", e)
             Result.Error(e)
         } catch (e: Exception) {
-            KurozoraLogger.error("KurozoraApiClient", "Unknown error in PUT request to ${endpoint.path}", e)
+            KurozoraLogger.error("[KurozoraApiClient]", "Unknown error in PUT request to ${endpoint.path}", e)
             Result.Error(KurozoraError.UnknownError(e.message ?: "Unknown error", e))
         }
     }
@@ -212,7 +211,7 @@ class KurozoraApiClient(
         parameters: Map<String, String> = emptyMap()
     ): Result<T> {
         return try {
-            KurozoraLogger.debug("KurozoraApiClient", "DELETE request to ${endpoint.path}")
+            KurozoraLogger.debug("[KurozoraApiClient]", "DELETE request to ${endpoint.path}")
             val response = httpClient.delete("$baseUrl/${endpoint.path}") {
                 parameters.forEach { (key, value) ->
                     parameter(key, value)
@@ -220,10 +219,10 @@ class KurozoraApiClient(
             }
             Result.Success(response.body())
         } catch (e: KurozoraError) {
-            KurozoraLogger.error("KurozoraApiClient", "Error in DELETE request to ${endpoint.path}", e)
+            KurozoraLogger.error("[KurozoraApiClient]", "Error in DELETE request to ${endpoint.path}", e)
             Result.Error(e)
         } catch (e: Exception) {
-            KurozoraLogger.error("KurozoraApiClient", "Unknown error in DELETE request to ${endpoint.path}", e)
+            KurozoraLogger.error("[KurozoraApiClient]", "Unknown error in DELETE request to ${endpoint.path}", e)
             Result.Error(KurozoraError.UnknownError(e.message ?: "Unknown error", e))
         }
     }
