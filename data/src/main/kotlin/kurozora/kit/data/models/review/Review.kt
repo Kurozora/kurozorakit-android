@@ -1,12 +1,13 @@
 package kurozora.kit.data.models.review
 
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kurozora.kit.data.models.IdentityResource
+import kurozora.kit.data.models.LocalDateSerializer
 import kurozora.kit.data.models.character.CharacterIdentityResponse
 import kurozora.kit.data.models.episode.EpisodeIdentityResponse
 import kurozora.kit.data.models.game.GameIdentityResponse
 import kurozora.kit.data.models.literature.LiteratureIdentityResponse
-import kurozora.kit.data.models.person.Person
 import kurozora.kit.data.models.person.PersonIdentityResponse
 import kurozora.kit.data.models.show.ShowIdentityResponse
 import kurozora.kit.data.models.song.SongIdentityResponse
@@ -18,14 +19,15 @@ data class Review(
     override val id: String,
     override val type: String,
     override val href: String,
-    val attributes: Person.Attributes,
-    val relationships: Person.Relationships? = null
+    val attributes: Attributes,
+    val relationships: Relationships? = null
 ) : IdentityResource {
     @Serializable
     data class Attributes(
         val score: Double,
         val description: String? = null,
-        val createdAt: String
+        @Serializable(with = LocalDateSerializer::class)
+        val createdAt: LocalDate?
     )
 
     @Serializable

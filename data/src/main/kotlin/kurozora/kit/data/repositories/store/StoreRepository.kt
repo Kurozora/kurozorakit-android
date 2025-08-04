@@ -4,18 +4,17 @@ import kurozora.kit.api.KKEndpoint
 import kurozora.kit.api.KurozoraApiClient
 import kurozora.kit.shared.Result
 import kurozora.kit.data.models.user.User
-import kurozora.kit.data.models.user.receipt.Receipt
 import kurozora.kit.data.models.user.receipt.ReceiptResponse
 
 interface StoreRepository {
-    suspend fun verifyReceipt(receipt: String): Result<Receipt>
+    suspend fun verifyReceipt(receipt: String): Result<ReceiptResponse>
 }
 
 open class StoreRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : StoreRepository {
 
-    override suspend fun verifyReceipt(receipt: String): Result<Receipt> {
+    override suspend fun verifyReceipt(receipt: String): Result<ReceiptResponse> {
         val body = mapOf("receipt" to receipt)
         val result = apiClient.post<ReceiptResponse, Map<String, String>>(KKEndpoint.Store.Verify, body)
 
@@ -27,6 +26,6 @@ open class StoreRepositoryImpl(
             println("Received validate receipt error: ${error.message}")
         }
 
-        return result.map { it.data.first() }
+        return result
     }
 }

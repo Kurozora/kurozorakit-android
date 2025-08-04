@@ -15,4 +15,8 @@ object Deps {
         const val mock = "io.ktor:ktor-client-mock:${Versions.ktor}"
         const val cio = "io.ktor:ktor-client-cio:${Versions.ktor}"
     }
+
+    object Test {
+        const val mockk = "io.mockk:mockk:${Versions.mockk}"
+    }
 }

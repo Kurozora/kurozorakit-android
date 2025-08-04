@@ -11,18 +11,18 @@ interface ScheduleRepository {
     suspend fun getSchedule(
         type: KKScheduleType,
         date: String,
-    ): Result<Schedule>
+    ): Result<ScheduleResponse>
 }
 
 open class ScheduleRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : ScheduleRepository {
 
-    override suspend fun getSchedule(type: KKScheduleType, date: String): Result<Schedule> {
+    override suspend fun getSchedule(type: KKScheduleType, date: String): Result<ScheduleResponse> {
         val parameters = mapOf(
             "date" to date,
-            "type" to type.toString()
+            "type" to type.value.toString()
         )
-        return apiClient.get<ScheduleResponse>(KKEndpoint.Schedule.Index, parameters).map { it.data.first() }
+        return apiClient.get<ScheduleResponse>(KKEndpoint.Schedule.Index, parameters)
     }
 }

@@ -6,12 +6,10 @@ import kurozora.kit.api.KurozoraApiClient
 import kurozora.kit.data.enums.KKSearchFilter
 import kurozora.kit.data.enums.KKSearchScope
 import kurozora.kit.data.enums.KKSearchType
-import kurozora.kit.data.models.Filterable
-import kurozora.kit.shared.Result
-import kurozora.kit.data.models.search.Search
 import kurozora.kit.data.models.search.SearchResponse
 import kurozora.kit.data.models.search.SearchSuggesitonsResponse
-import java.util.Base64
+import kurozora.kit.shared.Result
+import java.util.*
 
 interface SearchRepository {
     suspend fun search(
@@ -21,13 +19,13 @@ interface SearchRepository {
         next: String? = null,
         limit: Int = 20,
         filter: KKSearchFilter? = null,
-    ): Result<Search>
+    ): Result<SearchResponse>
 
     suspend fun getSearchSuggestions(
         scope: KKSearchScope,
         types: List<KKSearchType>,
         query: String,
-    ): Result<List<String>>
+    ): Result<SearchSuggesitonsResponse>
 }
 
 open class SearchRepositoryImpl(
@@ -41,14 +39,11 @@ open class SearchRepositoryImpl(
         next: String?,
         limit: Int,
         filter: KKSearchFilter?
-    ): Result<Search> {
-        val parameters = mutableMapOf<String, String>()
+    ): Result<SearchResponse> {
+        val params = mutableMapOf<String, String>()
         if (next == null) {
-            val typesString = types.joinToString(",", transform = { it.toString() })
-
-            parameters.apply {
+            params.apply {
                 put("scope", scope.queryValue)
-                put("types", typesString)
                 put("query", query)
                 put("limit", limit.toString())
             }
@@ -71,22 +66,37 @@ open class SearchRepositoryImpl(
 
                 try {
                     val filterJson = Json.encodeToString(filters)
-                    parameters["filter"] = Base64.getEncoder().encodeToString(filterJson.toByteArray())
+                    params["filter"] = Base64.getEncoder().encodeToString(filterJson.toByteArray())
                 } catch (e: Exception) {
                     println("❌ Encode error: Could not make base64 string from filter data $filters")
                 }
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Search.Index
-        return apiClient.get<SearchResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<SearchResponse>(endpoint, params)  {
+            url {
+                types.forEach {
+                    parameters.append("types[]", it.toString())
+                }
+            }
+        }
     }
 
     override suspend fun getSearchSuggestions(
         scope: KKSearchScope,
         types: List<KKSearchType>,
         query: String,
-    ): Result<List<String>> {
-        val parameters = mapOf("query" to query)
-        return apiClient.get<SearchSuggesitonsResponse>(KKEndpoint.Search.Suggestions, parameters).map { it.data }
+    ): Result<SearchSuggesitonsResponse> {
+        val params = mapOf(
+            "scope" to scope.queryValue,
+            "query" to query
+        )
+        return apiClient.get<SearchSuggesitonsResponse>(KKEndpoint.Search.Suggestions, params) {
+            url {
+                types.forEach {
+                    parameters.append("types[]", it.toString())
+                }
+            }
+        }
     }
 }

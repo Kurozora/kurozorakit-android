@@ -1,5 +1,7 @@
 package kurozora.kit.data.repositories.review
 
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kurozora.kit.api.KKEndpoint
 import kurozora.kit.api.KurozoraApiClient
 import kurozora.kit.shared.Result

@@ -1,14 +1,14 @@
 package kurozora.kit.data.models.user
 
-import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kurozora.kit.data.enums.ActivityStatus
 import kurozora.kit.data.enums.BlockStatus
 import kurozora.kit.data.enums.FollowStatus
 import kurozora.kit.data.enums.UserRole
 import kurozora.kit.data.models.IdentityResource
+import kurozora.kit.data.models.LocalDateSerializer
 import kurozora.kit.data.models.media.Media
 import kurozora.kit.data.models.user.achievement.AchievementResponse
 import kurozora.kit.data.models.user.receipt.Receipt
@@ -60,10 +60,10 @@ data class User(
         var isPro: Boolean,
         var isSubscribed: Boolean,
         var isVerified: Boolean,
-        @SerialName("joinedAt")
-        val joinedAtTimestamp: Long,
-        @SerialName("subscribedAt")
-        val subscribedAtTimestamp: Long? = null,
+        @Serializable(with = LocalDateSerializer::class)
+        val joinedAt: LocalDate?,
+        @Serializable(with = LocalDateSerializer::class)
+        val subscribedAt: LocalDate? = null,
         var followerCount: Int,
         var followingCount: Int,
         val reputationCount: Int,
@@ -82,12 +82,6 @@ data class User(
         @SerialName("_followStatus")
         private var _followStatus: FollowStatus? = null
     ) {
-        @Transient
-        val joinedAt: Instant = Instant.fromEpochSeconds(joinedAtTimestamp)
-
-        @Transient
-        val subscribedAt: Instant? = subscribedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
-
         var blockStatus: BlockStatus
             get() = _blockStatus ?: BlockStatus.fromBoolean(isBlocked)
             set(value) { _blockStatus = value }
@@ -111,8 +105,8 @@ data class User(
             copy().also { it.followStatus = using.followStatus }
 
         fun update(using: UserUpdate) {
-            slug = using.username
-            username = using.nickname
+            slug = using.username.toString()
+            username = using.nickname.toString()
             biography = using.biography
             profile = using.profile
             banner = using.banner
@@ -123,8 +117,8 @@ data class User(
 
         fun updated(using: UserUpdate): Attributes =
             copy().also {
-                it.slug = using.username
-                it.username = using.nickname
+                it.slug = using.username.toString()
+                it.username = using.nickname.toString()
                 it.biography = using.biography
                 it.profile = using.profile
                 it.banner = using.banner

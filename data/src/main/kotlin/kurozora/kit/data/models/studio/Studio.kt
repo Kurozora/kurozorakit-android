@@ -1,10 +1,13 @@
 package kurozora.kit.data.models.studio
 
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kurozora.kit.data.models.IdentityResource
+import kurozora.kit.data.models.LocalDateSerializer
+import kurozora.kit.data.models.WebsiteURLsAsListSerializer
 import kurozora.kit.data.models.library.LibraryAttributes
 import kurozora.kit.data.models.game.GameIdentityResponse
 import kurozora.kit.data.models.literature.LiteratureIdentityResponse
@@ -38,22 +41,18 @@ data class Studio(
         val tvRating: TVRating,
         val stats: MediaStat? = null,
         val socialURLs: List<String>? = null,
+        @Serializable(with = WebsiteURLsAsListSerializer::class)
         val websiteURLs: List<String>? = null,
         val isProducer: Boolean? = null,
         val isStudio: Boolean? = null,
         val isLicensor: Boolean? = null,
         val isNSFW: Boolean,
-        @SerialName("foundedAt")
-        val foundedAtTimestamp: Long? = null,
-        @SerialName("defunctAt")
-        val defunctAtTimestamp: Long? = null,
+        @Serializable(LocalDateSerializer::class)
+        val foundedAtTimestamp: LocalDate?,
+        @Serializable(LocalDateSerializer::class)
+        val defunctAtTimestamp: LocalDate? = null,
         var library: LibraryAttributes? = null
-    ) {
-        @Transient
-        val foundedAt: Instant? = foundedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
-        @Transient
-        val defunctAt: Instant? = defunctAtTimestamp?.let { Instant.fromEpochSeconds(it) }
-    }
+    )
 
     @Serializable
     data class Relationships(

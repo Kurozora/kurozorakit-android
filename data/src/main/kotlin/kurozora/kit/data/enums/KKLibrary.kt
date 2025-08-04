@@ -1,6 +1,7 @@
 package kurozora.kit.data.enums
 
 import kotlinx.serialization.Serializable
+import kurozora.kit.data.models.IntEnumSerializer
 
 object KKLibrary {
     // MARK: - Kind
@@ -19,7 +20,7 @@ object KKLibrary {
     }
 
     // MARK: - Status
-    @Serializable
+    @Serializable(with = IntEnumSerializer::class)
     enum class Status(val value: Int) {
         NONE(-1),
         INPROGRESS(0),

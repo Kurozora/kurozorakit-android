@@ -1,9 +1,18 @@
 package kurozora.kit.data.enums
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class ActivityStatus(val stringValue: String, val symbolValue: String, val colorValue: String) {
-    ONLINE("Online", "✓", "green"),
-    SEEN_RECENTLY("Seen Recently", "–", "yellow"),
-    OFFLINE("Offline", "x", "red");
+    @SerialName("Online")
+    Online("Online", "✓", "green"),
+
+    @SerialName("Seen Recently")
+    Seen_Recently("Seen Recently", "–", "yellow"),
+
+    @SerialName("Offline")
+    Offline("Offline", "x", "red");
 
     companion object {
         fun fromString(value: String): ActivityStatus? {
@@ -11,3 +20,4 @@ enum class ActivityStatus(val stringValue: String, val symbolValue: String, val 
         }
     }
 }
+

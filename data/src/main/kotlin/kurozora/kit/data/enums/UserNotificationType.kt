@@ -4,11 +4,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class UserNotificationType(val value: String) {
-    session("NewSession"),
-    follower("NewFollower"),
-    feedMessageReply("NewFeedMessageReply"),
-    feedMessageReShare("NewFeedMessageReShare"),
-    libraryImportFinished("LibraryImportFinished"),
-    subscriptionStatus("SubscriptionStatus"),
+    NewSession("NewSession"),
+    NewFollower("NewFollower"),
+    NewFeedMessageReply("NewFeedMessageReply"),
+    NewFeedMessageReShare("NewFeedMessageReShare"),
+    LibraryImportFinished("LibraryImportFinished"),
+    SubscriptionStatus("SubscriptionStatus"),
     other("");
 }

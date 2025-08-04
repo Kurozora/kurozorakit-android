@@ -3,4 +3,5 @@ object Versions {
     const val kotlinCoroutines = "1.10.2"
     const val ktor = "3.2.2"
     const val kotlinxSerialization = "1.9.0"
+    const val mockk = "1.14.5"
 }

@@ -15,6 +15,8 @@ data class ErrorResponse(
  */
 @Serializable
 data class ApiError(
-    val code: String,
-    val message: String
+    val id: Int,
+    val status: Int,
+    val title: String,
+    val detail: String
 )

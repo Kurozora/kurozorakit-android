@@ -1,6 +1,8 @@
 package kurozora.kit.core
 
 import kurozora.kit.api.KurozoraApiClient
+import kurozora.kit.api.TokenProvider
+import kurozora.kit.data.DefaultTokenProvider
 import kurozora.kit.shared.logging.CompositeLogger
 import kurozora.kit.shared.logging.ConsoleLogger
 import kurozora.kit.shared.logging.KurozoraLogger
@@ -219,6 +221,7 @@ class KurozoraKit private constructor(
     class Builder {
         private var apiEndpoint: String = KurozoraApi.V1.baseUrl
         private var apiKey: String = ""
+        private var tokenProvider: TokenProvider = DefaultTokenProvider
         private var logLevel: LogLevel = LogLevel.INFO
         private var maxRetries: Int = 3
         private var initialBackoffDelayMs: Long = 1000
@@ -234,6 +237,11 @@ class KurozoraKit private constructor(
          * Sets the API key.
          */
         fun apiKey(apiKey: String) = apply { this.apiKey = apiKey }
+
+        /**
+         * Sets the token provider.
+         */
+        fun tokenProvider(tokenProvider: TokenProvider) = apply { this.tokenProvider = tokenProvider }
 
         /**
          * Sets the log level.
@@ -276,6 +284,7 @@ class KurozoraKit private constructor(
                 baseUrl = apiEndpoint,
                 apiKey = apiKey,
                 userAgent = "KurozoraApp/1.0.0 (com.seloreis.kurozora; Android 14) KtorClient/3.2.2",
+                tokenProvider = tokenProvider
             )
 
             // Create all repositories

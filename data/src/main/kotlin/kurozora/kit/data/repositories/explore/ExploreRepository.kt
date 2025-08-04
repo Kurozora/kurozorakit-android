@@ -2,9 +2,8 @@ package kurozora.kit.data.repositories.explore
 
 import kurozora.kit.api.KKEndpoint
 import kurozora.kit.api.KurozoraApiClient
-import kurozora.kit.shared.Result
-import kurozora.kit.data.models.explore.ExploreCategory
 import kurozora.kit.data.models.explore.ExploreCategoryResponse
+import kurozora.kit.shared.Result
 
 interface ExploreRepository {
     /**
@@ -16,7 +15,7 @@ interface ExploreRepository {
      * @param genreId The id of a genre by which the explore page should be filtered.
      * @param themeId The id of a theme by which the explore page should be filtered.
      */
-    suspend fun getExplore(genreId: String? = null, themeId: String? = null): Result<List<ExploreCategory>>
+    suspend fun getExplore(genreId: String? = null, themeId: String? = null): Result<ExploreCategoryResponse>
 
     /**
      * Fetch the content of an explore category.
@@ -30,33 +29,33 @@ interface ExploreRepository {
         exploreCategoryId: String,
         next: String? = null,
         limit: Int = 5
-    ): Result<List<ExploreCategory>>
+    ): Result<ExploreCategoryResponse>
 }
 
 open class ExploreRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : ExploreRepository {
 
-    override suspend fun getExplore(genreId: String?, themeId: String?): Result<List<ExploreCategory>> {
+    override suspend fun getExplore(genreId: String?, themeId: String?): Result<ExploreCategoryResponse> {
         val parameters = mutableMapOf<String, String>().apply {
             genreId?.takeIf { it.isNotEmpty() }?.let { put("genre_id", it) }
             themeId?.takeIf { it.isNotEmpty() }?.let { put("theme_id", it) }
         }
 
-        return apiClient.get<ExploreCategoryResponse>(KKEndpoint.Explore.Index, parameters).map { it.data }
+        return apiClient.get<ExploreCategoryResponse>(KKEndpoint.Explore.Index, parameters)
     }
 
     override suspend fun getExplore(
         exploreCategoryId: String,
         next: String?,
         limit: Int
-    ): Result<List<ExploreCategory>> {
+    ): Result<ExploreCategoryResponse> {
         val parameters = if (next == null) {
             mapOf("limit" to limit.toString())
         } else {
             emptyMap()
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Explore.Details(exploreCategoryId)
-        return apiClient.get<ExploreCategoryResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<ExploreCategoryResponse>(endpoint, parameters)
     }
 }

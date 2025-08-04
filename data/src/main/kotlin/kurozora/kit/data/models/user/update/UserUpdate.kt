@@ -5,12 +5,12 @@ import kurozora.kit.data.models.media.Media
 
 @Serializable
 data class UserUpdate(
-    var username: String,
-    var nickname: String,
+    var username: String? = null,
+    var nickname: String? = null,
     var biography: String? = null,
     var profile: Media? = null,
     var banner: Media? = null,
-    var preferredLanguage: String,
-    var preferredTVRating: Int,
-    var preferredTimezone: String
+    var preferredLanguage: String? = null,
+    var preferredTVRating: Int? = null,
+    var preferredTimezone: String? = null
 )

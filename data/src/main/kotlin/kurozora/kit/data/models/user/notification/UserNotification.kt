@@ -3,8 +3,10 @@ package kurozora.kit.data.models.user.notification
 import kotlinx.serialization.Serializable
 import kurozora.kit.data.models.IdentityResource
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kurozora.kit.data.enums.ReadStatus
 import kurozora.kit.data.enums.UserNotificationType
+import kurozora.kit.data.models.LocalDateSerializer
 
 @Serializable
 data class UserNotification(
@@ -21,7 +23,8 @@ data class UserNotification(
         private var _readStatus: ReadStatus? = null,
         val payload: Payload,
         val description: String,
-        val createdAt: Instant
+        @Serializable(with = LocalDateSerializer::class)
+        val createdAt: LocalDate?
     ) {
         val readStatus: ReadStatus
             get() = _readStatus ?: ReadStatus.fromBoolean(isRead)

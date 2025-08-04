@@ -1,16 +1,31 @@
 package kurozora.kit.api
 
 /**
- * Interface for providing authentication tokens.
+ * Interface for managing authentication tokens.
  */
 interface TokenProvider {
     /**
-     * Returns the current authentication token, or null if there is none.
+     * Saves an authentication token.
+     */
+    suspend fun saveToken(token: String)
+
+    /**
+     * Gets the current authentication token.
      */
     suspend fun getToken(): String?
 
     /**
-     * Refreshes the authentication token and returns the new token, or null if the refresh failed.
+     * Saves a refresh token.
      */
-    suspend fun refreshToken(): String?
+    suspend fun saveRefreshToken(refreshToken: String)
+
+    /**
+     * Gets the current refresh token.
+     */
+    suspend fun getRefreshToken(): String?
+
+    /**
+     * Clears all tokens.
+     */
+    suspend fun clearTokens()
 }

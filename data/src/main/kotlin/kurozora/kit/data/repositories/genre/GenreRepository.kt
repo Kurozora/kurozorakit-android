@@ -7,19 +7,19 @@ import kurozora.kit.data.models.genre.Genre
 import kurozora.kit.data.models.genre.GenreResponse
 
 interface GenreRepository {
-    suspend fun getGenres(): Result<List<Genre>>
-    suspend fun getGenre(genreId: String): Result<Genre>
+    suspend fun getGenres(): Result<GenreResponse>
+    suspend fun getGenre(genreId: String): Result<GenreResponse>
 }
 
 open class GenreRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : GenreRepository {
 
-    override suspend fun getGenres(): Result<List<Genre>> {
-        return apiClient.get<GenreResponse>(KKEndpoint.Genres.Index).map { it.data }
+    override suspend fun getGenres(): Result<GenreResponse> {
+        return apiClient.get<GenreResponse>(KKEndpoint.Genres.Index)
     }
 
-    override suspend fun getGenre(genreId: String): Result<Genre> {
-        return apiClient.get<GenreResponse>(KKEndpoint.Genres.Details(genreId)).map { it.data.first() }
+    override suspend fun getGenre(genreId: String): Result<GenreResponse> {
+        return apiClient.get<GenreResponse>(KKEndpoint.Genres.Details(genreId))
     }
 }

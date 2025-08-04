@@ -1,17 +1,13 @@
 package kurozora.kit.data.models.show
 
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import kotlinx.serialization.json.JsonNames
 import kurozora.kit.data.models.IdentityResource
-import kurozora.kit.data.models.library.LibraryAttributes
 import kurozora.kit.data.models.LocalDateSerializer
 import kurozora.kit.data.models.character.CharacterIdentityResponse
 import kurozora.kit.data.models.country.Country
 import kurozora.kit.data.models.language.Language
+import kurozora.kit.data.models.library.LibraryAttributes
 import kurozora.kit.data.models.media.Media
 import kurozora.kit.data.models.media.MediaStat
 import kurozora.kit.data.models.person.PersonIdentityResponse
@@ -28,23 +24,6 @@ import kurozora.kit.data.models.show.song.ShowSongResponse
 import kurozora.kit.data.models.song.SongIdentityResponse
 import kurozora.kit.data.models.staff.StaffIdentityResponse
 import kurozora.kit.data.models.studio.StudioIdentityResponse
-
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
-data class ShowAttributes(
-    @JsonNames("startedAt") val startedAtTimestamp: Long? = null,
-    @JsonNames("endedAt") val endedAtTimestamp: Long? = null,
-    @JsonNames("nextBroadcastAt") val nextBroadcastAtTimestamp: Long? = null,
-) {
-    @Transient
-    val startedAt: Instant? = startedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
-
-    @Transient
-    val endedAt: Instant? = endedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
-
-    @Transient
-    val nextBroadcastAt: Instant? = nextBroadcastAtTimestamp?.let { Instant.fromEpochSeconds(it) }
-}
 
 @Serializable
 data class Show(

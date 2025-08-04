@@ -1,15 +1,13 @@
 package kurozora.kit.data.models.literature
 
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import kotlinx.serialization.json.JsonNames
 import kurozora.kit.data.models.IdentityResource
-import kurozora.kit.data.models.library.LibraryAttributes
+import kurozora.kit.data.models.LocalDateSerializer
 import kurozora.kit.data.models.character.CharacterIdentityResponse
 import kurozora.kit.data.models.country.Country
 import kurozora.kit.data.models.language.Language
+import kurozora.kit.data.models.library.LibraryAttributes
 import kurozora.kit.data.models.media.Media
 import kurozora.kit.data.models.media.MediaStat
 import kurozora.kit.data.models.person.PersonIdentityResponse
@@ -23,22 +21,6 @@ import kurozora.kit.data.models.show.related.RelatedLiteratureResponse
 import kurozora.kit.data.models.show.related.RelatedShowResponse
 import kurozora.kit.data.models.staff.StaffIdentityResponse
 import kurozora.kit.data.models.studio.StudioIdentityResponse
-
-@Serializable
-data class LiteratureAttributes(
-    @JsonNames("startedAt") val startedAtTimestamp: Long? = null,
-    @JsonNames("endedAt") val endedAtTimestamp: Long? = null,
-    @JsonNames("nextPublicationAt") val nextPublicationAtTimestamp: Long? = null,
-) {
-    @Transient
-    val startedAt: Instant? = startedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
-
-    @Transient
-    val endedAt: Instant? = endedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
-
-    @Transient
-    val nextPublicationAt: Instant? = nextPublicationAtTimestamp?.let { Instant.fromEpochSeconds(it) }
-}
 
 @Serializable
 data class Literature(
@@ -78,8 +60,11 @@ data class Literature(
         val chapterCount: Int,
         val pageCount: Int,
         val stats: MediaStat? = null,
+        @Serializable(with = LocalDateSerializer::class)
         val startedAt: LocalDate? = null,
+        @Serializable(with = LocalDateSerializer::class)
         val endedAt: LocalDate? = null,
+        @Serializable(with = LocalDateSerializer::class)
         val nextPublicationAt: LocalDate? = null,
         val duration: String,
         val durationCount: Int,

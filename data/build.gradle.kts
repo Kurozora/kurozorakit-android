@@ -10,4 +10,5 @@ dependencies {
     implementation(Deps.Kotlin.coroutinesCore)
     implementation(Deps.Kotlin.serialization)
     implementation(Deps.Kotlin.dateTime)
+    implementation(Deps.Ktor.core)
 }

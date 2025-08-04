@@ -1,81 +1,72 @@
 package kurozora.kit.data.repositories.user
 
+import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.http.*
 import kurozora.kit.api.KKEndpoint
 import kurozora.kit.api.KurozoraApiClient
 import kurozora.kit.data.enums.KKLibrary
 import kurozora.kit.data.enums.ReadStatus
-import kurozora.kit.shared.Result
-import kurozora.kit.data.models.favorite.Favorite
 import kurozora.kit.data.models.favorite.FavoriteResponse
-import kurozora.kit.data.models.favorite.library.FavoriteLibrary
 import kurozora.kit.data.models.favorite.library.FavoriteLibraryResponse
-import kurozora.kit.data.models.feed.message.FeedMessage
-import kurozora.kit.data.models.feed.message.FeedMessageResponse
+import kurozora.kit.data.models.feed.message.FeedMessageIdentityResponse
 import kurozora.kit.data.models.library.LibraryResponse
 import kurozora.kit.data.models.library.LibraryUpdateResponse
 import kurozora.kit.data.models.misc.LibraryImport
-import kurozora.kit.data.models.recap.Recap
 import kurozora.kit.data.models.recap.RecapResponse
-import kurozora.kit.data.models.recap.item.RecapItem
 import kurozora.kit.data.models.recap.item.RecapItemResponse
-import kurozora.kit.data.models.user.User
-import kurozora.kit.data.models.user.UserIdentity
 import kurozora.kit.data.models.user.UserIdentityResponse
 import kurozora.kit.data.models.user.UserResponse
-import kurozora.kit.data.models.user.notification.UserNotification
+import kurozora.kit.data.models.user.notification.SingleNotificationResponse
 import kurozora.kit.data.models.user.notification.UserNotificationResponse
-import kurozora.kit.data.models.user.notification.update.UserNotificationUpdate
 import kurozora.kit.data.models.user.notification.update.UserNotificationUpdateResponse
-import kurozora.kit.data.models.user.reminder.library.ReminderLibrary
 import kurozora.kit.data.models.user.reminder.library.ReminderLibraryResponse
-import kurozora.kit.data.models.user.session.Session
-import kurozora.kit.data.models.user.session.SessionIdentity
 import kurozora.kit.data.models.user.session.SessionIdentityResponse
 import kurozora.kit.data.models.user.session.SessionResponse
-import kurozora.kit.data.models.user.tokens.AccessToken
 import kurozora.kit.data.models.user.tokens.AccessTokenResponse
 import kurozora.kit.data.models.user.update.UserUpdate
+import kurozora.kit.data.models.user.update.UserUpdateResponse
+import kurozora.kit.shared.Result
 import java.net.URL
-import kotlin.collections.filterValues
 
 interface UserRepository {
     // Profile operations
-    suspend fun getMyProfile(): Result<User>
-    suspend fun updateMyProfile(update: UserUpdate): Result<User>
-    suspend fun getMyFollowers(next: String? = null, limit: Int = 20): Result<List<UserIdentity>>
-    suspend fun getMyFollowing(next: String? = null, limit: Int = 20): Result<List<UserIdentity>>
+    suspend fun getMyProfile(): Result<UserResponse>
+    suspend fun updateMyProfile(update: UserUpdate): Result<UserUpdateResponse>
+    suspend fun getMyFollowers(next: String? = null, limit: Int = 20): Result<UserIdentityResponse>
+    suspend fun getMyFollowing(next: String? = null, limit: Int = 20): Result<UserIdentityResponse>
     // Access tokens
-    suspend fun getAccessTokens(next: String? = null, limit: Int = 20): Result<List<AccessToken>>
-    suspend fun getAccessToken(accessToken: String): Result<AccessToken>
+    suspend fun getAccessTokens(next: String? = null, limit: Int = 20): Result<AccessTokenResponse>
+    suspend fun getAccessToken(accessToken: String): Result<AccessTokenResponse>
     suspend fun updateAccessToken(accessToken: String, apnDeviceToken: String): Result<Unit>
     suspend fun deleteAccessToken(accessToken: String): Result<Unit>
     // Favorites
-    suspend fun getMyFavorites(libraryKind: KKLibrary.Kind, next: String? = null, limit: Int = 20): Result<FavoriteLibrary>
-    suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelID: String): Result<Favorite>
+    suspend fun getMyFavorites(libraryKind: KKLibrary.Kind, next: String? = null, limit: Int = 20): Result<FavoriteLibraryResponse>
+    suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelID: String): Result<FavoriteResponse>
     // Feed
-    suspend fun getMyFeedMessages(next: String? = null, limit: Int = 20): Result<List<FeedMessage>>
+    suspend fun getMyFeedMessages(next: String? = null, limit: Int = 20): Result<FeedMessageIdentityResponse>
     // Library
-    suspend fun getMyLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, sortType: KKLibrary.SortType, sortOption: KKLibrary.Option, next: String? = null, limit: Int = 20): Result<LibraryResponse>
+    suspend fun getMyLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, sortType: KKLibrary.SortType? = KKLibrary.SortType.NONE, sortOption: KKLibrary.Option? = null, next: String? = null, limit: Int = 20): Result<LibraryResponse>
     suspend fun addToLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelID: String): Result<LibraryUpdateResponse>
     suspend fun updateMyLibrary(libraryKind: KKLibrary.Kind, modelID: String, rewatchCount: Int? = null, isHidden: Boolean? = null): Result<LibraryUpdateResponse>
     suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelID: String): Result<LibraryUpdateResponse>
     suspend fun clearMyLibrary(libraryKind: KKLibrary.Kind, password: String): Result<Unit>
     suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, filePath: URL): Result<LibraryImport>
     // Notifications
-    suspend fun getMyNotifications(): Result<List<UserNotification>>
-    suspend fun getMyNotification(notificationId: String): Result<UserNotification>
+    suspend fun getMyNotifications(): Result<UserNotificationResponse>
+    suspend fun getMyNotification(notificationId: String): Result<SingleNotificationResponse>
     suspend fun deleteMyNotification(notificationId: String): Result<Unit>
-    suspend fun updateMyNotification(notificationID: String, readStatus: ReadStatus): Result<UserNotificationUpdate>
+    suspend fun updateMyNotification(notificationID: String, readStatus: ReadStatus): Result<UserNotificationUpdateResponse>
     // Recap
-    suspend fun getMyRecaps(): Result<List<Recap>>
-    suspend fun getMyRecapDetails(year: String, month: String): Result<List<RecapItem>>
+    suspend fun getMyRecaps(): Result<RecapResponse>
+    suspend fun getMyRecapDetails(year: String, month: String): Result<RecapItemResponse>
     // Reminders
-    suspend fun getMyReminders(libraryKind: KKLibrary.Kind, next: String? = null, limit: Int = 20): Result<ReminderLibrary>
-    suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelID: String): Result<ReminderLibrary>
+    suspend fun getMyReminders(libraryKind: KKLibrary.Kind, next: String? = null, limit: Int = 20): Result<ReminderLibraryResponse>
+    suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelID: String): Result<ReminderLibraryResponse>
     suspend fun downloadMyReminders(): Result<ByteArray>
     // Sessions
-    suspend fun getMySessions(next: String? = null, limit: Int = 20): Result<List<SessionIdentity>>
-    suspend fun getMySession(sessionId: String): Result<Session>
+    suspend fun getMySessions(next: String? = null, limit: Int = 20): Result<SessionIdentityResponse>
+    suspend fun getMySession(sessionId: String): Result<SessionResponse>
     suspend fun deleteMySession(sessionId: String): Result<Unit>
 }
 
@@ -83,80 +74,108 @@ open class UserRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : UserRepository {
 
-    override suspend fun getMyProfile(): Result<User> {
-        return apiClient.get<UserResponse>(KKEndpoint.Me.Profile).map { it.data.first() }
+    override suspend fun getMyProfile(): Result<UserResponse> {
+        return apiClient.get<UserResponse>(KKEndpoint.Me.Profile)
     }
 
     // TODO()
-    override suspend fun updateMyProfile(update: UserUpdate): Result<User> {
-        return apiClient.put<UserResponse, UserUpdate>(KKEndpoint.Me.Update, update).map { it.data.first() }
+    override suspend fun updateMyProfile(update: UserUpdate): Result<UserUpdateResponse> {
+        return apiClient.post<UserUpdateResponse, Unit>(
+            KKEndpoint.Me.Update,
+            body = Unit
+        ) {
+            contentType(ContentType.MultiPart.FormData)
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        update.username?.let { append("username", it) }
+                        update.nickname?.let { append("nickname", it) }
+                        update.biography?.let { append("biography", it) }
+                        // update.profile?.let { append("profile", it.id) }
+                        // update.banner?.let { append("banner", it.id) }
+                        update.preferredLanguage?.let { append("preferredLanguage", it) }
+                        update.preferredTVRating?.let { append("preferredTVRating", it.toString()) }
+                        update.preferredTimezone?.let { append("preferredTimezone", it) }
+                    }
+
+                )
+            )
+        }
     }
 
-    override suspend fun getMyFollowers(next: String?, limit: Int): Result<List<UserIdentity>> {
+
+    override suspend fun getMyFollowers(next: String?, limit: Int): Result<UserIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Followers
-        return apiClient.get<UserIdentityResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<UserIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getMyFollowing(next: String?, limit: Int): Result<List<UserIdentity>> {
+    override suspend fun getMyFollowing(next: String?, limit: Int): Result<UserIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Following
-        return apiClient.get<UserIdentityResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<UserIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getAccessTokens(next: String?, limit: Int): Result<List<AccessToken>> {
+    override suspend fun getAccessTokens(next: String?, limit: Int): Result<AccessTokenResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.AccessTokens.Index
-        return apiClient.get<AccessTokenResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<AccessTokenResponse>(endpoint, parameters)
     }
 
-    override suspend fun getAccessToken(accessToken: String): Result<AccessToken> {
+    override suspend fun getAccessToken(accessToken: String): Result<AccessTokenResponse> {
         val tokenID = accessToken.split('|')[0]
-        return apiClient.get<AccessTokenResponse>(KKEndpoint.Me.AccessTokens.Details(tokenID)).map { it.data.first() }
+        return apiClient.get<AccessTokenResponse>(KKEndpoint.Me.AccessTokens.Details(tokenID))
     }
 
     override suspend fun updateAccessToken(accessToken: String, apnDeviceToken: String): Result<Unit> {
         val body = mapOf("apn_device_token" to apnDeviceToken)
         val tokenID = accessToken.split('|')[0]
-        return apiClient.put<Unit, Map<String, String>>(KKEndpoint.Me.AccessTokens.Update(tokenID), body)
+        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.AccessTokens.Update(tokenID), body)
     }
 
     override suspend fun deleteAccessToken(accessToken: String): Result<Unit> {
         val tokenID = accessToken.split('|')[0]
-        return apiClient.delete<Unit>(KKEndpoint.Me.AccessTokens.Delete(tokenID))
+        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.AccessTokens.Delete(tokenID)) {
+            contentType(ContentType.Application.Json)
+        }
     }
 
-    override suspend fun getMyFavorites(libraryKind: KKLibrary.Kind, next: String?, limit: Int): Result<FavoriteLibrary> {
+    override suspend fun getMyFavorites(libraryKind: KKLibrary.Kind, next: String?, limit: Int): Result<FavoriteLibraryResponse> {
         val parameters = mapOf(
-            "library" to libraryKind.stringValue,
+            "library" to libraryKind.value.toString(),
             "limit" to limit.toString()
         )
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Favorites.Index
-        return apiClient.get<FavoriteLibraryResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<FavoriteLibraryResponse>(endpoint, parameters)
     }
 
-    override suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelID: String): Result<Favorite> {
+    override suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelID: String): Result<FavoriteResponse> {
         val body = mapOf(
-            "library" to libraryKind.stringValue,
+            "library" to libraryKind.value.toString(),
             "model_id" to modelID
         )
-        return apiClient.put<FavoriteResponse, Map<String, String>>(KKEndpoint.Me.Favorites.Update, body).map { it.data }
+        return apiClient.post<FavoriteResponse, Map<String, String>>(KKEndpoint.Me.Favorites.Update) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                body.forEach { (key, value) -> append(key, value) }
+            }))
+        }
     }
 
-    override suspend fun getMyFeedMessages(next: String?, limit: Int): Result<List<FeedMessage>> {
+    override suspend fun getMyFeedMessages(next: String?, limit: Int): Result<FeedMessageIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Feed.Messages
-        return apiClient.get<FeedMessageResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<FeedMessageIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getMyLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, sortType: KKLibrary.SortType, sortOption: KKLibrary.Option, next: String?, limit: Int): Result<LibraryResponse> {
+    override suspend fun getMyLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, sortType: KKLibrary.SortType?, sortOption: KKLibrary.Option?, next: String?, limit: Int): Result<LibraryResponse> {
         val parameters = mutableMapOf(
-            "library" to libraryKind.stringValue,
+            "library" to libraryKind.value.toString(),
             "status" to libraryStatus.sectionValue,
             "limit" to limit.toString()
         ).apply {
             if (sortType != KKLibrary.SortType.NONE) {
-                put("sort", "${sortType.parameterValue}${sortOption.parameterValue}")
+                put("sort", "${sortType?.parameterValue}${sortOption?.parameterValue}")
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Library.Index
@@ -165,11 +184,16 @@ open class UserRepositoryImpl(
 
     override suspend fun addToLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelID: String): Result<LibraryUpdateResponse> {
         val body = mapOf(
-            "library" to libraryKind.stringValue,
+            "library" to libraryKind.value.toString(),
             "status" to libraryStatus.sectionValue,
             "model_id" to modelID
         )
-        return apiClient.post<LibraryUpdateResponse, Map<String, String>>(KKEndpoint.Me.Library.Index, body)
+        return apiClient.post<LibraryUpdateResponse, Map<String, String>>(KKEndpoint.Me.Library.Index, body) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                body.forEach { (key, value) -> append(key, value) }
+            }))
+        }
     }
 
     override suspend fun updateMyLibrary(libraryKind: KKLibrary.Kind, modelID: String, rewatchCount: Int?, isHidden: Boolean?): Result<LibraryUpdateResponse> {
@@ -179,7 +203,7 @@ open class UserRepositoryImpl(
             "rewatch_count" to rewatchCount,
             "is_hidden" to isHidden
         ).filterValues { it != null }
-        return apiClient.put<LibraryUpdateResponse, Map<String, Any?>>(KKEndpoint.Me.Library.Update, body)
+        return apiClient.post<LibraryUpdateResponse, Map<String, Any?>>(KKEndpoint.Me.Library.Update, body)
     }
 
     override suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelID: String): Result<LibraryUpdateResponse> {
@@ -187,7 +211,12 @@ open class UserRepositoryImpl(
             "model_id" to modelID,
             "library" to libraryKind.stringValue
         )
-        return apiClient.post<LibraryUpdateResponse, Map<String, String>>(KKEndpoint.Me.Library.Delete, body)
+        return apiClient.post<LibraryUpdateResponse, Map<String, String>>(KKEndpoint.Me.Library.Delete, body) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                body.forEach { (key, value) -> append(key, value) }
+            }))
+        }
     }
 
     override suspend fun clearMyLibrary(libraryKind: KKLibrary.Kind, password: String): Result<Unit> {
@@ -198,72 +227,99 @@ open class UserRepositoryImpl(
         return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.Library.Clear, body)
     }
 
-    // TODO()
-    override suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, filePath: URL): Result<LibraryImport> {
-        val body = emptyMap<String, Any>()
-        return apiClient.post<LibraryImport, Map<String, Any>>(KKEndpoint.Me.Library.Import, body)
+    override suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, file: URL): Result<LibraryImport> {
+        return apiClient.post<LibraryImport, MultiPartFormDataContent>(
+            KKEndpoint.Me.Library.Import,
+            body = MultiPartFormDataContent(
+                formData {
+                    append(
+                        key = "file",
+                        value = file.toURI().toURL().openStream().readBytes(),
+                        headers = Headers.build {
+                            append(HttpHeaders.ContentDisposition, "form-data; name=\"file\"; filename=\"LibraryImport.xml\"")
+                            append(HttpHeaders.ContentType, "text/xml")
+                        }
+                    )
+                    append("library", libraryKind.value)
+                    append("service", service.value)
+                    append("behavior", behavior.value)
+                }
+            )
+        ) {
+            contentType(ContentType.MultiPart.FormData)
+        }
     }
 
-    override suspend fun getMyNotifications(): Result<List<UserNotification>> {
-        return apiClient.get<UserNotificationResponse>(KKEndpoint.Me.Notifications.Index).map { it.data }
+
+    override suspend fun getMyNotifications(): Result<UserNotificationResponse> {
+        return apiClient.get<UserNotificationResponse>(KKEndpoint.Me.Notifications.Index)
     }
 
-    override suspend fun getMyNotification(notificationId: String): Result<UserNotification> {
-        return apiClient.get<UserNotificationResponse>(KKEndpoint.Me.Notifications.Details(notificationId)).map { it.data.first() }
+    override suspend fun getMyNotification(notificationId: String): Result<SingleNotificationResponse> {
+        return apiClient.get<SingleNotificationResponse>(KKEndpoint.Me.Notifications.Details(notificationId))
     }
 
     override suspend fun deleteMyNotification(notificationId: String): Result<Unit> {
-        return apiClient.delete<Unit>(KKEndpoint.Me.Notifications.Delete(notificationId))
+        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.Notifications.Delete(notificationId)) {
+            contentType(ContentType.Application.Json)
+        }
     }
 
-    override suspend fun updateMyNotification(notificationID: String, readStatus: ReadStatus): Result<UserNotificationUpdate> {
-        val body = mapOf<String, Any>(
+    override suspend fun updateMyNotification(notificationID: String, readStatus: ReadStatus): Result<UserNotificationUpdateResponse> {
+        val body = mapOf(
             "notification" to notificationID,
-            "read" to readStatus.value
+            "read" to readStatus.value.toString()
         )
-        return apiClient.put<UserNotificationUpdateResponse, Map<String, Any>>(KKEndpoint.Me.Notifications.Update, body).map { it.data }
+        return apiClient.post<UserNotificationUpdateResponse, Map<String, String>>(KKEndpoint.Me.Notifications.Update, body) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                body.forEach { (key, value) -> append(key, value) }
+            }))
+        }
     }
 
-    override suspend fun getMyRecaps(): Result<List<Recap>> {
-        return apiClient.get<RecapResponse>(KKEndpoint.Me.Recap.Index).map { it.data }
+    override suspend fun getMyRecaps(): Result<RecapResponse> {
+        return apiClient.get<RecapResponse>(KKEndpoint.Me.Recap.Index)
     }
 
-    override suspend fun getMyRecapDetails(year: String, month: String): Result<List<RecapItem>> {
-        return apiClient.get<RecapItemResponse>(KKEndpoint.Me.Recap.Details(year, month)).map { it.data }
+    override suspend fun getMyRecapDetails(year: String, month: String): Result<RecapItemResponse> {
+        return apiClient.get<RecapItemResponse>(KKEndpoint.Me.Recap.Details(year, month))
     }
 
-    override suspend fun getMyReminders(libraryKind: KKLibrary.Kind, next: String?, limit: Int): Result<ReminderLibrary> {
+    override suspend fun getMyReminders(libraryKind: KKLibrary.Kind, next: String?, limit: Int): Result<ReminderLibraryResponse> {
         val parameters = mapOf(
             "library" to libraryKind.stringValue,
             "limit" to limit.toString()
         )
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Reminders.Index
-        return apiClient.get<ReminderLibraryResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<ReminderLibraryResponse>(endpoint, parameters)
     }
 
-    override suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelID: String): Result<ReminderLibrary> {
+    override suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelID: String): Result<ReminderLibraryResponse> {
         val body = mapOf(
             "library" to libraryKind.stringValue,
             "model_id" to modelID
         )
-        return apiClient.post<ReminderLibraryResponse, Map<String, String>>(KKEndpoint.Me.Reminders.Update, body).map { it.data }
+        return apiClient.post<ReminderLibraryResponse, Map<String, String>>(KKEndpoint.Me.Reminders.Update, body)
     }
 
     override suspend fun downloadMyReminders(): Result<ByteArray> {
         return apiClient.get<ByteArray>(KKEndpoint.Me.Reminders.Download)
     }
 
-    override suspend fun getMySessions(next: String?, limit: Int): Result<List<SessionIdentity>> {
+    override suspend fun getMySessions(next: String?, limit: Int): Result<SessionIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Sessions.Index
-        return apiClient.get<SessionIdentityResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<SessionIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getMySession(sessionId: String): Result<Session> {
-        return apiClient.get<SessionResponse>(KKEndpoint.Me.Sessions.Details(sessionId)).map { it.data.first() }
+    override suspend fun getMySession(sessionId: String): Result<SessionResponse> {
+        return apiClient.get<SessionResponse>(KKEndpoint.Me.Sessions.Details(sessionId))
     }
 
     override suspend fun deleteMySession(sessionId: String): Result<Unit> {
-        return apiClient.delete<Unit>(KKEndpoint.Me.Sessions.Delete(sessionId))
+        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.Sessions.Delete(sessionId)){
+            contentType(ContentType.Application.Json)
+        }
     }
 }

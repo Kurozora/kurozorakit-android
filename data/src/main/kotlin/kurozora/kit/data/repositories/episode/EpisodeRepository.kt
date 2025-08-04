@@ -1,44 +1,46 @@
 package kurozora.kit.data.repositories.episode
 
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kurozora.kit.api.KKEndpoint
 import kurozora.kit.api.KurozoraApiClient
-import kurozora.kit.shared.Result
-import kurozora.kit.data.models.episode.Episode
+import kurozora.kit.data.models.episode.EpisodeIdentityResponse
 import kurozora.kit.data.models.episode.EpisodeResponse
-import kurozora.kit.data.models.episode.update.EpisodeUpdate
 import kurozora.kit.data.models.episode.update.EpisodeUpdateResponse
-import kurozora.kit.data.models.review.Review
 import kurozora.kit.data.models.review.ReviewResponse
+import kurozora.kit.shared.Result
 
 interface EpisodeRepository {
-    suspend fun getEpisode(episodeId: String, relationships: List<String> = emptyList<String>()): Result<Episode>
-    suspend fun getEpisodeSuggestions(episodeId: String, limit: Int = 20): Result<List<Episode>>
-    suspend fun updateEpisodeWatchStatus(episodeId: String): Result<EpisodeUpdate>
+    suspend fun getEpisode(episodeId: String, relationships: List<String> = emptyList<String>()): Result<EpisodeResponse>
+    suspend fun getEpisodeSuggestions(episodeId: String, limit: Int = 20): Result<EpisodeIdentityResponse>
+    suspend fun updateEpisodeWatchStatus(episodeId: String): Result<EpisodeUpdateResponse>
     suspend fun rateEpisode(episodeId: String, rating: Double, review: String? = null): Result<Unit>
-    suspend fun getEpisodeReviews(episodeId: String, next: String? = null, limit: Int = 20): Result<List<Review>>
+    suspend fun getEpisodeReviews(episodeId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
 }
 
 open class EpisodeRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : EpisodeRepository {
 
-    override suspend fun getEpisode(episodeId: String, relationships: List<String>): Result<Episode> {
-        val parameters: MutableMap<String, String> = mutableMapOf()
-        if (!relationships.isEmpty()) {
-            parameters.put("include", relationships.joinToString(","))
+    override suspend fun getEpisode(episodeId: String, relationships: List<String>): Result<EpisodeResponse> {
+        return apiClient.get<EpisodeResponse>(KKEndpoint.Episodes.Details(episodeId)) {
+            url {
+                relationships.forEach {
+                    parameters.append("include[]", it)
+                }
+            }
         }
-        return apiClient.get<EpisodeResponse>(KKEndpoint.Episodes.Details(episodeId), parameters).map { it.data.first() }
     }
 
-    override suspend fun getEpisodeSuggestions(episodeId: String, limit: Int): Result<List<Episode>> {
-        val parameters = mapOf(
-            "limit" to limit.toString()
-        )
-        return apiClient.get<EpisodeResponse>(KKEndpoint.Episodes.Suggestions(episodeId), parameters).map { it.data }
+    override suspend fun getEpisodeSuggestions(episodeId: String, limit: Int): Result<EpisodeIdentityResponse> {
+        val parameters = mapOf("limit" to limit.toString())
+        return apiClient.get<EpisodeIdentityResponse>(KKEndpoint.Episodes.Suggestions(episodeId), parameters)
     }
 
-    override suspend fun updateEpisodeWatchStatus(episodeId: String): Result<EpisodeUpdate> {
-        return apiClient.post<EpisodeUpdateResponse, Map<String, String>>(KKEndpoint.Episodes.Watched(episodeId), emptyMap()).map { it.data }
+    override suspend fun updateEpisodeWatchStatus(episodeId: String): Result<EpisodeUpdateResponse> {
+        return apiClient.post<EpisodeUpdateResponse, Map<String, String>>(KKEndpoint.Episodes.Watched(episodeId)) {
+            contentType(ContentType.Application.Json)
+        }
     }
 
     override suspend fun rateEpisode(episodeId: String, rating: Double, review: String?): Result<Unit> {
@@ -47,12 +49,12 @@ open class EpisodeRepositoryImpl(
             "description" to review
         ).filterValues { it != null }
 
-        return apiClient.post<EpisodeResponse, Map<String, Any?>>(KKEndpoint.Episodes.Rate(episodeId), body).map { it.data.first() }
+        return apiClient.post<Unit, Map<String, Any?>>(KKEndpoint.Episodes.Rate(episodeId), body)
     }
 
-    override suspend fun getEpisodeReviews(episodeId: String, next: String?, limit: Int): Result<List<Review>> {
+    override suspend fun getEpisodeReviews(episodeId: String, next: String?, limit: Int): Result<ReviewResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Episodes.Reviews(episodeId)
-        return apiClient.get<ReviewResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<ReviewResponse>(endpoint, parameters)
     }
 }

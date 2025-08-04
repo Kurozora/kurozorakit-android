@@ -7,21 +7,25 @@ import kurozora.kit.data.enums.MediaKind
 import kurozora.kit.shared.Result
 import kurozora.kit.data.models.media.Media
 import kurozora.kit.data.models.media.MediaResponse
+import kotlin.toString
 
 interface ImageRepository {
-    suspend fun getRandomImages(kind: MediaKind, collection: MediaCollection, limit: Int = 1): Result<List<Media>>
+    suspend fun getRandomImages(kind: MediaKind, collection: MediaCollection, limit: Int = 1): Result<MediaResponse>
 }
 
 open class ImageRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : ImageRepository {
-
-    override suspend fun getRandomImages(kind: MediaKind, collection: MediaCollection, limit: Int): Result<List<Media>> {
+    override suspend fun getRandomImages(
+        kind: MediaKind,
+        collection: MediaCollection,
+        limit: Int
+    ): Result<MediaResponse> {
         val parameters = mapOf(
             "limit" to limit.toString(),
             "collection" to collection.stringValue,
             "type" to kind.stringValue,
         )
-        return apiClient.get<MediaResponse>(KKEndpoint.Images.Random, parameters).map { it.data }
+        return apiClient.get<MediaResponse>(KKEndpoint.Images.Random, parameters)
     }
 }

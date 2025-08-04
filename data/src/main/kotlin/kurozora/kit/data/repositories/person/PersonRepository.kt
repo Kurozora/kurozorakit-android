@@ -1,40 +1,37 @@
 package kurozora.kit.data.repositories.person
 
+import io.ktor.client.request.forms.FormDataContent
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.Parameters
+import io.ktor.http.contentType
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kurozora.kit.api.KKEndpoint
 import kurozora.kit.api.KurozoraApiClient
-import kurozora.kit.shared.Result
-import kurozora.kit.data.models.character.Character
 import kurozora.kit.data.models.character.CharacterIdentityResponse
-import kurozora.kit.data.models.character.CharacterResponse
-import kurozora.kit.data.models.game.Game
 import kurozora.kit.data.models.game.GameIdentityResponse
-import kurozora.kit.data.models.game.GameResponse
-import kurozora.kit.data.models.literature.Literature
 import kurozora.kit.data.models.literature.LiteratureIdentityResponse
-import kurozora.kit.data.models.literature.LiteratureResponse
-import kurozora.kit.data.models.person.Person
-import kurozora.kit.data.models.person.PersonIdentity
 import kurozora.kit.data.models.person.PersonIdentityResponse
 import kurozora.kit.data.models.person.PersonResponse
-import kurozora.kit.data.models.review.Review
 import kurozora.kit.data.models.review.ReviewResponse
+import kurozora.kit.data.models.search.SearchResponse
 import kurozora.kit.data.models.search.filters.PersonFilter
-import kurozora.kit.data.models.show.Show
 import kurozora.kit.data.models.show.ShowIdentityResponse
-import kurozora.kit.data.models.show.ShowResponse
-import java.util.Base64
+import kurozora.kit.shared.Result
+import java.util.*
 
 interface PersonRepository {
     // Basic operations
-    suspend fun getPeople(next: String? = null, limit: Int = 20, filter: PersonFilter?): Result<List<PersonIdentity>>
-    suspend fun getPerson(personId: String, relationships: List<String> = emptyList<String>()): Result<Person>
+    suspend fun getPeople(next: String? = null, limit: Int = 20, filter: PersonFilter? = null): Result<PersonIdentityResponse>
+    suspend fun getPerson(personId: String, relationships: List<String> = emptyList()): Result<PersonResponse>
     // Related content
-    suspend fun getPersonShows(personId: String, next: String? = null, limit: Int = 20): Result<List<Show>>
-    suspend fun getPersonGames(personId: String, next: String? = null, limit: Int = 20): Result<List<Game>>
-    suspend fun getPersonLiteratures(personId: String, next: String? = null, limit: Int = 20): Result<List<Literature>>
-    suspend fun getPersonCharacters(personId: String, next: String? = null, limit: Int = 20): Result<List<Character>>
-    suspend fun getPersonReviews(personId: String, next: String? = null, limit: Int = 20): Result<List<Review>>
+    suspend fun getPersonShows(personId: String, next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
+    suspend fun getPersonGames(personId: String, next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
+    suspend fun getPersonLiteratures(personId: String, next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
+    suspend fun getPersonCharacters(personId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
+    suspend fun getPersonReviews(personId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
     // Rating
     suspend fun ratePerson(personId: String, rating: Double, review: String? = null): Result<Unit>
 }
@@ -43,7 +40,7 @@ open class PersonRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : PersonRepository {
 
-    override suspend fun getPeople(next: String?, limit: Int, filter: PersonFilter?): Result<List<PersonIdentity>> {
+    override suspend fun getPeople(next: String?, limit: Int, filter: PersonFilter?): Result<PersonIdentityResponse> {
         var parameters: MutableMap<String, String> = mutableMapOf()
         if (next == null) {
             parameters = mutableMapOf("limit" to limit.toString())
@@ -52,61 +49,80 @@ open class PersonRepositoryImpl(
                 val filters = f.toFilterMap().filterValues { it != null }
 
                 try {
-                    val filterJson = Json.encodeToString(filters)
+                    val jsonObject = buildJsonObject {
+                        filters.forEach { (key, value) ->
+                            when (value) {
+                                is String -> put(key, JsonPrimitive(value))
+                                is Boolean -> put(key, JsonPrimitive(value))
+                                is Number -> put(key, JsonPrimitive(value))
+                                else -> println("⚠️ Unknown type for key=$key, value=$value")
+                            }
+                        }
+                    }
+
+                    val filterJson = jsonObject.toString()
                     parameters["filter"] = Base64.getEncoder().encodeToString(filterJson.toByteArray())
                 } catch (e: Exception) {
-                    println("❌ Encode error: Could not make base64 string from filter data $filters")
+                    println("❌ Encode error: Could not make base64 string from filter data $filters \n$e")
                 }
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Index
-        return apiClient.get<PersonIdentityResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<SearchResponse>(endpoint, parameters).map { it.data.people as PersonIdentityResponse }
     }
 
-    override suspend fun getPerson(personId: String, relationships: List<String>): Result<Person> {
-        val parameters: MutableMap<String, String> = mutableMapOf()
-        if (!relationships.isEmpty()) {
-            parameters.put("include", relationships.joinToString(","))
+    override suspend fun getPerson(personId: String, relationships: List<String>): Result<PersonResponse> {
+        return apiClient.get<PersonResponse>(KKEndpoint.Person.Details(personId)) {
+            url {
+                relationships.forEach {
+                    parameters.append("include[]", it)
+                }
+            }
         }
-        return apiClient.get<PersonResponse>(KKEndpoint.Person.Details(personId)).map { it.data.first() }
     }
 
-    override suspend fun getPersonShows(personId: String, next: String?, limit: Int): Result<List<Show>> {
+    override suspend fun getPersonShows(personId: String, next: String?, limit: Int): Result<ShowIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Show(personId)
-        return apiClient.get<ShowIdentityResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<ShowIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getPersonGames(personId: String, next: String?, limit: Int): Result<List<Game>> {
+    override suspend fun getPersonGames(personId: String, next: String?, limit: Int): Result<GameIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Game(personId)
-        return apiClient.get<GameIdentityResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<GameIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getPersonLiteratures(personId: String, next: String?, limit: Int): Result<List<Literature>> {
+    override suspend fun getPersonLiteratures(personId: String, next: String?, limit: Int): Result<LiteratureIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Literature(personId)
-        return apiClient.get<LiteratureIdentityResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<LiteratureIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getPersonCharacters(personId: String, next: String?, limit: Int): Result<List<Character>> {
+    override suspend fun getPersonCharacters(personId: String, next: String?, limit: Int): Result<CharacterIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Characters(personId)
-        return apiClient.get<CharacterIdentityResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<CharacterIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getPersonReviews(personId: String, next: String?, limit: Int): Result<List<Review>> {
+    override suspend fun getPersonReviews(personId: String, next: String?, limit: Int): Result<ReviewResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Reviews(personId)
-        return apiClient.get<ReviewResponse>(endpoint, parameters).map { it.data }
+        return apiClient.get<ReviewResponse>(endpoint, parameters)
     }
 
     override suspend fun ratePerson(personId: String, rating: Double, review: String?): Result<Unit> {
-        val body = mapOf(
-            "rating" to rating,
-            "description" to review
-        ).filterValues { it != null }
-
-        return apiClient.post<Unit, Map<String, Any?>>(KKEndpoint.Person.Rate(personId), body)
+        val body = mutableMapOf(
+            "rating" to rating.toString()
+        )
+        if (!review.isNullOrBlank()) {
+            body["description"] = review
+        }
+        return apiClient.post<Unit, Map<String, Any?>>(KKEndpoint.Person.Rate(personId), body) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                body.forEach { (key, value) -> append(key, value) }
+            }))
+        }
     }
 }
