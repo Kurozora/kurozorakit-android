@@ -18,7 +18,7 @@ data class Cast (
     @Serializable
     data class Attributes(
         val role: CastRole,
-        val language: Language
+        val language: String
     )
 
     @Serializable

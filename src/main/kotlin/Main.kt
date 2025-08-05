@@ -2,6 +2,7 @@ package kurozora.kit
 
 import kurozora.kit.core.KurozoraApi
 import kurozora.kit.core.KurozoraKit
+import kurozora.kit.data.models.search.filters.ShowFilter
 import kurozora.kit.data.models.user.User
 
 suspend fun main() {
@@ -109,9 +110,9 @@ suspend fun main() {
 //    }
 //-------------------------------------SHOWS-------------------------------------------
 //    filter ile çalışmıyor
-//    kurozoraKit.show().getShows(filter = ShowFilter(isNSFW = true)).onSuccess {
-//        println(it.data)
-//    }
+    kurozoraKit.show().getShows(filter = ShowFilter(isNSFW = true)).onSuccess {
+        println(it.data)
+    }
     // not implemented
 //    kurozoraKit.show().getShows(listOf("2", "4", "22"),listOf("genres", "episodes")).onSuccess {
 //        println(it)

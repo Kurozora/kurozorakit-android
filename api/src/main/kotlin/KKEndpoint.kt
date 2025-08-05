@@ -15,14 +15,14 @@ sealed class KKEndpoint(val path: String) {
 
     // MARK: - Show
     sealed class Show(endpointValue: String) : KKEndpoint(endpointValue) {
-        class Index(vararg showIds: List<String>) : Show(
+        class Index(vararg showIds: String) : Show(
             if (showIds.isEmpty()) "anime"
             else "anime/${showIds.joinToString(",")}"
         )
         class Details(showId: String) : Show("anime/${showId}")
         class Cast(showId: String) : Show("anime/${showId}/cast")
         class Characters(showId: String) : Show("anime/${showId}/characters")
-        class People(showId: String) : Show("anime/${showId}/people")
+        class People(showId: String) : Show("anime/${showId}/staff")
         class Reviews(showId: String) : Show("anime/${showId}/reviews")
         class Seasons(showId: String) : Show("anime/${showId}/seasons") {
             class Details(seasonId: String) : KKEndpoint("seasons/$seasonId")
@@ -45,7 +45,7 @@ sealed class KKEndpoint(val path: String) {
         class Details(id: String) : Literature("manga/$id")
         class Cast(id: String)    : Literature("manga/$id/cast")
         class Characters(id: String) : Literature("manga/$id/characters")
-        class People(id: String)  : Literature("manga/$id/people")
+        class People(id: String)  : Literature("manga/$id/staff")
         class Reviews(id: String) : Literature("manga/$id/reviews")
         class Studios(id: String) : Literature("manga/$id/studios")
         class MoreByStudio(id: String) : Literature("manga/$id/more-by-studio")
@@ -57,19 +57,19 @@ sealed class KKEndpoint(val path: String) {
     }
 
     sealed class Game(path: String) : KKEndpoint(path) {
-        object Index : Game("game")
-        class Details(gameId: String) : Game("game/$gameId")
-        class Cast(gameId: String) : Game("game/$gameId/cast")
-        class People(gameId: String) : Game("game/$gameId/people")
-        class Characters(gameId: String) : Game("game/$gameId/characters")
-        class Reviews(gameId: String) : Game("game/$gameId/reviews")
-        class Studios(gameId: String) : Game("game/$gameId/studios")
-        class MoreByStudio(gameId: String) : Game("game/$gameId/more-by-studio")
-        class RelatedShows(gameId: String) : Game("game/$gameId/related-shows")
-        class RelatedLiteratures(gameId: String) : Game("game/$gameId/related-literatures")
-        class RelatedGames(gameId: String) : Game("game/$gameId/related-games")
-        object Upcoming : Game("game/upcoming")
-        class Rate(gameId: String) : Game("game/$gameId/studios")
+        object Index : Game("games")
+        class Details(gameId: String) : Game("games/$gameId")
+        class Cast(gameId: String) : Game("games/$gameId/cast")
+        class People(gameId: String) : Game("games/$gameId/staff")
+        class Characters(gameId: String) : Game("games/$gameId/characters")
+        class Reviews(gameId: String) : Game("games/$gameId/reviews")
+        class Studios(gameId: String) : Game("games/$gameId/studios")
+        class MoreByStudio(gameId: String) : Game("games/$gameId/more-by-studio")
+        class RelatedShows(gameId: String) : Game("games/$gameId/related-shows")
+        class RelatedLiteratures(gameId: String) : Game("games/$gameId/related-literatures")
+        class RelatedGames(gameId: String) : Game("games/$gameId/related-games")
+        object Upcoming : Game("games/upcoming")
+        class Rate(gameId: String) : Game("games/$gameId/rate")
     }
 
     sealed class Character(path: String) : KKEndpoint(path) {
@@ -127,9 +127,9 @@ sealed class KKEndpoint(val path: String) {
 
     // --- Cast ---
     sealed class Cast(path: String): KKEndpoint(path) {
-        class ShowCast(castId: String)       : Cast("show-cast/$castId")
-        class LiteratureCast(castId: String): Cast("literature-cast/$castId")
-        class GameCast(castId: String)      : Cast("game-cast/$castId")
+        class ShowCast(showId: String)       : Cast("anime/$showId/show-cast")
+        class LiteratureCast(literatureId: String): Cast("manga/$literatureId/literature-cast")
+        class GameCast(gameId: String)      : Cast("games/$gameId/game-cast")
     }
 
     // --- Genres ---
@@ -181,7 +181,7 @@ sealed class KKEndpoint(val path: String) {
         object SiwaSignIn : Auth("users/siwa/signin")
         object ResetPassword : Auth("users/reset-password")
         class Block(id: String)     : Auth("users/$id/block")
-        class Blocking(id: String)  : Auth("users/$id/blocking")
+        class Blocking(id: String)  : Auth("users/$id/blocked")
         class FeedMessages(id: String) : Auth("users/$id/feed-messages")
         class Follow(id: String)    : Auth("users/$id/follow")
         class Followers(id: String) : Auth("users/$id/followers")

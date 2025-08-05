@@ -1,4 +1,4 @@
-package kurozora.kit.models.feed.message.update
+package kurozora.kit.data.models.feed.message.update
 
 import kotlinx.serialization.Serializable
 

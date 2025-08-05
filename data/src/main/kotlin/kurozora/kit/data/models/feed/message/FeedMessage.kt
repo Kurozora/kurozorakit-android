@@ -7,7 +7,7 @@ import kotlinx.serialization.Transient
 import kurozora.kit.data.models.IdentityResource
 import kurozora.kit.data.models.user.User
 import kurozora.kit.data.models.user.UserResponse
-import kurozora.kit.models.feed.message.update.FeedMessageUpdate
+import kurozora.kit.data.models.feed.message.update.FeedMessageUpdate
 
 @Serializable
 data class FeedMessage(

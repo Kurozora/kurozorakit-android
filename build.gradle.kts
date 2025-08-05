@@ -30,7 +30,7 @@ subprojects {
     }
 
     kotlin {
-        jvmToolchain(24)
+        jvmToolchain(22)
     }
 }
 

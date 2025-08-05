@@ -1,8 +1,9 @@
-package kurozora.kit.data.models.misc
+package kurozora.kit.shared
 
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class MetaResponse(
-    val meta: Meta
+    val meta: Meta,
+    val errors: List<ApiError>,
 )

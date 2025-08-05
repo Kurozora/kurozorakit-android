@@ -8,9 +8,9 @@ enum class MediaKind {
 
     val stringValue: String
         get() = when (this) {
-            episodes -> "Episodes"
-            games -> "Games"
-            literatures -> "Literatures"
-            shows -> "Shows"
+            episodes -> "episodes"
+            games -> "games"
+            literatures -> "literatures"
+            shows -> "shows"
         }
 }

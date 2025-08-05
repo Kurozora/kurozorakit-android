@@ -11,12 +11,12 @@ enum class MediaCollection {
 
     val stringValue: String
         get() = when (this) {
-            artwork -> "Artwork"
-            banner -> "Banner"
-            logo -> "Logo"
-            poster -> "Poster"
-            profile -> "Profile"
-            screenshot -> "Screenshot"
-            symbol -> "Symbol"
+            artwork -> "artwork"
+            banner -> "banner"
+            logo -> "logo"
+            poster -> "poster"
+            profile -> "profile"
+            screenshot -> "screenshot"
+            symbol -> "symbol"
         }
 }

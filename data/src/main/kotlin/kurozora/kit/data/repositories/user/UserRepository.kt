@@ -51,7 +51,7 @@ interface UserRepository {
     suspend fun updateMyLibrary(libraryKind: KKLibrary.Kind, modelID: String, rewatchCount: Int? = null, isHidden: Boolean? = null): Result<LibraryUpdateResponse>
     suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelID: String): Result<LibraryUpdateResponse>
     suspend fun clearMyLibrary(libraryKind: KKLibrary.Kind, password: String): Result<Unit>
-    suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, filePath: URL): Result<LibraryImport>
+    suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, file: URL): Result<LibraryImport>
     // Notifications
     suspend fun getMyNotifications(): Result<UserNotificationResponse>
     suspend fun getMyNotification(notificationId: String): Result<SingleNotificationResponse>

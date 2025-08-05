@@ -1,4 +1,4 @@
-package kurozora.kit.data.models.misc
+package kurozora.kit.shared
 
 import kotlinx.serialization.Serializable
 

@@ -1,4 +1,4 @@
-package kurozora.kit.api
+package kurozora.kit.shared
 
 import kotlinx.serialization.Serializable
 

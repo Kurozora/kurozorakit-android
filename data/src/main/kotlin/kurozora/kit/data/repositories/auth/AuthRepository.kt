@@ -20,9 +20,6 @@ import kurozora.kit.data.models.user.UserResponse
 import kurozora.kit.data.models.user.update.block.BlockUpdateResponse
 import kurozora.kit.data.models.user.update.follow.FollowUpdateResponse
 import kurozora.kit.shared.Result
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.forEach
 
 interface AuthRepository {
     suspend fun signUp(username: String, email: String, password: String, profileImage: ByteArray? = null): Result<Unit>
