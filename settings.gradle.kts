@@ -4,6 +4,7 @@ plugins {
 
 rootProject.name = "KurozoraKit"
 
+include("cache")
 include("core")
 include("api")
 include("data")

@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm") version "2.2.0"
 }
 
-group = "kurozora.kit"
+group = "kurozorakit"
 version = "1.0-SNAPSHOT"
 
 repositories {

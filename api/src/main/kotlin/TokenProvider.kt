@@ -1,4 +1,21 @@
-package kurozora.kit.api
+package kurozorakit.api
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class AccountUser(
+    val id: String,
+    val token: String,
+    val username: String,
+    val profileUrl: String? = null
+)
+
+interface Platform {
+    val platform: String
+    val platformVersion: String
+    val deviceVendor: String
+    val deviceModel: String
+}
 
 /**
  * Interface for managing authentication tokens.
@@ -7,25 +24,10 @@ interface TokenProvider {
     /**
      * Saves an authentication token.
      */
-    suspend fun saveToken(token: String)
+    suspend fun saveToken(user: AccountUser)
 
     /**
      * Gets the current authentication token.
      */
     suspend fun getToken(): String?
-
-    /**
-     * Saves a refresh token.
-     */
-    suspend fun saveRefreshToken(refreshToken: String)
-
-    /**
-     * Gets the current refresh token.
-     */
-    suspend fun getRefreshToken(): String?
-
-    /**
-     * Clears all tokens.
-     */
-    suspend fun clearTokens()
 }

@@ -1,0 +1,18 @@
+package kurozorakit.data.models.song
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class SongIdentity(
+    val id: String,
+    val type: String = "songs",
+    val href: String = "",
+) {
+    override fun equals(other: Any?): Boolean {
+        return (other is SongIdentity) && this.id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+}

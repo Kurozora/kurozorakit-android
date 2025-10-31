@@ -1,60 +1,62 @@
-package kurozora.kit.core
+package kurozorakit.core
 
-import kurozora.kit.api.KurozoraApiClient
-import kurozora.kit.api.TokenProvider
-import kurozora.kit.data.DefaultTokenProvider
-import kurozora.kit.shared.logging.CompositeLogger
-import kurozora.kit.shared.logging.ConsoleLogger
-import kurozora.kit.shared.logging.KurozoraLogger
-import kurozora.kit.shared.logging.LogLevel
-import kurozora.kit.data.repositories.auth.AuthRepository
-import kurozora.kit.data.repositories.auth.AuthRepositoryImpl
-import kurozora.kit.data.repositories.cast.CastRepository
-import kurozora.kit.data.repositories.cast.CastRepositoryImpl
-import kurozora.kit.data.repositories.character.CharacterRepository
-import kurozora.kit.data.repositories.character.CharacterRepositoryImpl
-import kurozora.kit.data.repositories.episode.EpisodeRepository
-import kurozora.kit.data.repositories.episode.EpisodeRepositoryImpl
-import kurozora.kit.data.repositories.explore.ExploreRepository
-import kurozora.kit.data.repositories.explore.ExploreRepositoryImpl
-import kurozora.kit.data.repositories.feed.FeedRepository
-import kurozora.kit.data.repositories.feed.FeedRepositoryImpl
-import kurozora.kit.data.repositories.game.GameRepository
-import kurozora.kit.data.repositories.game.GameRepositoryImpl
-import kurozora.kit.data.repositories.genre.GenreRepository
-import kurozora.kit.data.repositories.genre.GenreRepositoryImpl
-import kurozora.kit.data.repositories.image.ImageRepository
-import kurozora.kit.data.repositories.image.ImageRepositoryImpl
-import kurozora.kit.data.repositories.legal.LegalRepository
-import kurozora.kit.data.repositories.legal.LegalRepositoryImpl
-import kurozora.kit.data.repositories.literature.LiteratureRepository
-import kurozora.kit.data.repositories.literature.LiteratureRepositoryImpl
-import kurozora.kit.data.repositories.misc.MiscRepository
-import kurozora.kit.data.repositories.misc.MiscRepositoryImpl
-import kurozora.kit.data.repositories.person.PersonRepository
-import kurozora.kit.data.repositories.person.PersonRepositoryImpl
-import kurozora.kit.data.repositories.review.ReviewRepository
-import kurozora.kit.data.repositories.review.ReviewRepositoryImpl
-import kurozora.kit.data.repositories.schedule.ScheduleRepository
-import kurozora.kit.data.repositories.schedule.ScheduleRepositoryImpl
-import kurozora.kit.data.repositories.search.SearchRepository
-import kurozora.kit.data.repositories.search.SearchRepositoryImpl
-import kurozora.kit.data.repositories.season.SeasonRepository
-import kurozora.kit.data.repositories.season.SeasonRepositoryImpl
-import kurozora.kit.data.repositories.show.ShowRepository
-import kurozora.kit.data.repositories.show.ShowRepositoryImpl
-import kurozora.kit.data.repositories.song.SongRepository
-import kurozora.kit.data.repositories.song.SongRepositoryImpl
-import kurozora.kit.data.repositories.store.StoreRepository
-import kurozora.kit.data.repositories.store.StoreRepositoryImpl
-import kurozora.kit.data.repositories.studio.StudioRepository
-import kurozora.kit.data.repositories.studio.StudioRepositoryImpl
-import kurozora.kit.data.repositories.theme.ThemeRepository
-import kurozora.kit.data.repositories.theme.ThemeRepositoryImpl
-import kurozora.kit.data.repositories.themestore.ThemeStoreRepository
-import kurozora.kit.data.repositories.themestore.ThemeStoreRepositoryImpl
-import kurozora.kit.data.repositories.user.UserRepository
-import kurozora.kit.data.repositories.user.UserRepositoryImpl
+import kurozorakit.api.KurozoraApiClient
+import kurozorakit.api.Platform
+import kurozorakit.api.TokenProvider
+import kurozorakit.cache.CacheManager
+import kurozorakit.data.DefaultTokenProvider
+import kurozorakit.shared.logging.CompositeLogger
+import kurozorakit.shared.logging.ConsoleLogger
+import kurozorakit.shared.logging.KurozoraLogger
+import kurozorakit.shared.logging.LogLevel
+import kurozorakit.data.repositories.auth.AuthRepository
+import kurozorakit.data.repositories.auth.AuthRepositoryImpl
+import kurozorakit.data.repositories.cast.CastRepository
+import kurozorakit.data.repositories.cast.CastRepositoryImpl
+import kurozorakit.data.repositories.character.CharacterRepository
+import kurozorakit.data.repositories.character.CharacterRepositoryImpl
+import kurozorakit.data.repositories.episode.EpisodeRepository
+import kurozorakit.data.repositories.episode.EpisodeRepositoryImpl
+import kurozorakit.data.repositories.explore.ExploreRepository
+import kurozorakit.data.repositories.explore.ExploreRepositoryImpl
+import kurozorakit.data.repositories.feed.FeedRepository
+import kurozorakit.data.repositories.feed.FeedRepositoryImpl
+import kurozorakit.data.repositories.game.GameRepository
+import kurozorakit.data.repositories.game.GameRepositoryImpl
+import kurozorakit.data.repositories.genre.GenreRepository
+import kurozorakit.data.repositories.genre.GenreRepositoryImpl
+import kurozorakit.data.repositories.image.ImageRepository
+import kurozorakit.data.repositories.image.ImageRepositoryImpl
+import kurozorakit.data.repositories.legal.LegalRepository
+import kurozorakit.data.repositories.legal.LegalRepositoryImpl
+import kurozorakit.data.repositories.literature.LiteratureRepository
+import kurozorakit.data.repositories.literature.LiteratureRepositoryImpl
+import kurozorakit.data.repositories.misc.MiscRepository
+import kurozorakit.data.repositories.misc.MiscRepositoryImpl
+import kurozorakit.data.repositories.person.PersonRepository
+import kurozorakit.data.repositories.person.PersonRepositoryImpl
+import kurozorakit.data.repositories.review.ReviewRepository
+import kurozorakit.data.repositories.review.ReviewRepositoryImpl
+import kurozorakit.data.repositories.schedule.ScheduleRepository
+import kurozorakit.data.repositories.schedule.ScheduleRepositoryImpl
+import kurozorakit.data.repositories.search.SearchRepository
+import kurozorakit.data.repositories.search.SearchRepositoryImpl
+import kurozorakit.data.repositories.season.SeasonRepository
+import kurozorakit.data.repositories.season.SeasonRepositoryImpl
+import kurozorakit.data.repositories.show.ShowRepository
+import kurozorakit.data.repositories.show.ShowRepositoryImpl
+import kurozorakit.data.repositories.song.SongRepository
+import kurozorakit.data.repositories.song.SongRepositoryImpl
+import kurozorakit.data.repositories.store.StoreRepository
+import kurozorakit.data.repositories.store.StoreRepositoryImpl
+import kurozorakit.data.repositories.studio.StudioRepository
+import kurozorakit.data.repositories.studio.StudioRepositoryImpl
+import kurozorakit.data.repositories.theme.ThemeRepository
+import kurozorakit.data.repositories.theme.ThemeRepositoryImpl
+import kurozorakit.data.repositories.themestore.ThemeStoreRepository
+import kurozorakit.data.repositories.themestore.ThemeStoreRepositoryImpl
+import kurozorakit.data.repositories.user.UserRepository
+import kurozorakit.data.repositories.user.UserRepositoryImpl
 
 /**
  * Main entry point for the KurozoraKit library.
@@ -227,6 +229,9 @@ class KurozoraKit private constructor(
         private var initialBackoffDelayMs: Long = 1000
         private var maxBackoffDelayMs: Long = 30000
         private var backoffFactor: Double = 2.0
+        // cache
+        private var cacheManager: CacheManager? = null
+        private lateinit var platform: Platform
 
         /**
          * Sets the API endpoint.
@@ -237,6 +242,11 @@ class KurozoraKit private constructor(
          * Sets the API key.
          */
         fun apiKey(apiKey: String) = apply { this.apiKey = apiKey }
+
+        /**
+         * Sets the Platform
+         */
+        fun platform(platform: Platform) = apply { this.platform = platform }
 
         /**
          * Sets the token provider.
@@ -268,6 +278,8 @@ class KurozoraKit private constructor(
          */
         fun backoffFactor(factor: Double) = apply { this.backoffFactor = factor }
 
+        fun cacheManager(cacheManager: CacheManager) = apply { this.cacheManager = cacheManager }
+
         /**
          * Builds a new KurozoraKit instance.
          */
@@ -283,8 +295,9 @@ class KurozoraKit private constructor(
             val apiClient = KurozoraApiClient(
                 baseUrl = apiEndpoint,
                 apiKey = apiKey,
-                userAgent = "KurozoraApp/1.0.0 (com.seloreis.kurozora; Android 14) KtorClient/3.2.2",
-                tokenProvider = tokenProvider
+                tokenProvider = tokenProvider,
+                cacheManager = cacheManager,
+                platform = platform,
             )
 
             // Create all repositories

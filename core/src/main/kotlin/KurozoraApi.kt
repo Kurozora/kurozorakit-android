@@ -1,4 +1,4 @@
-package kurozora.kit.core
+package kurozorakit.core
 
 /**
  * Contains information about the Kurozora API.

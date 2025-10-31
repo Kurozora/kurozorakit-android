@@ -1,4 +1,4 @@
-package kurozora.kit.api
+package kurozorakit.api
 
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -11,10 +11,14 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import kurozora.kit.shared.KurozoraError
-import kurozora.kit.shared.MetaResponse
-import kurozora.kit.shared.logging.KurozoraLogger
-import kurozora.kit.shared.Result
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
+import kurozorakit.cache.CacheEntry
+import kurozorakit.cache.CacheManager
+import kurozorakit.shared.KurozoraError
+import kurozorakit.shared.MetaResponse
+import kurozorakit.shared.logging.KurozoraLogger
+import kurozorakit.shared.Result
 
 /**
  * Client for making requests to the Kurozora API.
@@ -22,8 +26,9 @@ import kurozora.kit.shared.Result
 class KurozoraApiClient(
     val baseUrl: String,
     private val apiKey: String,
-    private val userAgent: String,
-    private val tokenProvider: TokenProvider? = null
+    private val tokenProvider: TokenProvider? = null,
+    val cacheManager: CacheManager? = null,
+    val platform: Platform,
 ) {
     /**
      * The HTTP client used for making requests.
@@ -63,16 +68,16 @@ class KurozoraApiClient(
                     }
                 }
 
-                refreshTokens {
-                    val newToken = tokenProvider?.getRefreshToken()
-                    if (newToken != null) {
-                        println("[Auth] Refresh token loaded: $newToken")
-                        BearerTokens(newToken, "")
-                    } else {
-                        println("[Auth] No refresh token found.")
-                        null
-                    }
-                }
+//                refreshTokens {
+//                    val newToken = tokenProvider?.getRefreshToken()
+//                    if (newToken != null) {
+//                        println("[Auth] Refresh token loaded: $newToken")
+//                        BearerTokens(newToken, "")
+//                    } else {
+//                        println("[Auth] No refresh token found.")
+//                        null
+//                    }
+//                }
             }
         }
 
@@ -81,7 +86,7 @@ class KurozoraApiClient(
             contentType(ContentType.Application.FormUrlEncoded)
             header("X-API-Key", apiKey)
             header("Accept", "application/json")
-            header(HttpHeaders.UserAgent, userAgent)
+            header(HttpHeaders.UserAgent, "KurozoraApp/1.0.0 (com.seloreis.kurozora; Android 14) KtorClient/3.2.2")
         }
 
         HttpResponseValidator {
@@ -186,17 +191,62 @@ class KurozoraApiClient(
     suspend inline fun <reified T> get(
         endpoint: KKEndpoint,
         parameters: Map<String, String> = emptyMap(),
+        ttlMillis: Long = 300000, // 300000 -> 5 dk    3600000 -> 1 saat
+        forceRefresh: Boolean = false,
         noinline block: HttpRequestBuilder.() -> Unit = {}
     ): Result<T> {
         return try {
+            val url = buildString {
+                append("$baseUrl/${endpoint.path}")
+                if (parameters.isNotEmpty()) {
+                    append("?")
+                    append(parameters.entries.joinToString("&") { "${it.key}=${it.value}" })
+                }
+            }
+
+            val cacheKey = cacheManager?.let {
+                generateCacheKey(
+                    url = url,
+                    parameters = parameters,
+                    extras = extractRequestInfoFromBlock(block)
+                )
+            }
+
+            // Cache kontrolü (forceRefresh false ise)
+            if (cacheManager != null && !forceRefresh) {
+                val cached = cacheManager.get(cacheKey!!)
+                if (cached != null && !cached.isExpired()) {
+                    KurozoraLogger.debug("[KurozoraApiClient]", "Cache HIT for ${endpoint.path}")
+                    val json = Json { ignoreUnknownKeys = true }
+                    val data = json.decodeFromString<T>(cached.data)
+                    return Result.Success(data)
+                }
+            }
+
             KurozoraLogger.debug("[KurozoraApiClient]", "GET request to ${endpoint.path}")
             val response = httpClient.get("$baseUrl/${endpoint.path}") {
-                parameters.forEach { (key, value) ->
-                    parameter(key, value)
-                }
+                parameters.forEach { (key, value) -> parameter(key, value) }
                 block()
             }
-            Result.Success(response.body())
+            val body: T = response.body()
+
+            // Cache’e yaz
+            if (cacheManager != null) {
+                val json = Json { prettyPrint = false }
+                val jsonElement = json.encodeToString(body)
+                val entry = CacheEntry(
+                    key = cacheKey!!,
+                    data = jsonElement,
+                    timestamp = System.currentTimeMillis(),
+                    expirationTime = System.currentTimeMillis() + ttlMillis,
+                    size = jsonElement.toString().length.toLong(),
+                    url = url
+                )
+                cacheManager.put(entry)
+                KurozoraLogger.debug("[KurozoraApiClient]", "Cache SAVED for ${endpoint.path}")
+            }
+
+            Result.Success(body)
         } catch (e: KurozoraError) {
             KurozoraLogger.error("[KurozoraApiClient]", "Error in GET request to ${endpoint.path}", e)
             Result.Error(e)
@@ -205,6 +255,52 @@ class KurozoraApiClient(
             Result.Error(KurozoraError.UnknownError(e.message ?: "Unknown error", e))
         }
     }
+
+
+    fun generateCacheKey(
+        url: String,
+        parameters: Map<String, String> = emptyMap(),
+        extras: Map<String, String> = emptyMap()
+    ): String {
+        val parsed = try { java.net.URL(url) } catch (e: Exception) { null }
+        val normalizedPath = parsed?.path?.trim('/') ?: url
+        val query = parsed?.query?.split("&")?.sorted()?.joinToString("&") ?: ""
+
+        val paramString = parameters.entries.sortedBy { it.key }
+            .joinToString("&") { "${it.key}=${it.value}" }
+
+        val extraString = extras.entries.sortedBy { it.key }
+            .joinToString("&") { "${it.key}=${it.value}" }
+
+        val rawKey = "$normalizedPath?$query|$paramString|$extraString"
+        return rawKey.hashCode().toString()
+    }
+
+
+    fun extractRequestInfoFromBlock(block: HttpRequestBuilder.() -> Unit): Map<String, String> {
+        return try {
+            val builder = HttpRequestBuilder()
+            builder.block()
+
+            // Tüm parametreleri (query/body parametreleri dahil)
+            val params = builder.url.parameters.entries()
+                .associate { it.key to it.value.joinToString(",") }
+
+            // Header'ları da dahil et
+            val headers = builder.headers.entries()
+                .associate { it.key to it.value.joinToString(",") }
+
+            // Body (örneğin setBody çağrılmışsa) - optional
+            val body = builder.body?.toString()?.takeIf { it.isNotEmpty() }?.let { mapOf("body" to it) } ?: emptyMap()
+
+            // Hepsini tek bir map olarak birleştir
+            params + headers + body
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+
 
     /**
      * Makes a POST request to the specified endpoint.

@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":shared"))
+    implementation(project(":cache"))
     implementation(Deps.Kotlin.stdlib)
     implementation(Deps.Kotlin.coroutinesCore)
     implementation(Deps.Kotlin.serialization)

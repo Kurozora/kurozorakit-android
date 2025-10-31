@@ -1,4 +1,4 @@
-package kurozora.kit.shared
+package kurozorakit.shared
 
 /**
  * A sealed class representing errors that can occur in the KurozoraKit library.

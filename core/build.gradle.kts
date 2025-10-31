@@ -7,6 +7,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":api"))
     implementation(project(":shared"))
+    implementation(project(":cache"))
     implementation(Deps.Kotlin.stdlib)
     implementation(Deps.Kotlin.coroutinesCore)
     implementation(Deps.Kotlin.serialization)

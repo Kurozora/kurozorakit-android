@@ -1,4 +1,7 @@
-package kurozora.kit.api
+package kurozorakit.api
+
+import kurozorakit.api.KKEndpoint.Literature
+import kurozorakit.api.KKEndpoint.Songs
 
 sealed class KKEndpoint(val path: String) {
     data class Url(val url: String): KKEndpoint(url)
@@ -25,6 +28,10 @@ sealed class KKEndpoint(val path: String) {
         class People(showId: String) : Show("anime/${showId}/staff")
         class Reviews(showId: String) : Show("anime/${showId}/reviews")
         class Seasons(showId: String) : Show("anime/${showId}/seasons") {
+            class Index(vararg seasonIds: String) : KKEndpoint(
+                if (seasonIds.isEmpty()) "seasons"
+                else "seasons/${seasonIds.joinToString(",")}"
+            )
             class Details(seasonId: String) : KKEndpoint("seasons/$seasonId")
             class Episodes(seasonId: String) : KKEndpoint("seasons/$seasonId/episodes")
             class Watched(seasonId: String) : KKEndpoint("seasons/$seasonId/watched")
@@ -41,7 +48,10 @@ sealed class KKEndpoint(val path: String) {
 
     // --- Literature ---
     sealed class Literature(path: String): KKEndpoint(path) {
-        object Index : Literature("manga")
+        class Index(vararg litIds: String) : Literature(
+            if (litIds.isEmpty()) "manga"
+            else "manga/${litIds.joinToString(",")}"
+        )
         class Details(id: String) : Literature("manga/$id")
         class Cast(id: String)    : Literature("manga/$id/cast")
         class Characters(id: String) : Literature("manga/$id/characters")
@@ -57,7 +67,10 @@ sealed class KKEndpoint(val path: String) {
     }
 
     sealed class Game(path: String) : KKEndpoint(path) {
-        object Index : Game("games")
+        class Index(vararg gameIds: String) : Show(
+            if (gameIds.isEmpty()) "game"
+            else "game/${gameIds.joinToString(",")}"
+        )
         class Details(gameId: String) : Game("games/$gameId")
         class Cast(gameId: String) : Game("games/$gameId/cast")
         class People(gameId: String) : Game("games/$gameId/staff")
@@ -73,7 +86,10 @@ sealed class KKEndpoint(val path: String) {
     }
 
     sealed class Character(path: String) : KKEndpoint(path) {
-        object Index : Character("characters")
+        class Index(vararg characterIds: String) : Show(
+            if (characterIds.isEmpty()) "characters"
+            else "characters/${characterIds.joinToString(",")}"
+        )
         class Details(characterId: String) : Character("characters/$characterId")
         class People(characterId: String) : Character("characters/$characterId/people")
         class Shows(characterId: String) : Character("characters/$characterId/anime")
@@ -85,7 +101,10 @@ sealed class KKEndpoint(val path: String) {
     }
 
     sealed class Person(path: String) : KKEndpoint(path) {
-        object Index : Person("people")
+        class Index(vararg peopleIds: String) : Person(
+            if (peopleIds.isEmpty()) "people"
+            else "people/${peopleIds.joinToString(",")}"
+        )
         class Details(peopleId: String) : Person("people/$peopleId")
         class Show(peopleId: String) : Person("people/$peopleId/anime")
         class Game(peopleId: String) : Person("people/$peopleId/games")
@@ -97,7 +116,10 @@ sealed class KKEndpoint(val path: String) {
 
     // --- Studios ---
     sealed class Studios(path: String): KKEndpoint(path) {
-        object Index : Studios("studios")
+        class Index(vararg studioIds: String) : Studios(
+            if (studioIds.isEmpty()) "studios"
+            else "studios/${studioIds.joinToString(",")}"
+        )
         class Details(id: String) : Studios("studios/$id")
         class Games(id: String)   : Studios("studios/$id/games")
         class Literatures(id: String) : Studios("studios/$id/literatures")
@@ -108,6 +130,10 @@ sealed class KKEndpoint(val path: String) {
 
     // --- Episodes ---
     sealed class Episodes(path: String): KKEndpoint(path) {
+        class Index(vararg episodeIds: String) : Episodes(
+            if (episodeIds.isEmpty()) "episodes"
+            else "episodes/${episodeIds.joinToString(",")}"
+        )
         class Details(epId: String)    : Episodes("episodes/$epId")
         class Suggestions(epId: String): Episodes("episodes/$epId/suggestions")
         class Watched(epId: String)    : Episodes("episodes/$epId/watched")
@@ -117,7 +143,10 @@ sealed class KKEndpoint(val path: String) {
 
     // --- Songs ---
     sealed class Songs(path: String): KKEndpoint(path) {
-        object Index : Songs("songs")
+        class Index(vararg songIds: String) : Songs(
+            if (songIds.isEmpty()) "songs"
+            else "songs/${songIds.joinToString(",")}"
+        )
         class Details(id: String) : Songs("songs/$id")
         class Shows(id: String)   : Songs("songs/$id/anime")
         class Games(id: String)   : Songs("songs/$id/games")
@@ -176,6 +205,10 @@ sealed class KKEndpoint(val path: String) {
 
     // --- Auth ---
     sealed class Auth(path: String): KKEndpoint(path) {
+        class Index(vararg userIds: String) : Auth(
+            if (userIds.isEmpty()) "users"
+            else "users/${userIds.joinToString(",")}"
+        )
         object SignUp     : Auth("users")
         object SignIn     : Auth("users/signin")
         object SiwaSignIn : Auth("users/siwa/signin")

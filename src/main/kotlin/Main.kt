@@ -1,14 +1,14 @@
-package kurozora.kit
+package kurozorakit
 
-import kurozora.kit.core.KurozoraApi
-import kurozora.kit.core.KurozoraKit
-import kurozora.kit.data.models.search.filters.ShowFilter
-import kurozora.kit.data.models.user.User
+import kurozorakit.core.KurozoraApi
+import kurozorakit.core.KurozoraKit
+import kurozorakit.data.models.search.filters.ShowFilter
+import kurozorakit.data.models.user.User
 
 suspend fun main() {
     val kurozoraKit = KurozoraKit.Builder()
         .apiEndpoint(KurozoraApi.V1.baseUrl)
-        .apiKey("api_key_goes_here")
+        .apiKey("your-api-key")
         .build()
 
 //    kurozoraKit.auth().signIn("test@example.com", $$"test").onSuccess { res ->
@@ -110,9 +110,9 @@ suspend fun main() {
 //    }
 //-------------------------------------SHOWS-------------------------------------------
 //    filter ile çalışmıyor
-    kurozoraKit.show().getShows(filter = ShowFilter(isNSFW = true)).onSuccess {
-        println(it.data)
-    }
+//    kurozoraKit.show().getShows(filter = ShowFilter(isNSFW = true)).onSuccess {
+//        println(it.data)
+//    }
     // not implemented
 //    kurozoraKit.show().getShows(listOf("2", "4", "22"),listOf("genres", "episodes")).onSuccess {
 //        println(it)
