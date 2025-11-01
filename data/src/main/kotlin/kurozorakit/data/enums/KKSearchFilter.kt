@@ -24,3 +24,17 @@ sealed interface KKSearchFilter {
     data class User(val filter: UserFilter) : KKSearchFilter
 }
 
+fun KKSearchFilter.toFilterMap(): Map<String, Any?> {
+    return when (this) {
+        is KKSearchFilter.AppTheme -> this.filter.toFilterMap()
+        is KKSearchFilter.Character -> this.filter.toFilterMap()
+        is KKSearchFilter.Episode -> this.filter.toFilterMap()
+        is KKSearchFilter.Game -> this.filter.toFilterMap()
+        is KKSearchFilter.Literature -> this.filter.toFilterMap()
+        is KKSearchFilter.Person -> this.filter.toFilterMap()
+        is KKSearchFilter.Show -> this.filter.toFilterMap()
+        is KKSearchFilter.Song -> this.filter.toFilterMap()
+        is KKSearchFilter.Studio -> this.filter.toFilterMap()
+        is KKSearchFilter.User -> this.filter.toFilterMap()
+    }
+}

@@ -1,14 +1,18 @@
 package kurozorakit.data.repositories.search
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.enums.KKSearchFilter
 import kurozorakit.data.enums.KKSearchScope
 import kurozorakit.data.enums.KKSearchType
+import kurozorakit.data.enums.toFilterMap
 import kurozorakit.data.models.search.SearchResponse
 import kurozorakit.data.models.search.SearchSuggesitonsResponse
 import kurozorakit.shared.Result
+import java.nio.charset.StandardCharsets
 import java.util.*
 
 interface SearchRepository {
@@ -49,31 +53,37 @@ open class SearchRepositoryImpl(
             }
 
             filter?.let { f ->
-                val filters = mutableMapOf<String, Any?>()
-
-                when (f) {
-                    is KKSearchFilter.AppTheme -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                    is KKSearchFilter.Character -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                    is KKSearchFilter.Episode -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                    is KKSearchFilter.Game -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                    is KKSearchFilter.Literature -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                    is KKSearchFilter.Person -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                    is KKSearchFilter.Show -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                    is KKSearchFilter.Song -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                    is KKSearchFilter.Studio -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                    is KKSearchFilter.User -> filters.putAll(f.filter.toFilterMap().filterValues { it != null })
-                }
-
                 try {
-                    val filterJson = Json.encodeToString(filters)
-                    params["filter"] = Base64.getEncoder().encodeToString(filterJson.toByteArray())
+                    val filters = f.toFilterMap().filterValues { it != null }
+
+                    val jsonObject = buildJsonObject {
+                        filters.forEach { (key, value) ->
+                            when (value) {
+                                is String -> put(key, JsonPrimitive(value))
+                                is Boolean -> put(key, JsonPrimitive(value))
+                                is Number -> put(key, JsonPrimitive(value))
+                                else -> println("⚠️ Unknown type for key=$key, value=$value")
+                            }
+                        }
+                    }
+
+                    // JSON'u doğru biçimde serialize et
+                    val filterJson = Json.encodeToString(jsonObject)
+                    val encodedFilter = Base64.getUrlEncoder()
+                        .withoutPadding()
+                        .encodeToString(filterJson.toByteArray(StandardCharsets.UTF_8))
+
+                    params["filter"] = encodedFilter
+
+
                 } catch (e: Exception) {
-                    println("❌ Encode error: Could not make base64 string from filter data $filters")
+                    println("❌ Encode error: Could not make base64 string from filter data $f \n${e.stackTraceToString()}")
                 }
             }
+
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Search.Index
-        return apiClient.get<SearchResponse>(endpoint, params)  {
+        return apiClient.get<SearchResponse>(endpoint, params) {
             url {
                 types.forEach {
                     parameters.append("types[]", it.toString())

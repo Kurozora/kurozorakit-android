@@ -26,7 +26,7 @@ import kurozorakit.shared.Result
 class KurozoraApiClient(
     val baseUrl: String,
     private val apiKey: String,
-    private val tokenProvider: TokenProvider? = null,
+    val tokenProvider: TokenProvider? = null,
     val cacheManager: CacheManager? = null,
     val platform: Platform,
 ) {

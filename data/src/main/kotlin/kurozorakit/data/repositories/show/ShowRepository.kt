@@ -21,6 +21,8 @@ import kurozorakit.data.models.show.related.RelatedGameResponse
 import kurozorakit.data.models.show.related.RelatedLiteratureResponse
 import kurozorakit.data.models.show.related.RelatedShowResponse
 import kurozorakit.data.models.show.song.ShowSongResponse
+import kurozorakit.data.models.staff.StaffIdentityResponse
+import kurozorakit.data.models.staff.StaffResponse
 import kurozorakit.data.models.studio.StudioResponse
 import kurozorakit.shared.Result
 import java.util.*
@@ -33,6 +35,7 @@ interface ShowRepository {
     suspend fun getUpcomingShows(next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
     // Related content
     suspend fun getShowCast(showId: String, next: String? = null, limit: Int = 20): Result<CastIdentityResponse>
+    suspend fun getShowStaff(showId: String, next: String? = null, limit: Int = 20): Result<StaffResponse>
     suspend fun getShowCharacters(showId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
     suspend fun getShowPeople(showId: String, next: String? = null, limit: Int = 20): Result<PersonIdentityResponse>
     suspend fun getShowReviews(showId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
@@ -109,6 +112,11 @@ open class ShowRepositoryImpl(
     override suspend fun getShowCast(showId: String, next: String?, limit: Int): Result<CastIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         return apiClient.get<CastIdentityResponse>(KKEndpoint.Show.Cast(showId), parameters)
+    }
+
+    override suspend fun getShowStaff(showId: String, next: String?, limit: Int): Result<StaffResponse> {
+        val parameters = mapOf("limit" to limit.toString())
+        return apiClient.get<StaffResponse>(KKEndpoint.Show.Staff(showId), parameters)
     }
 
     override suspend fun getShowCharacters(showId: String, next: String?, limit: Int): Result<CharacterIdentityResponse> {

@@ -99,7 +99,7 @@ open class AuthRepositoryImpl(
         response.onSuccess {
             val user = it.data.first()
             User.current = user
-            DefaultTokenProvider.saveToken(
+            apiClient.tokenProvider?.saveToken(
                 AccountUser(
                     id = user.id,
                     username = user.attributes.username,
