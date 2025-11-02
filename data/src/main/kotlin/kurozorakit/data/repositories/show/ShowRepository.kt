@@ -35,7 +35,7 @@ interface ShowRepository {
     suspend fun getUpcomingShows(next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
     // Related content
     suspend fun getShowCast(showId: String, next: String? = null, limit: Int = 20): Result<CastIdentityResponse>
-    suspend fun getShowStaff(showId: String, next: String? = null, limit: Int = 20): Result<StaffResponse>
+    suspend fun getShowStaff(showId: String, next: String? = null, limit: Int = 20): Result<StaffIdentityResponse>
     suspend fun getShowCharacters(showId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
     suspend fun getShowPeople(showId: String, next: String? = null, limit: Int = 20): Result<PersonIdentityResponse>
     suspend fun getShowReviews(showId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
@@ -114,9 +114,9 @@ open class ShowRepositoryImpl(
         return apiClient.get<CastIdentityResponse>(KKEndpoint.Show.Cast(showId), parameters)
     }
 
-    override suspend fun getShowStaff(showId: String, next: String?, limit: Int): Result<StaffResponse> {
+    override suspend fun getShowStaff(showId: String, next: String?, limit: Int): Result<StaffIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
-        return apiClient.get<StaffResponse>(KKEndpoint.Show.Staff(showId), parameters)
+        return apiClient.get<StaffIdentityResponse>(KKEndpoint.Show.Staff(showId), parameters)
     }
 
     override suspend fun getShowCharacters(showId: String, next: String?, limit: Int): Result<CharacterIdentityResponse> {

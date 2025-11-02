@@ -22,6 +22,8 @@ import kurozorakit.data.models.show.cast.CastResponse
 import kurozorakit.data.models.show.related.RelatedGameResponse
 import kurozorakit.data.models.show.related.RelatedLiteratureResponse
 import kurozorakit.data.models.show.related.RelatedShowResponse
+import kurozorakit.data.models.staff.StaffIdentity
+import kurozorakit.data.models.staff.StaffIdentityResponse
 import kurozorakit.data.models.staff.StaffResponse
 import kurozorakit.data.models.studio.StudioIdentityResponse
 import kurozorakit.data.models.studio.StudioResponse
@@ -35,7 +37,7 @@ interface GameRepository {
     suspend fun getUpcomingGames(next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
     // Related content
     suspend fun getGameCast(gameId: String, next: String? = null, limit: Int = 20): Result<CastResponse>
-    suspend fun getGameStaff(gameId: String, next: String? = null, limit: Int = 20): Result<StaffResponse>
+    suspend fun getGameStaff(gameId: String, next: String? = null, limit: Int = 20): Result<StaffIdentityResponse>
     suspend fun getGameCharacters(gameId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
     suspend fun getGameReviews(gameId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
     suspend fun getGameStudios(gameId: String, next: String? = null, limit: Int = 20): Result<StudioResponse>
@@ -103,10 +105,10 @@ open class GameRepositoryImpl(
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Cast(gameId)
         return apiClient.get<CastResponse>(endpoint, parameters)
     }
-    override suspend fun getGameStaff(gameId: String, next: String?, limit: Int): Result<StaffResponse> {
+    override suspend fun getGameStaff(gameId: String, next: String?, limit: Int): Result<StaffIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Staff(gameId)
-        return apiClient.get<StaffResponse>(endpoint, parameters)
+        return apiClient.get<StaffIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getGameCharacters(gameId: String, next: String?, limit: Int): Result<CharacterIdentityResponse> {

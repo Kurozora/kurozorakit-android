@@ -21,6 +21,7 @@ import kurozorakit.data.models.show.cast.CastIdentityResponse
 import kurozorakit.data.models.show.related.RelatedGameResponse
 import kurozorakit.data.models.show.related.RelatedLiteratureResponse
 import kurozorakit.data.models.show.related.RelatedShowResponse
+import kurozorakit.data.models.staff.StaffIdentityResponse
 import kurozorakit.data.models.staff.StaffResponse
 import kurozorakit.data.models.studio.StudioIdentityResponse
 import kurozorakit.data.models.studio.StudioResponse
@@ -34,7 +35,7 @@ interface LiteratureRepository {
     suspend fun getUpcomingLiteratures(next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
     // Related content
     suspend fun getLiteratureCast(literatureId: String, next: String? = null, limit: Int = 20): Result<CastIdentityResponse>
-    suspend fun getLiteratureStaff(literatureId: String, next: String? = null, limit: Int = 20): Result<StaffResponse>
+    suspend fun getLiteratureStaff(literatureId: String, next: String? = null, limit: Int = 20): Result<StaffIdentityResponse>
     suspend fun getLiteratureCharacters(literatureId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
     suspend fun getLiteraturePeople(literatureId: String, next: String? = null, limit: Int = 20): Result<PersonIdentityResponse>
     suspend fun getLiteratureReviews(literatureId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
@@ -104,10 +105,10 @@ open class LiteratureRepositoryImpl(
         return apiClient.get<CastIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getLiteratureStaff(literatureId: String, next: String?, limit: Int): Result<StaffResponse> {
+    override suspend fun getLiteratureStaff(literatureId: String, next: String?, limit: Int): Result<StaffIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Staff(literatureId)
-        return apiClient.get<StaffResponse>(endpoint, parameters)
+        return apiClient.get<StaffIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getLiteratureCharacters(literatureId: String, next: String?, limit: Int): Result<CharacterIdentityResponse> {

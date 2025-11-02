@@ -159,9 +159,10 @@ sealed class KKEndpoint(val path: String) {
 
     // --- Cast ---
     sealed class Cast(path: String): KKEndpoint(path) {
-        class ShowCast(showId: String)       : Cast("anime/$showId/show-cast")
-        class LiteratureCast(literatureId: String): Cast("manga/$literatureId/literature-cast")
-        class GameCast(gameId: String)      : Cast("games/$gameId/game-cast")
+        class CastDetail(id: String)       : Cast("cast/$id")
+        class ShowCast(showId: String)       : Cast("anime/$showId/cast")
+        class LiteratureCast(literatureId: String): Cast("manga/$literatureId/cast")
+        class GameCast(gameId: String)      : Cast("games/$gameId/cast")
     }
 
     // --- Genres ---

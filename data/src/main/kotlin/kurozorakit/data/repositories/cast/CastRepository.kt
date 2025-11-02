@@ -6,6 +6,7 @@ import kurozorakit.data.models.show.cast.CastResponse
 import kurozorakit.shared.Result
 
 interface CastRepository {
+    suspend fun getCast(id: String): Result<CastResponse>
     suspend fun getShowCast(showId: String): Result<CastResponse>
     suspend fun getLiteratureCast(literatureId: String): Result<CastResponse>
     suspend fun getGameCast(gameId: String): Result<CastResponse>
@@ -14,6 +15,9 @@ interface CastRepository {
 open class CastRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : CastRepository {
+    override suspend fun getCast(id: String): Result<CastResponse> {
+        return apiClient.get<CastResponse>(KKEndpoint.Cast.CastDetail(id))
+    }
 
     override suspend fun getShowCast(showId: String): Result<CastResponse> {
         return apiClient.get<CastResponse>(KKEndpoint.Cast.ShowCast(showId))
