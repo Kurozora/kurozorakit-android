@@ -3,6 +3,7 @@ package kurozorakit.data.repositories.auth
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import kotlinx.serialization.json.Json
 import kurozorakit.api.AccountUser
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
@@ -104,7 +105,8 @@ open class AuthRepositoryImpl(
                     id = user.id,
                     username = user.attributes.username,
                     token = it.authenticationToken,
-                    profileUrl = user.attributes.profile?.url
+                    profileUrl = user.attributes.profile?.url,
+                    userJson = Json.encodeToString(user)
                 )
             )
         }

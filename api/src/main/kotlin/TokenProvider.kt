@@ -7,7 +7,8 @@ data class AccountUser(
     val id: String,
     val token: String,
     val username: String,
-    val profileUrl: String? = null
+    val profileUrl: String? = null,
+    val userJson: String,
 )
 
 interface Platform {
