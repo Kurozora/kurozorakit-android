@@ -5,18 +5,18 @@ import kurozorakit.data.models.Filterable
 
 @Serializable
 data class ShowFilter(
-    val airDay: Int? = null,
-    val airSeason: Int? = null,
+    val airDay: String? = null,
+    val airSeason: String? = null,
     val airTime: String? = null,
     val countryOfOrigin: String? = null,
-    val duration: Int? = null,
+    val duration: String? = null,
     val isNSFW: Boolean? = null,
     val startedAt: Long? = null,
     val endedAt: Long? = null,
     val mediaType: Int? = null,
-    val source: Int? = null,
-    val status: Int? = null,
-    val tvRating: Int? = null,
+    val source: String? = null,
+    val status: String? = null,
+    val tvRating: String? = null,
     val seasonCount: Int? = null,
     val episodeCount: Int? = null
 ) : Filterable {

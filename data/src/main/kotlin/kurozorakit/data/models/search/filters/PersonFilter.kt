@@ -5,7 +5,7 @@ import kurozorakit.data.models.Filterable
 
 @Serializable
 data class PersonFilter(
-    val astrologicalSign: Int? = null,
+    val astrologicalSign: String? = null,
     val birthDate: Long? = null,
     val deceasedDate: Long? = null
 ) : Filterable {

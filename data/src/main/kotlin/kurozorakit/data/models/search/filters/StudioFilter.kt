@@ -5,8 +5,8 @@ import kurozorakit.data.models.Filterable
 
 @Serializable
 data class StudioFilter(
-    val type: Int? = null,
-    val tvRating: Int? = null,
+    val type: String? = null,
+    val tvRating: String? = null,
     val address: String? = null,
     val foundedAt: Long? = null,
     val defunctAt: Long? = null,

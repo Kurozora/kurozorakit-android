@@ -5,18 +5,18 @@ import kurozorakit.data.models.Filterable
 
 @Serializable
 data class LiteratureFilter(
-    val publicationDay: Int? = null,
-    val publicationSeason: Int? = null,
+    val publicationDay: String? = null,
+    val publicationSeason: String? = null,
     val publicationTime: String? = null,
     val countryOfOrigin: String? = null,
     val duration: Int? = null,
     val startedAt: Long? = null,
     val endedAt: Long? = null,
     val isNSFW: Boolean? = null,
-    val mediaType: Int? = null,
-    val source: Int? = null,
-    val status: Int? = null,
-    val tvRating: Int? = null,
+    val mediaType: String? = null,
+    val source: String? = null,
+    val status: String? = null,
+    val tvRating: String? = null,
     val volumeCount: Int? = null,
     val chapterCount: Int? = null,
     val pageCount: Int? = null

@@ -6,13 +6,13 @@ import kurozorakit.data.models.Filterable
 @Serializable
 data class CharacterFilter(
     val age: Int? = null,
-    val astrologicalSign: Int? = null,
+    val astrologicalSign: String? = null,
     val birthDay: Int? = null,
     val birthMonth: Int? = null,
     val bust: String? = null,
     val height: String? = null,
     val hip: String? = null,
-    val status: Int? = null,
+    val status: String? = null,
     val waist: String? = null,
     val weight: String? = null
 ) : Filterable {

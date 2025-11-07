@@ -11,10 +11,10 @@ data class GameFilter(
     val duration: Int? = null,
     val publishedAt: Long? = null,
     val isNSFW: Boolean? = null,
-    val mediaType: Int? = null,
-    val source: Int? = null,
-    val status: Int? = null,
-    val tvRating: Int? = null,
+    val mediaType: String? = null,
+    val source: String? = null,
+    val status: String? = null,
+    val tvRating: String? = null,
     val editionCount: Int? = null
 ) : Filterable {
     override fun toFilterMap() = mapOf(

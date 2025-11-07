@@ -13,8 +13,8 @@ data class EpisodeFilter(
     val isFinale: Boolean? = null,
     val number: Int? = null,
     val numberTotal: Int? = null,
-    val season: Int? = null,
-    val tvRating: Int? = null,
+    val season: String? = null,
+    val tvRating: String? = null,
     val startedAt: Long? = null,
     val endedAt: Long? = null
 ) : Filterable {
