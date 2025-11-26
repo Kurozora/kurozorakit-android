@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "app.kurozora"
-version = "1.2.4-SNAPSHOT"
+version = "1.2.4"
 
 allprojects {
     repositories {
@@ -55,7 +55,7 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), rootProject.name, version.toString())
+    coordinates(group.toString(), project.rootProject.name, version.toString())
 
     pom {
         name = "KurozoraKit"
