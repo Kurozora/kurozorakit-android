@@ -212,7 +212,7 @@ open class UserRepositoryImpl(
     override suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelID: String): Result<LibraryUpdateResponse> {
         val body = mapOf(
             "model_id" to modelID,
-            "library" to libraryKind.stringValue
+            "library" to libraryKind.value.toString()
         )
         return apiClient.post<LibraryUpdateResponse, Map<String, String>>(KKEndpoint.Me.Library.Delete, body) {
             contentType(ContentType.Application.FormUrlEncoded)
