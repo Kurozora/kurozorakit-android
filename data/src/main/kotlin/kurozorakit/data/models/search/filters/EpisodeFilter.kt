@@ -18,7 +18,7 @@ data class EpisodeFilter(
     val startedAt: Long? = null,
     val endedAt: Long? = null
 ) : Filterable {
-    override fun toFilterMap() = mapOf(
+    override fun toFilterMap(forLibrary: Boolean) = mapOf(
         "duration" to duration,
         "is_filler" to isFiller,
         "is_nsfw" to isNSFW,

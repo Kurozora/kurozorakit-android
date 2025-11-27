@@ -5,11 +5,11 @@ import kurozorakit.data.models.Filterable
 
 @Serializable
 data class PersonFilter(
-    val astrologicalSign: String? = null,
+    val astrologicalSign: FilterValue? = null,
     val birthDate: Long? = null,
     val deceasedDate: Long? = null
 ) : Filterable {
-    override fun toFilterMap() = mapOf(
+    override fun toFilterMap(forLibrary: Boolean) = mapOf(
         "astrological_sign" to astrologicalSign,
         "birthdate" to birthDate,
         "deceased_date" to deceasedDate

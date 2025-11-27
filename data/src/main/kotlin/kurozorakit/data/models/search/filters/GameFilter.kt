@@ -6,18 +6,18 @@ import kurozorakit.data.models.Filterable
 @Serializable
 data class GameFilter(
     val publicationDay: Int? = null,
-    val publicationSeason: Int? = null,
-    val countryOfOrigin: String? = null,
+    val publicationSeason: FilterValue? = null,
+    val countryOfOrigin: FilterValue? = null,
     val duration: Int? = null,
     val publishedAt: Long? = null,
     val isNSFW: Boolean? = null,
-    val mediaType: String? = null,
-    val source: String? = null,
-    val status: String? = null,
-    val tvRating: String? = null,
+    val mediaType: FilterValue? = null,
+    val source: FilterValue? = null,
+    val status: FilterValue? = null,
+    val tvRating: FilterValue? = null,
     val editionCount: Int? = null
 ) : Filterable {
-    override fun toFilterMap() = mapOf(
+    override fun toFilterMap(forLibrary: Boolean) = mapOf(
         "publication_day" to publicationDay,
         "publication_season" to publicationSeason,
         "country_id" to countryOfOrigin,

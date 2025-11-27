@@ -1,8 +1,10 @@
 package kurozorakit.data.repositories.search
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.enums.KKSearchFilter
@@ -11,6 +13,7 @@ import kurozorakit.data.enums.KKSearchType
 import kurozorakit.data.enums.toFilterMap
 import kurozorakit.data.models.search.SearchResponse
 import kurozorakit.data.models.search.SearchSuggesitonsResponse
+import kurozorakit.data.models.search.filters.FilterValue
 import kurozorakit.shared.Result
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -54,34 +57,74 @@ open class SearchRepositoryImpl(
 
             filter?.let { f ->
                 try {
-                    val filters = f.toFilterMap().filterValues { it != null }
+                    val filters = f.toFilterMap(scope == KKSearchScope.library).filterValues { it != null }
 
                     val jsonObject = buildJsonObject {
                         filters.forEach { (key, value) ->
                             when (value) {
                                 is String -> put(key, JsonPrimitive(value))
                                 is Boolean -> put(key, JsonPrimitive(value))
-                                is Number -> put(key, JsonPrimitive(value))
-                                else -> println("⚠️ Unknown type for key=$key, value=$value")
+                                is Number -> put(key, JsonPrimitive(value.toString()))
+                                is FilterValue -> {
+                                    val fv = buildJsonObject {
+                                        value.include?.let { put("include", JsonPrimitive(it)) }
+                                        value.exclude?.let { put("exclude", JsonPrimitive(it)) }
+                                    }
+                                    put(key, fv)
+                                }
+
+                                is Map<*, *> -> {
+                                    // Eğer value Map olarak geldiyse (ör. { "include" -> "1,2", "exclude" -> null })
+                                    val inner = buildJsonObject {
+                                        value.forEach { (k, v) ->
+                                            if (k is String && v != null) {
+                                                when (v) {
+                                                    is String -> put(k, JsonPrimitive(v))
+                                                    is Number -> put(k, JsonPrimitive(v.toString()))
+                                                    is Boolean -> put(k, JsonPrimitive(v))
+                                                    else -> {
+                                                        // eğer iç value daha karmaşıksa serialize etmeyi dene
+                                                        try {
+                                                            val elem = Json.encodeToJsonElement(v)
+                                                            put(k, elem)
+                                                        } catch (_: Exception) {
+                                                            println("⚠️ Skipping inner key $k with unsupported type ${v.javaClass}")
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    put(key, inner)
+                                }
+
+                                else -> {
+                                    // Genel deneme: nesne @Serializable ise Json.encodeToJsonElement ile deneyelim
+                                    try {
+                                        val element = Json.encodeToJsonElement(value)
+                                        put(key, element)
+                                    } catch (e: Exception) {
+                                        println("⚠️ Unknown type for key=$key, value=$value — cannot serialize (${e.message})")
+                                    }
+                                }
                             }
                         }
                     }
 
-                    // JSON'u doğru biçimde serialize et
-                    val filterJson = Json.encodeToString(jsonObject)
+                    // JSON'u stringe çevir
+                    val filterJson = Json.encodeToString(JsonObject.serializer(), jsonObject)
                     val encodedFilter = Base64.getUrlEncoder()
                         .withoutPadding()
                         .encodeToString(filterJson.toByteArray(StandardCharsets.UTF_8))
 
                     params["filter"] = encodedFilter
 
-
                 } catch (e: Exception) {
                     println("❌ Encode error: Could not make base64 string from filter data $f \n${e.stackTraceToString()}")
                 }
             }
-
         }
+
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Search.Index
         return apiClient.get<SearchResponse>(endpoint, params) {
             url {
@@ -91,6 +134,7 @@ open class SearchRepositoryImpl(
             }
         }
     }
+
 
     override suspend fun getSearchSuggestions(
         scope: KKSearchScope,

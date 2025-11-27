@@ -46,7 +46,7 @@ open class PersonRepositoryImpl(
             parameters = mutableMapOf("limit" to limit.toString())
 
             filter?.let { f ->
-                val filters = f.toFilterMap().filterValues { it != null }
+                val filters = f.toFilterMap(false).filterValues { it != null }
 
                 try {
                     val jsonObject = buildJsonObject {

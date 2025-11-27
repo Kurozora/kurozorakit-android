@@ -183,6 +183,9 @@ open class UserRepositoryImpl(
     }
 
     override suspend fun addToLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelID: String): Result<LibraryUpdateResponse> {
+        if (libraryStatus == KKLibrary.Status.NONE) {
+            return removeFromMyLibrary(libraryKind, modelID)
+        }
         val body = mapOf(
             "library" to libraryKind.value.toString(),
             "status" to libraryStatus.sectionValue,
@@ -288,7 +291,7 @@ open class UserRepositoryImpl(
 
     override suspend fun getMyReminders(libraryKind: KKLibrary.Kind, next: String?, limit: Int): Result<ReminderLibraryResponse> {
         val parameters = mapOf(
-            "library" to libraryKind.stringValue,
+            "library" to libraryKind.value.toString(),
             "limit" to limit.toString()
         )
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Reminders.Index
@@ -297,10 +300,12 @@ open class UserRepositoryImpl(
 
     override suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelID: String): Result<ReminderLibraryResponse> {
         val body = mapOf(
-            "library" to libraryKind.stringValue,
+            "library" to libraryKind.value.toString(),
             "model_id" to modelID
         )
-        return apiClient.post<ReminderLibraryResponse, Map<String, String>>(KKEndpoint.Me.Reminders.Update, body)
+        return apiClient.post<ReminderLibraryResponse, Map<String, String>>(KKEndpoint.Me.Reminders.Update, body) {
+            contentType(ContentType.Application.Json)
+        }
     }
 
     override suspend fun downloadMyReminders(): Result<ByteArray> {

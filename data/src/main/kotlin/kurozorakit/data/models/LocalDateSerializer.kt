@@ -26,25 +26,81 @@ import kurozorakit.data.models.user.update.block.BlockInfoOrBoolean
 
 // Custom Serializer for LocalDate from/to Timestamp (Long)
 object LocalDateSerializer : KSerializer<LocalDate?> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.LONG)
+
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.LONG)
+
     override fun serialize(encoder: Encoder, value: LocalDate?) {
         if (value == null) {
-            encoder.encodeNull()
-        } else {
-            val instant = value.atStartOfDayIn(TimeZone.UTC)
-            encoder.encodeLong(instant.toEpochMilliseconds())
+            encoder.encodeLong(-1)
+            return
         }
+
+        val instant = value.atStartOfDayIn(TimeZone.UTC)
+        encoder.encodeLong(instant.toEpochMilliseconds() / 1000) // saniye olarak encode ediyorsan
     }
 
     override fun deserialize(decoder: Decoder): LocalDate? {
-        if (decoder.decodeNotNullMark()) {
-            val timestamp = decoder.decodeLong()
-            return Instant.fromEpochMilliseconds(timestamp).toLocalDateTime(TimeZone.UTC).date
-        }
-        return null
+        val timestamp = decoder.decodeLong()
+        if (timestamp <= 0) return null
+
+        // Backend saniye gönderiyor → epoch MILLIseconds istiyor → ×1000
+        val millis = timestamp * 1000
+
+        return Instant.fromEpochMilliseconds(millis)
+            .toLocalDateTime(TimeZone.UTC)
+            .date
     }
 }
 
+object InstantAsEpochSecondsSerializer : KSerializer<Instant> {
+
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("Instant", PrimitiveKind.LONG)
+
+    override fun serialize(encoder: Encoder, value: Instant) {
+        // Instant → seconds (10-digit)
+        val seconds = value.epochSeconds
+        encoder.encodeLong(seconds)
+    }
+
+    override fun deserialize(decoder: Decoder): Instant {
+        val seconds = decoder.decodeLong()
+        // Backend saniye gönderiyor → Instant.ofEpochSeconds kullanıyoruz
+        return Instant.fromEpochSeconds(seconds)
+    }
+}
+
+object FlexibleInstantSerializer : KSerializer<Instant?> {
+
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("FlexibleInstant", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): Instant? {
+        val raw = decoder.decodeString()
+
+        // Case 1: "00:00" — only time provided, no date → cannot convert to Instant
+        if (raw.matches(Regex("""^\d{2}:\d{2}$"""))) {
+            return null // veya default behavior
+        }
+
+        // Case 2: number as string → epoch seconds
+        if (raw.matches(Regex("""^\d+$"""))) {
+            return Instant.fromEpochSeconds(raw.toLong())
+        }
+
+        // Case 3: ISO string
+        return try {
+            Instant.parse(raw)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: Instant?) {
+        encoder.encodeString(value?.toString() ?: "")
+    }
+}
 
 object IntEnumSerializer : KSerializer<KKLibrary.Status> {
     override val descriptor: SerialDescriptor =

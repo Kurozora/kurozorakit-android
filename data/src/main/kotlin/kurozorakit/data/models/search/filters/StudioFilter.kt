@@ -12,7 +12,7 @@ data class StudioFilter(
     val defunctAt: Long? = null,
     val isNSFW: Boolean? = null
 ) : Filterable {
-    override fun toFilterMap() = mapOf(
+    override fun toFilterMap(forLibrary: Boolean) = mapOf(
         "type" to type,
         "tv_rating_id" to tvRating,
         "address" to address,

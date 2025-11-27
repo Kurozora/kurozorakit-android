@@ -1,10 +1,11 @@
 package kurozorakit.data.models.show
 
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kurozorakit.data.models.IdentityResource
-import kurozorakit.data.models.LocalDateSerializer
-import kurozorakit.data.models.character.CharacterIdentityResponse
+import kurozorakit.data.models.InstantAsEpochSecondsSerializer
+import kurozorakit.data.models.FlexibleInstantSerializer
 import kurozorakit.data.models.character.CharacterResponse
 import kurozorakit.data.models.country.Country
 import kurozorakit.data.models.language.Language
@@ -70,18 +71,19 @@ data class Show(
         val episodeCount: Int,
         val seasonCount: Int,
         val stats: MediaStat? = null,
-        @Serializable(with = LocalDateSerializer::class)
-        val startedAt: LocalDate? = null,
-        @Serializable(with = LocalDateSerializer::class)
-        val endedAt: LocalDate? = null,
-        @Serializable(with = LocalDateSerializer::class)
-        val nextBroadcastAt: LocalDate? = null,
+        @Serializable(with = InstantAsEpochSecondsSerializer::class)
+        val startedAt: Instant? = null,
+        @Serializable(with = InstantAsEpochSecondsSerializer::class)
+        val endedAt: Instant? = null,
+        @Serializable(with = InstantAsEpochSecondsSerializer::class)
+        val nextBroadcastAt: Instant? = null,
         val duration: String,
         val durationCount: Int,
         val durationTotal: String,
         val durationTotalCount: Int,
         val airSeason: String? = null,
-        val airTime: String? = null,
+        @Serializable(with = FlexibleInstantSerializer::class)
+        val airTime: Instant? = null,
         val airDay: String? = null,
         val isNSFW: Boolean,
         val copyright: String? = null,

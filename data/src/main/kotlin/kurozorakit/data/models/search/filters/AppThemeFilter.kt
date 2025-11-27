@@ -9,7 +9,7 @@ data class AppThemeFilter(
     val uiStatusBarStyle: Int? = null,
     val version: String? = null
 ) : Filterable {
-    override fun toFilterMap() = mapOf(
+    override fun toFilterMap(forLibrary: Boolean) = mapOf(
         "download_count" to downloadCount,
         "ui_status_bar_style" to uiStatusBarStyle,
         "version" to version

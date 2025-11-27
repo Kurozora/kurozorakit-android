@@ -5,5 +5,5 @@ import kurozorakit.data.models.Filterable
 
 @Serializable
 class SongFilter : Filterable {
-    override fun toFilterMap() = emptyMap<String, Any?>()
+    override fun toFilterMap(forLibrary: Boolean) = emptyMap<String, Any?>()
 }

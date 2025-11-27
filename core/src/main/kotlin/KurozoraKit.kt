@@ -5,6 +5,8 @@ import kurozorakit.api.Platform
 import kurozorakit.api.TokenProvider
 import kurozorakit.cache.CacheManager
 import kurozorakit.data.DefaultTokenProvider
+import kurozorakit.data.repositories.airseason.AirSeasonRepository
+import kurozorakit.data.repositories.airseason.AirSeasonRepositoryImpl
 import kurozorakit.shared.logging.CompositeLogger
 import kurozorakit.shared.logging.ConsoleLogger
 import kurozorakit.shared.logging.KurozoraLogger
@@ -87,7 +89,8 @@ class KurozoraKit private constructor(
     private val songRepository: SongRepository,
     private val storeRepository: StoreRepository,
     private val themeRepository: ThemeRepository,
-    private val themeStoreRepository: ThemeStoreRepository
+    private val themeStoreRepository: ThemeStoreRepository,
+    private val airSeasonRepository: AirSeasonRepository,
 ) {
 
     /**
@@ -210,6 +213,11 @@ class KurozoraKit private constructor(
      */
     fun themeStore(): ThemeStoreRepository = themeStoreRepository
 
+    /**
+     * Access to the air season repository.
+     */
+    fun airSeason(): AirSeasonRepository = airSeasonRepository
+
     companion object {
         /**
          * The current version of the KurozoraKit library.
@@ -325,6 +333,7 @@ class KurozoraKit private constructor(
             val storeRepository = StoreRepositoryImpl(apiClient)
             val themeRepository = ThemeRepositoryImpl(apiClient)
             val themeStoreRepository = ThemeStoreRepositoryImpl(apiClient)
+            val airSeasonRepository = AirSeasonRepositoryImpl(apiClient)
 
             return KurozoraKit(
                 apiClient = apiClient,
@@ -351,7 +360,8 @@ class KurozoraKit private constructor(
                 songRepository = songRepository,
                 storeRepository = storeRepository,
                 themeRepository = themeRepository,
-                themeStoreRepository = themeStoreRepository
+                themeStoreRepository = themeStoreRepository,
+                airSeasonRepository = airSeasonRepository,
             )
         }
     }

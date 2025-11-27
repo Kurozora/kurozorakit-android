@@ -59,7 +59,7 @@ open class ShowRepositoryImpl(
         if (next == null) {
             parameters = mutableMapOf("limit" to limit.toString())
             filter?.let { f ->
-                val filters = f.toFilterMap().filterValues { it != null }
+                val filters = f.toFilterMap(false).filterValues { it != null }
                 try {
                     val jsonObject = buildJsonObject {
                         filters.forEach { (key, value) ->

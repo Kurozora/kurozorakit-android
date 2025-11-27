@@ -1,6 +1,7 @@
 package kurozorakit.api
 
 import kurozorakit.api.KKEndpoint.Literature
+import kurozorakit.api.KKEndpoint.Me.Recap
 import kurozorakit.api.KKEndpoint.Songs
 
 sealed class KKEndpoint(val path: String) {
@@ -194,6 +195,13 @@ sealed class KKEndpoint(val path: String) {
             class Update(messageId: String) : Messages("feed/messages/$messageId/update")
             class Delete(messageId: String) : Messages("feed/messages/$messageId/delete")
         }
+    }
+
+    // --- Images ---
+    sealed class Seasons(path: String): KKEndpoint(path) {
+        class Anime(year: String, season: String) : Seasons("anime/seasons/$year/$season")
+        class Manga(year: String, season: String) : Seasons("manga/seasons/$year/$season")
+        class Game(year: String, season: String) : Seasons("games/seasons/$year/$season")
     }
 
     // --- Images ---

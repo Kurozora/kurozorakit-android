@@ -6,7 +6,7 @@ import kurozorakit.data.models.Filterable
 @Serializable
 data class CharacterFilter(
     val age: Int? = null,
-    val astrologicalSign: String? = null,
+    val astrologicalSign: FilterValue? = null,
     val birthDay: Int? = null,
     val birthMonth: Int? = null,
     val bust: String? = null,
@@ -16,7 +16,7 @@ data class CharacterFilter(
     val waist: String? = null,
     val weight: String? = null
 ) : Filterable {
-    override fun toFilterMap() = mapOf(
+    override fun toFilterMap(forLibrary: Boolean) = mapOf(
         "age" to age,
         "astrological_sign" to astrologicalSign,
         "birth_day" to birthDay,
