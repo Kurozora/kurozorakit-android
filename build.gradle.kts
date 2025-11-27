@@ -1,20 +1,16 @@
 plugins {
     kotlin("jvm") version "2.2.0"
     kotlin("plugin.serialization") version "2.2.0" apply false
+    id("com.vanniktech.maven.publish") version "0.35.0"
 }
 
-group = "kurozorakit"
-version = "1.2.5"
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-}
+group = "app.kurozora"
+version = "1.2.4"
 
 allprojects {
     repositories {
         mavenCentral()
+        mavenLocal()
     }
 }
 
@@ -40,11 +36,49 @@ dependencies {
     implementation(project(":shared"))
 }
 
+/**
+ * Build a single fat JAR combining root + all subprojects.
+ */
 tasks.register<Jar>("fatJar") {
-    archiveBaseName.set("kurozorakit-android")
+    archiveBaseName.set(rootProject.name)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    // main module outputs
     from(sourceSets.main.get().output)
 
-    val subprojectsOutputs = subprojects.map { it.sourceSets["main"].output }
-    from(subprojectsOutputs)
+    // include all subproject outputs
+    from(subprojects.map { it.sourceSets["main"].output })
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+
+    signAllPublications()
+
+    coordinates(group.toString(), project.rootProject.name, version.toString())
+
+    pom {
+        name = "KurozoraKit"
+        description = "KurozoraKit lets users manage their anime, manga, games and music library and access many other services from your app. When users provide permission to access their Kurozora account, they can use your app to share anime, add it to their library, and discover any of the thousands of content in the Kurozora catalog. If your app detects that the user is not yet a Kurozora member, you can offer them to create an account within your app."
+        inceptionYear = "2025"
+        url = "https://github.com/Kurozora/kurozorakit-android"
+        licenses {
+            license {
+                name = "MIT"
+                url = "https://github.com/Kurozora/kurozorakit-android/blob/main/LICENSE"
+            }
+        }
+        developers {
+            developer {
+                id = "kurozora"
+                name = "Kurozora"
+                url = "https://github.com/Kurozora/"
+            }
+        }
+        scm {
+            url = "https://github.com/Kurozora/kurozorakit-android"
+            connection = "scm:git:git://github.com/Kurozora/kurozorakit-android.git"
+            developerConnection = "scm:git:ssh://git@github.com/Kurozora/kurozorakit-android.git"
+        }
+    }
 }

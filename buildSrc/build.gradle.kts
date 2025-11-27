@@ -2,8 +2,8 @@ plugins {
     kotlin("jvm") version "2.2.0"
 }
 
-group = "kurozorakit"
-version = "1.0-SNAPSHOT"
+group = "app.kurozora"
+version = "1.2.4"
 
 repositories {
     mavenCentral()
