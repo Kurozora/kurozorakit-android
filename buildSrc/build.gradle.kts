@@ -2,11 +2,13 @@ plugins {
     kotlin("jvm") version "2.2.0"
 }
 
-group = "app.kurozora"
-version = "1.2.4"
+allprojects {
+    group = "app.kurozora"
+    version = "1.2.5"
 
-repositories {
-    mavenCentral()
+    repositories {
+        mavenCentral()
+    }
 }
 
 dependencies {
