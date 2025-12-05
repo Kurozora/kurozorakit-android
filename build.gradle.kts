@@ -64,6 +64,7 @@ mavenPublishing {
         KotlinJvm(
             javadocJar = JavadocJar.Empty(),
             sourcesJar = true,
+            publication = "fatJar"
         )
     )
 
@@ -101,20 +102,19 @@ mavenPublishing {
     }
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            withType<MavenPublication>().configureEach {
-                if (name == "kotlinJvm") {
+publishing {
+    publications {
+        create<MavenPublication>("fatJar") {
+            artifact(tasks.named("fatJar"))
 
-                    // Default jar'ı kaldır
-                    artifacts.removeIf { it.classifier == null }
+            groupId = group.toString()
+            artifactId = rootProject.name
+            version = version.toString()
 
-                    // Fat jar'ı ana artifact olarak ekle
-                    artifact(fatJar.get()) {
-                        classifier = null
-                    }
-                }
+            pom {
+                name.set("KurozoraKit")
+                description.set("KurozoraKit SDK")
+                url.set("https://github.com/Kurozora/kurozorakit-android")
             }
         }
     }
