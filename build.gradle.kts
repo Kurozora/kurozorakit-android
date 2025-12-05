@@ -104,6 +104,16 @@ mavenPublishing {
 tasks.named<Jar>("jar") {
     enabled = false
 }
+tasks.configureEach {
+    if (name.contains("publish", ignoreCase = true)
+        || name.contains("sign", ignoreCase = true)
+        || name.contains("Metadata", ignoreCase = true)
+    ) {
+        dependsOn("jar")
+        dependsOn("fatJar")
+    }
+}
+
 
 publishing {
     publications {
