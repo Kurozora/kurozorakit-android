@@ -43,6 +43,7 @@ dependencies {
  */
 val fatJar = tasks.register<Jar>("fatJar") {
     archiveBaseName.set(rootProject.name)
+    archiveClassifier.set("")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     // main module outputs
@@ -101,15 +102,18 @@ mavenPublishing {
 }
 
 afterEvaluate {
-    tasks.named("generateMetadataFileForKotlinPublication") {
-        dependsOn(fatJar)
-    }
-
     publishing {
         publications {
-            getByName("kotlin", MavenPublication::class) {
-                artifact(fatJar) {
-classifier = null
+            withType<MavenPublication>().configureEach {
+                if (name == "kotlinJvm") {
+
+                    // Default jar'ı kaldır
+                    artifacts.removeIf { it.classifier == null }
+
+                    // Fat jar'ı ana artifact olarak ekle
+                    artifact(fatJar.get()) {
+                        classifier = null
+                    }
                 }
             }
         }
