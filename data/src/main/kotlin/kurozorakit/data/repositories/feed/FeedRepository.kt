@@ -6,6 +6,7 @@ import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.feed.message.FeedMessageRequest
 import kurozorakit.data.models.feed.message.FeedMessageResponse
+import kurozorakit.data.models.feed.message.toStringMap
 import kurozorakit.data.models.feed.message.update.FeedMessageUpdateResponse
 import kurozorakit.shared.Result
 import kotlin.let
@@ -40,19 +41,17 @@ open class FeedRepositoryImpl(
         return apiClient.get<FeedMessageResponse>(endpoint, parameters)
     }
 
-    override suspend fun postFeedMessage(feedMessageRequest: FeedMessageRequest): Result<FeedMessageResponse> {
-        val body = mutableMapOf<String, Any>(
-            "content" to feedMessageRequest.content,
-            "isNSFW" to feedMessageRequest.isNSFW,
-            "isSpoiler" to feedMessageRequest.isSpoiler,
-        )
-        feedMessageRequest.parentIdentity?.id?.let { messageId ->
-            body["parent_id"] = messageId
-            body["is_reply"] = feedMessageRequest.isReply
-            body["is_reshare"] = feedMessageRequest.isReShare
+    override suspend fun postFeedMessage(
+        feedMessageRequest: FeedMessageRequest
+    ): Result<FeedMessageResponse> {
+        return apiClient.post<FeedMessageResponse, Map<String, String>>(
+            KKEndpoint.Feed.Post,
+            feedMessageRequest.toStringMap()
+        ) {
+            contentType(ContentType.Application.Json)
         }
-        return apiClient.post<FeedMessageResponse, Map<String, Any>>(KKEndpoint.Feed.Post, body)
     }
+
 
     override suspend fun getFeedMessage(messageId: String): Result<FeedMessageResponse> {
         return apiClient.get<FeedMessageResponse>(KKEndpoint.Feed.Messages.Details(messageId))
@@ -65,20 +64,20 @@ open class FeedRepositoryImpl(
     }
 
     override suspend fun heartFeedMessage(messageId: String): Result<FeedMessageUpdateResponse> {
-        return apiClient.post<FeedMessageUpdateResponse, Map<String, Boolean>>(KKEndpoint.Feed.Messages.Heart(messageId)) {
+        return apiClient.post<FeedMessageUpdateResponse, Unit>(KKEndpoint.Feed.Messages.Heart(messageId), Unit) {
             contentType(ContentType.Application.Json)
         }
     }
 
     override suspend fun pinFeedMessage(messageId: String): Result<FeedMessageUpdateResponse> {
-        return apiClient.post<FeedMessageUpdateResponse, Map<String, Boolean>>(KKEndpoint.Feed.Messages.Pin(messageId)) {
+        return apiClient.post<FeedMessageUpdateResponse, Map<String, Boolean>>(KKEndpoint.Feed.Messages.Pin(messageId), emptyMap()) {
             contentType(ContentType.Application.Json)
         }
     }
 
     override suspend fun updateFeedMessage(messageId: String, update: FeedMessageRequest): Result<FeedMessageUpdateResponse> {
         val body = mapOf(
-            "content" to update.content,
+            "body" to update.content,
             "is_nsfw" to (update.isNSFW.compareTo(false)).toString(),
             "is_spoiler" to (update.isSpoiler.compareTo(false)).toString()
         )
@@ -88,6 +87,6 @@ open class FeedRepositoryImpl(
     }
 
     override suspend fun deleteFeedMessage(messageId: String): Result<Unit> {
-        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Feed.Messages.Delete(messageId))
+        return apiClient.post<Unit, Unit>(KKEndpoint.Feed.Messages.Delete(messageId), Unit)
     }
 }
