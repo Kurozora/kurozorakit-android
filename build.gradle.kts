@@ -101,14 +101,16 @@ mavenPublishing {
 }
 
 afterEvaluate {
-    tasks.named("generateMetadataFileForMavenPublication") {
+    tasks.named("generateMetadataFileForKotlinPublication") {
         dependsOn(fatJar)
     }
 
     publishing {
         publications {
-            getByName("maven", MavenPublication::class) {
-                artifact(fatJar)
+            getByName("kotlin", MavenPublication::class) {
+                artifact(fatJar) {
+classifier = null
+                }
             }
         }
     }
