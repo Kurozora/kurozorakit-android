@@ -64,7 +64,6 @@ mavenPublishing {
         KotlinJvm(
             javadocJar = JavadocJar.Empty(),
             sourcesJar = true,
-            publication = "fatJar"
         )
     )
 
@@ -104,8 +103,8 @@ mavenPublishing {
 
 publishing {
     publications {
-        create<MavenPublication>("fatJar") {
-            artifact(tasks.named("fatJar"))
+        create<MavenPublication>("fatJarPublication") {
+            artifact(fatJar.get())
 
             groupId = group.toString()
             artifactId = rootProject.name
@@ -119,3 +118,4 @@ publishing {
         }
     }
 }
+
