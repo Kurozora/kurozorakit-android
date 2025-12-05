@@ -101,9 +101,14 @@ mavenPublishing {
     }
 }
 
+tasks.named<Jar>("jar") {
+    enabled = false
+}
+
 publishing {
     publications {
         create<MavenPublication>("fatJarPublication") {
+this.artifacts.clear()
             artifact(fatJar.get())
 
             groupId = group.toString()
