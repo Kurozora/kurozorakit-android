@@ -101,35 +101,18 @@ mavenPublishing {
     }
 }
 
-tasks.named<Jar>("jar") {
-    enabled = false
-}
-tasks.configureEach {
-    if (name.contains("publish", ignoreCase = true)
-        || name.contains("sign", ignoreCase = true)
-        || name.contains("Metadata", ignoreCase = true)
-    ) {
-        dependsOn("jar")
-        dependsOn("fatJar")
+tasks.withType<Jar>().configureEach {
+    if (name == "jar") {
+        dependsOn(fatJar)
+        enabled = false
     }
 }
 
-
 publishing {
     publications {
-        create<MavenPublication>("fatJarPublication") {
-this.artifacts.clear()
+        withType<MavenPublication>().configureEach {
+            artifacts.removeIf { it.classifier == null && it.extension == "jar" }
             artifact(fatJar.get())
-
-            groupId = group.toString()
-            artifactId = rootProject.name
-            version = version.toString()
-
-            pom {
-                name.set("KurozoraKit")
-                description.set("KurozoraKit SDK")
-                url.set("https://github.com/Kurozora/kurozorakit-android")
-            }
         }
     }
 }
