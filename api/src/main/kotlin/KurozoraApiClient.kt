@@ -88,7 +88,7 @@ class KurozoraApiClient(
             contentType(ContentType.Application.FormUrlEncoded)
             header("X-API-Key", apiKey)
             header("Accept", "application/json")
-            header(HttpHeaders.UserAgent, "KurozoraApp/1.0.0 (${userAgent.getName()}; Android ${userAgent.getVersion()}) KtorClient/3.2.2")
+            header(HttpHeaders.UserAgent, "${userAgent.getAppName()}/${userAgent.getAppVersion()} (${userAgent.getAppID()}; ${userAgent.getPlatformName()} ${userAgent.getPlatformVersion()}) KtorClient/3.2.2")
         }
 
         HttpResponseValidator {

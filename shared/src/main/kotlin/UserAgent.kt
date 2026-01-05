@@ -1,14 +1,29 @@
 package kurozorakit.shared
 
 class UserAgent (
-    private val name: String = "",
-    private val version: String = "",
+    private val appName: String = "",
+    private val appVersion: String = "",
+    private val appID: String = "",
+    private val platformName: String = "",
+    private val platformVersion: String = "",
 ) {
-    fun getName(): String{
-        return name
+
+    fun getAppName(): String{
+        return appName
     }
 
-    fun getVersion(): String {
-        return version
+    fun getAppVersion(): String {
+        return appVersion
+    }
+    fun getAppID(): String {
+        return appID
+    }
+
+    fun getPlatformName(): String {
+        return platformName
+    }
+
+    fun getPlatformVersion(): String {
+        return platformVersion
     }
 }
