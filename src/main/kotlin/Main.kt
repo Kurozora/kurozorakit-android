@@ -4,11 +4,13 @@ import kurozorakit.core.KurozoraApi
 import kurozorakit.core.KurozoraKit
 import kurozorakit.data.models.search.filters.ShowFilter
 import kurozorakit.data.models.user.User
+import kurozorakit.shared.UserAgent
 
 suspend fun main() {
     val kurozoraKit = KurozoraKit.Builder()
         .apiEndpoint(KurozoraApi.V1.baseUrl)
         .apiKey("your-api-key")
+        .userAgent(UserAgent(appName = "your_app_name", appID = "com.username.kurozora", platformName = "your_platform_name", platformVersion = "your_platform_version"))
         .build()
 
 //    kurozoraKit.auth().signIn("test@example.com", $$"test").onSuccess { res ->

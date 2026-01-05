@@ -3,8 +3,10 @@ package kurozorakit.core
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.api.Platform
 import kurozorakit.api.TokenProvider
+import kurozorakit.shared.UserAgent
 import kurozorakit.cache.CacheManager
 import kurozorakit.data.DefaultTokenProvider
+import kurozorakit.data.models.user.User
 import kurozorakit.data.repositories.airseason.AirSeasonRepository
 import kurozorakit.data.repositories.airseason.AirSeasonRepositoryImpl
 import kurozorakit.shared.logging.CompositeLogger
@@ -237,6 +239,7 @@ class KurozoraKit private constructor(
         private var initialBackoffDelayMs: Long = 1000
         private var maxBackoffDelayMs: Long = 30000
         private var backoffFactor: Double = 2.0
+        private var userAgent: UserAgent = UserAgent()
         // cache
         private var cacheManager: CacheManager? = null
         private lateinit var platform: Platform
@@ -289,6 +292,11 @@ class KurozoraKit private constructor(
         fun cacheManager(cacheManager: CacheManager) = apply { this.cacheManager = cacheManager }
 
         /**
+         * Sets the User Agent
+         */
+        fun userAgent(userAgent: UserAgent) = apply { this.userAgent = userAgent }
+
+        /**
          * Builds a new KurozoraKit instance.
          */
         fun build(): KurozoraKit {
@@ -306,6 +314,7 @@ class KurozoraKit private constructor(
                 tokenProvider = tokenProvider,
                 cacheManager = cacheManager,
                 platform = platform,
+                userAgent = userAgent,
             )
 
             // Create all repositories
