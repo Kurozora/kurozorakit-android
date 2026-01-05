@@ -44,6 +44,7 @@ KurozoraKit can be initialized as simply as:
 ```kotlin
 val kurozoraKit = KurozoraKit.Builder()
     .apiKey("your_api_key")
+    .userAgent(UserAgent(name="your_username", version="your_android_version"))
     .build()
 ```
 
@@ -53,6 +54,7 @@ KurozoraKit allows you to set your own API endpoint. For example, if you have a 
 val kurozoraKit = KurozoraKit.Builder()
     .apiEndpoint(KurozoraApi.V1.baseUrl)
     .apiKey("your_api_key")
+    .userAgent(UserAgent(name="your_username", version="your_android_version"))
     .build()
 ```
 
@@ -76,6 +78,7 @@ object KurozoraTokenProvider: TokenProvider {
 val kurozoraKit = KurozoraKit.Builder()
     .apiEndpoint(KurozoraApi.V1.baseUrl)
     .apiKey("your_api_key")
+    .userAgent(UserAgent(name="your_username", version="your_android_version"))
     .tokenProvider(KurozoraTokenProvider)
     .platform(getPlatform())
     .build()

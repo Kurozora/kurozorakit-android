@@ -19,6 +19,7 @@ import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.MetaResponse
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.shared.Result
+import kurozorakit.shared.UserAgent
 
 /**
  * Client for making requests to the Kurozora API.
@@ -29,6 +30,7 @@ class KurozoraApiClient(
     val tokenProvider: TokenProvider? = null,
     val cacheManager: CacheManager? = null,
     val platform: Platform,
+    private val userAgent: UserAgent,
 ) {
     /**
      * The HTTP client used for making requests.
@@ -86,7 +88,7 @@ class KurozoraApiClient(
             contentType(ContentType.Application.FormUrlEncoded)
             header("X-API-Key", apiKey)
             header("Accept", "application/json")
-            header(HttpHeaders.UserAgent, "KurozoraApp/1.0.0 (com.seloreis.kurozora; Android 14) KtorClient/3.2.2")
+            header(HttpHeaders.UserAgent, "KurozoraApp/1.0.0 (${userAgent.getName()}; Android ${userAgent.getVersion()}) KtorClient/3.2.2")
         }
 
         HttpResponseValidator {
