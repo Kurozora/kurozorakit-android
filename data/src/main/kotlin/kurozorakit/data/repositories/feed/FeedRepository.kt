@@ -11,20 +11,101 @@ import kurozorakit.data.models.feed.message.update.FeedMessageUpdateResponse
 import kurozorakit.shared.Result
 import kotlin.let
 
+/**
+ * Data repository responsible for social feed interactions and message management.
+ *
+ * This repository handles the retrieval of various feed types (Home, Explore) and
+ * provides comprehensive CRUD operations for feed messages. It also manages
+ * social engagements such as liking (hearting), replying to, and pinning messages.
+ */
 interface FeedRepository {
-    // Feed operations
+
+    /**
+     * Fetches the global discovery feed containing trending or public content.
+     *
+     * @param next Pagination cursor for the next set of messages.
+     * @param limit The maximum number of feed messages to return.
+     * @return A [Result] containing the [FeedMessageResponse].
+     */
     suspend fun getExploreFeed(next: String? = null, limit: Int = 20): Result<FeedMessageResponse>
+
+    /**
+     * Retrieves the personalized home feed for the authenticated user.
+     *
+     * Typically contains content from followed users and relevant updates.
+     *
+     * @param next Pagination cursor for the next set of messages.
+     * @param limit The maximum number of feed messages to return.
+     * @return A [Result] containing the [FeedMessageResponse].
+     */
     suspend fun getHomeFeed(next: String? = null, limit: Int = 20): Result<FeedMessageResponse>
+
+    /**
+     * Publishes a new message or status update to the feed.
+     *
+     * @param feedMessageRequest The data object containing the message content and metadata.
+     * @return A [Result] containing the newly created [FeedMessageResponse].
+     */
     suspend fun postFeedMessage(feedMessageRequest: FeedMessageRequest): Result<FeedMessageResponse>
-    // Message operations
+
+    /**
+     * Retrieves a single feed message by its unique identifier.
+     *
+     * @param messageId The unique ID of the target message.
+     * @return A [Result] containing the [FeedMessageResponse].
+     */
     suspend fun getFeedMessage(messageId: String): Result<FeedMessageResponse>
+
+    /**
+     * Fetches a paginated list of replies associated with a specific parent message.
+     *
+     * @param messageId The unique ID of the parent message.
+     * @param next Pagination cursor.
+     * @param limit Maximum number of replies to return.
+     * @return A [Result] containing the [FeedMessageResponse] listing the replies.
+     */
     suspend fun getFeedMessageReplies(messageId: String, next: String? = null, limit: Int = 20): Result<FeedMessageResponse>
+
+    /**
+     * Toggles the "heart" (like) status for a specific feed message.
+     *
+     * @param messageId The unique ID of the message to heart/unheart.
+     * @return A [Result] containing the [FeedMessageUpdateResponse] with the new counts.
+     */
     suspend fun heartFeedMessage(messageId: String): Result<FeedMessageUpdateResponse>
+
+    /**
+     * Toggles the pinned status of a feed message to highlight it on a profile.
+     *
+     * @param messageId The unique ID of the message to pin/unpin.
+     * @return A [Result] containing the [FeedMessageUpdateResponse].
+     */
     suspend fun pinFeedMessage(messageId: String): Result<FeedMessageUpdateResponse>
+
+    /**
+     * Updates the content or settings of an existing feed message.
+     *
+     * @param messageId The unique ID of the message to be modified.
+     * @param update The request object containing the updated fields.
+     * @return A [Result] containing the [FeedMessageUpdateResponse].
+     */
     suspend fun updateFeedMessage(messageId: String, update: FeedMessageRequest): Result<FeedMessageUpdateResponse>
+
+    /**
+     * Permanently removes a feed message from the platform.
+     *
+     * @param messageId The unique ID of the message to delete.
+     * @return A [Result] indicating the outcome of the deletion.
+     */
     suspend fun deleteFeedMessage(messageId: String): Result<Unit>
 }
 
+/**
+ * Implementation of [FeedRepository] that utilizes [KurozoraApiClient] for
+ * social timeline management and message interactions.
+ *
+ * @property apiClient The client used to execute requests against the feed and social networking endpoints.
+ */
 open class FeedRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : FeedRepository {

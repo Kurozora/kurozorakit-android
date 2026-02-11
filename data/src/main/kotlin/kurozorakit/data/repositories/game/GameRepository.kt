@@ -30,25 +30,132 @@ import kurozorakit.data.models.studio.StudioResponse
 import kurozorakit.shared.Result
 import java.util.*
 
+/**
+ * Data repository responsible for managing and retrieving video game information.
+ *
+ * This repository serves as the central hub for video game metadata, including
+ * release schedules, character rosters, production staff, and cross-media
+ * relationships (e.g., anime or manga adaptations of a game).
+ */
 interface GameRepository {
-    // Basic operations
+
+    /**
+     * Retrieves a paginated list of games, optionally filtered by specific criteria.
+     *
+     * @param next Pagination cursor for the next set of results.
+     * @param limit The maximum number of games to return.
+     * @param filter Optional [GameFilter] to narrow down results (e.g., by genre, platform, or year).
+     * @return A [Result] containing the [GameIdentityResponse].
+     */
     suspend fun getGames(next: String? = null, limit: Int = 20, filter: GameFilter? = null): Result<GameIdentityResponse>
+
+    /**
+     * Fetches detailed information for a specific game.
+     *
+     * @param id The unique identifier of the game.
+     * @param relationships A list of related data to include in the response (e.g., "genres", "platforms").
+     * @return A [Result] containing the [GameResponse].
+     */
     suspend fun getGame(id: String, relationships: List<String> = emptyList<String>()): Result<GameResponse>
+
+    /**
+     * Retrieves a list of games scheduled for future release.
+     *
+     * @param next Pagination cursor.
+     * @param limit Maximum number of records.
+     * @return A [Result] containing the [GameIdentityResponse].
+     */
     suspend fun getUpcomingGames(next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
-    // Related content
+
+    /**
+     * Retrieves the voice cast associated with a specific game.
+     *
+     * @param gameId The unique ID of the game.
+     * @return A [Result] containing the [CastResponse].
+     */
     suspend fun getGameCast(gameId: String, next: String? = null, limit: Int = 20): Result<CastResponse>
+
+    /**
+     * Fetches the development staff and key personnel for a game.
+     *
+     * @param gameId The unique ID of the game.
+     * @return A [Result] containing the [StaffIdentityResponse].
+     */
     suspend fun getGameStaff(gameId: String, next: String? = null, limit: Int = 20): Result<StaffIdentityResponse>
+
+    /**
+     * Retrieves the characters featured in a specific game.
+     *
+     * @param gameId The unique ID of the game.
+     * @return A [Result] containing the [CharacterIdentityResponse].
+     */
     suspend fun getGameCharacters(gameId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
+
+    /**
+     * Retrieves user-written reviews for a specific game.
+     *
+     * @param gameId The unique ID of the game.
+     * @return A [Result] containing the [ReviewResponse].
+     */
     suspend fun getGameReviews(gameId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
+
+    /**
+     * Fetches the game studios (developers/publishers) involved with the game.
+     *
+     * @param gameId The unique ID of the game.
+     * @return A [Result] containing the [StudioResponse].
+     */
     suspend fun getGameStudios(gameId: String, next: String? = null, limit: Int = 20): Result<StudioResponse>
+
+    /**
+     * Retrieves other games developed or published by the same studios.
+     *
+     * @param gameId The reference game ID used to identify the studio.
+     * @return A [Result] containing the [GameIdentityResponse].
+     */
     suspend fun getMoreByStudio(gameId: String, next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
+
+    /**
+     * Fetches shows (Anime/TV) that are related to or adapted from this game.
+     *
+     * @param gameId The unique ID of the game.
+     * @return A [Result] containing the [RelatedShowResponse].
+     */
     suspend fun getRelatedShows(gameId: String, next: String? = null, limit: Int = 20): Result<RelatedShowResponse>
+
+    /**
+     * Fetches literature (Manga/Novels) related to or adapted from this game.
+     *
+     * @param gameId The unique ID of the game.
+     * @return A [Result] containing the [RelatedLiteratureResponse].
+     */
     suspend fun getRelatedLiteratures(gameId: String, next: String? = null, limit: Int = 20): Result<RelatedLiteratureResponse>
+
+    /**
+     * Retrieves other games that are part of the same franchise or series.
+     *
+     * @param gameId The unique ID of the game.
+     * @return A [Result] containing the [RelatedGameResponse].
+     */
     suspend fun getRelatedGames(gameId: String, next: String? = null, limit: Int = 20): Result<RelatedGameResponse>
-    // Rating
+
+    /**
+     * Submits or updates a user's rating and optional review for a game.
+     *
+     * @param gameId The unique ID of the game.
+     * @param rating The numerical score given by the user.
+     * @param review An optional text-based review.
+     * @return A [Result] indicating the outcome of the operation.
+     */
     suspend fun rateGame(gameId: String, rating: Double, review: String? = null): Result<Unit>
 }
 
+/**
+ * Implementation of [GameRepository] that utilizes [KurozoraApiClient] to
+ * manage video game content and social data.
+ *
+ * @property apiClient The client used to communicate with the game and relationship endpoints.
+ */
 open class GameRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : GameRepository {

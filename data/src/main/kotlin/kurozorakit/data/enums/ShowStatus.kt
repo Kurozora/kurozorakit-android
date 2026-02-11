@@ -1,21 +1,34 @@
 package kurozorakit.data.enums
 
 /**
- * Show status enum
+ * Represents the production and broadcast state of an animated series or movie.
+ *
+ * This enum is essential for the scheduling system, determining whether a show
+ * appears in the "Airing Today" section or is marked as completed in a user's library.
+ *
+ * @property rawValue The unique integer identifier for the show status.
  */
 enum class ShowStatus(val rawValue: Int) {
-    // Cases
+    /** The project is confirmed, but no broadcast window has been revealed. */
     TO_BE_ANNOUNCED(1),
+
+    /** The show has a set premiere date but has not yet started broadcasting. */
     NOT_AIRING_YET(2),
+
+    /** The show is currently broadcasting new episodes (Simulcast). */
     CURRENTLY_AIRING(3),
+
+    /** The series has completed its scheduled run. */
     FINISHED_AIRING(4),
+
+    /** The broadcast is temporarily paused but is expected to resume. */
     ON_HIATUS(5),
+
+    /** The show was cancelled or stopped indefinitely before completion. */
     DISCONTINUED(18);
 
-    // Properties
-
     /**
-     * The display name value of a show status.
+     * The human-readable label for the broadcast status.
      */
     val displayName: String
         get() = when (this) {
@@ -29,7 +42,7 @@ enum class ShowStatus(val rawValue: Int) {
 
     companion object {
         /**
-         * Returns all cases of ShowStatus
+         * Returns an array containing all defined [ShowStatus] constants.
          */
         val allCases: Array<ShowStatus>
             get() = entries.toTypedArray()

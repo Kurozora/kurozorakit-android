@@ -17,6 +17,19 @@ import kurozorakit.data.models.user.update.UserUpdate
 import kurozorakit.data.models.user.update.block.BlockUpdate
 import kurozorakit.data.models.user.update.follow.FollowUpdate
 
+/**
+ * Represents a Kurozora user account.
+ * * This model encapsulates user identity, profile details, social status (following/blocking),
+ * and platform-specific perks like Pro or Staff status. It also acts as the central
+ * session controller via the [current] singleton.
+ *
+ * @property id The unique numeric ID of the user.
+ * @property uuid The universally unique identifier for the user.
+ * @property type The resource type, typically "users".
+ * @property href The canonical API link to the user's profile.
+ * @property attributes Detailed profile data, preferences, and permissions.
+ * @property relationships Connections to achievements and authentication tokens.
+ */
 @Serializable
 data class User(
     override val id: String,
@@ -26,22 +39,45 @@ data class User(
     val attributes: Attributes,
     val relationships: Relationships? = null
 ) : IdentityResource {
+
     companion object {
+        /** The currently authenticated user instance. */
         var current: User? = null
-        val isSignedIn: Boolean
-            get() = current != null
-        val isPro: Boolean
-            get() = current?.attributes?.isPro ?: false
-        val isSubscribed: Boolean
-            get() = current?.attributes?.isSubscribed ?: false
+
+        /** Checks if a user session is active. */
+        val isSignedIn: Boolean get() = current != null
+
+        /** Checks if the current user has 'Pro' status. */
+        val isPro: Boolean get() = current?.attributes?.isPro ?: false
+
+        /** Checks if the current user has an active subscription. */
+        val isSubscribed: Boolean get() = current?.attributes?.isSubscribed ?: false
     }
 
+    /** Updates the core visual details of the current user instance. */
     fun updateDetails(with: User) {
         attributes.profile = with.attributes.profile
         attributes.banner = with.attributes.banner
         attributes.biography = with.attributes.biography
     }
 
+    /**
+     * User profile attributes and metadata.
+     * * @property slug URL-friendly identifier for the user.
+     * @property username Display name of the user.
+     * @property email User's email address (usually private/null for others).
+     * @property siwaIsEnabled Indicates if 'Sign in with Apple' is active.
+     * @property biography Short bio written by the user.
+     * @property activityStatus The user's online presence (e.g., Online, Away).
+     * @property profile Avatar image resource.
+     * @property banner Profile background image resource.
+     * @property isStaff True if the user is a Kurozora staff member.
+     * @property isPro True if the user has purchased a Pro membership.
+     * @property isSubscribed True if the user has an active recurring subscription.
+     * @property joinedAt The date the account was created.
+     * @property followerCount Number of users following this person.
+     * @property followStatus Social relationship status relative to the current user.
+     */
     @Serializable
     data class Attributes(
         var slug: String,
@@ -73,36 +109,22 @@ data class User(
         var preferredTimezone: String? = null,
         val canChangeUsername: Boolean? = null,
         val role: UserRole? = null,
-        @SerialName("isBlocked")
-        private val isBlocked: Boolean? = null,
-        @SerialName("_blockStatus")
-        private var _blockStatus: BlockStatus? = null,
-        @SerialName("isFollowed")
-        private val isFollowed: Boolean? = null,
-        @SerialName("_followStatus")
-        private var _followStatus: FollowStatus? = null
+        @SerialName("isBlocked") private val isBlocked: Boolean? = null,
+        @SerialName("_blockStatus") private var _blockStatus: BlockStatus? = null,
+        @SerialName("isFollowed") private val isFollowed: Boolean? = null,
+        @SerialName("_followStatus") private var _followStatus: FollowStatus? = null
     ) {
+        /** Safe accessor for the block status, reconciling boolean and enum fields. */
         var blockStatus: BlockStatus
             get() = _blockStatus ?: BlockStatus.fromBoolean(isBlocked)
             set(value) { _blockStatus = value }
 
+        /** Safe accessor for the follow status, reconciling boolean and enum fields. */
         var followStatus: FollowStatus
             get() = _followStatus ?: FollowStatus.fromBoolean(isFollowed)
             set(value) { _followStatus = value }
 
-        fun update(using: BlockUpdate) {
-            blockStatus = using.blockStatus
-        }
-
-        fun updated(using: BlockUpdate): Attributes =
-            copy().also { it.blockStatus = using.blockStatus }
-
-        fun update(using: FollowUpdate) {
-            followStatus = using.followStatus
-        }
-
-        fun updated(using: FollowUpdate): Attributes =
-            copy().also { it.followStatus = using.followStatus }
+        // --- Update Helper Methods ---
 
         fun update(using: UserUpdate) {
             slug = using.username.toString()
@@ -114,18 +136,6 @@ data class User(
             preferredTVRating = using.preferredTVRating
             preferredTimezone = using.preferredTimezone
         }
-
-        fun updated(using: UserUpdate): Attributes =
-            copy().also {
-                it.slug = using.username.toString()
-                it.username = using.nickname.toString()
-                it.biography = using.biography
-                it.profile = using.profile
-                it.banner = using.banner
-                it.preferredLanguage = using.preferredLanguage
-                it.preferredTVRating = using.preferredTVRating
-                it.preferredTimezone = using.preferredTimezone
-            }
 
         fun updateSubscription(from: Receipt) {
             val valid = from.attributes.isValid

@@ -24,7 +24,12 @@ import kurozorakit.data.enums.KKLibrary
 import kurozorakit.data.models.user.update.block.BlockInfo
 import kurozorakit.data.models.user.update.block.BlockInfoOrBoolean
 
-// Custom Serializer for LocalDate from/to Timestamp (Long)
+/**
+ * Serializer that converts a [LocalDate] to and from a Unix timestamp (Long).
+ * * * **Serialization:** Converts a [LocalDate] to the start of that day in UTC and encodes it as seconds.
+ * * **Deserialization:** Accepts a Long representing epoch seconds, converting it back to a [LocalDate].
+ * Returns `null` if the timestamp is 0 or negative.
+ */
 object LocalDateSerializer : KSerializer<LocalDate?> {
 
     override val descriptor: SerialDescriptor =
@@ -37,40 +42,47 @@ object LocalDateSerializer : KSerializer<LocalDate?> {
         }
 
         val instant = value.atStartOfDayIn(TimeZone.UTC)
-        encoder.encodeLong(instant.toEpochMilliseconds() / 1000) // saniye olarak encode ediyorsan
+        encoder.encodeLong(instant.toEpochMilliseconds() / 1000)
     }
 
     override fun deserialize(decoder: Decoder): LocalDate? {
         val timestamp = decoder.decodeLong()
-        if (timestamp <= 0) return null
+        if (timestamp <= 0L) return null
 
-        // Backend saniye gönderiyor → epoch MILLIseconds istiyor → ×1000
         val millis = timestamp * 1000
-
         return Instant.fromEpochMilliseconds(millis)
             .toLocalDateTime(TimeZone.UTC)
             .date
     }
 }
 
+/**
+ * Serializer for [Instant] that specifically targets 10-digit Unix epoch seconds.
+ * * Used when the backend strictly communicates in seconds rather than the default
+ * ISO-8601 strings or milliseconds.
+ */
 object InstantAsEpochSecondsSerializer : KSerializer<Instant> {
 
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("Instant", PrimitiveKind.LONG)
 
     override fun serialize(encoder: Encoder, value: Instant) {
-        // Instant → seconds (10-digit)
-        val seconds = value.epochSeconds
-        encoder.encodeLong(seconds)
+        encoder.encodeLong(value.epochSeconds)
     }
 
     override fun deserialize(decoder: Decoder): Instant {
         val seconds = decoder.decodeLong()
-        // Backend saniye gönderiyor → Instant.ofEpochSeconds kullanıyoruz
         return Instant.fromEpochSeconds(seconds)
     }
 }
 
+/**
+ * A highly resilient serializer for [Instant] that handles multiple incoming string formats.
+ * * This is useful for inconsistent APIs that might return:
+ * 1. **Time only:** "00:00" (returns null).
+ * 2. **Numeric String:** "1700000000" (treated as epoch seconds).
+ * 3. **ISO String:** "2023-11-22T10:00:00Z" (parsed normally).
+ */
 object FlexibleInstantSerializer : KSerializer<Instant?> {
 
     override val descriptor: SerialDescriptor =
@@ -79,17 +91,14 @@ object FlexibleInstantSerializer : KSerializer<Instant?> {
     override fun deserialize(decoder: Decoder): Instant? {
         val raw = decoder.decodeString()
 
-        // Case 1: "00:00" — only time provided, no date → cannot convert to Instant
         if (raw.matches(Regex("""^\d{2}:\d{2}$"""))) {
-            return null // veya default behavior
+            return null
         }
 
-        // Case 2: number as string → epoch seconds
         if (raw.matches(Regex("""^\d+$"""))) {
             return Instant.fromEpochSeconds(raw.toLong())
         }
 
-        // Case 3: ISO string
         return try {
             Instant.parse(raw)
         } catch (e: Exception) {
@@ -102,6 +111,10 @@ object FlexibleInstantSerializer : KSerializer<Instant?> {
     }
 }
 
+/**
+ * Maps an integer status code from the API to the [KKLibrary.Status] enum.
+ * * @see KKLibrary.Status.fromInt
+ */
 object IntEnumSerializer : KSerializer<KKLibrary.Status> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("LibraryStatus", PrimitiveKind.INT)
@@ -116,6 +129,12 @@ object IntEnumSerializer : KSerializer<KKLibrary.Status> {
     }
 }
 
+/**
+ * Handles an API quirk where a list of URLs is returned as a JSON Map/Object
+ * (with indices as keys) instead of a JSON Array.
+ * * **Example Input:** `{"0": "url1", "1": "url2"}`
+ * **Output:** `List<String>("url1", "url2")`
+ */
 object WebsiteURLsAsListSerializer : KSerializer<List<String>> {
     override val descriptor: SerialDescriptor =
         MapSerializer(String.serializer(), String.serializer()).descriptor
@@ -133,6 +152,12 @@ object WebsiteURLsAsListSerializer : KSerializer<List<String>> {
     }
 }
 
+/**
+ * A polymorphic serializer for the [BlockInfoOrBoolean] union type.
+ * * Since the `isBlocked` field in the API can be either a simple [Boolean] or a full
+ * [JsonObject] ([BlockInfo]), this serializer dynamically inspects the JSON element
+ * type to determine which subclass of [BlockInfoOrBoolean] to instantiate.
+ */
 object BlockedUnionSerializer : KSerializer<BlockInfoOrBoolean> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BlockedUnion")
 
@@ -161,4 +186,3 @@ object BlockedUnionSerializer : KSerializer<BlockInfoOrBoolean> {
         }
     }
 }
-

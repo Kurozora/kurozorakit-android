@@ -5,25 +5,39 @@ import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.explore.ExploreCategoryResponse
 import kurozorakit.shared.Result
 
+/**
+ * Data repository responsible for retrieving discovery-based content and curated lists.
+ *
+ * This repository manages the "Explore" functionality, which provides users with
+ * hand-picked media, staff recommendations, and content filtered by specific
+ * genres or themes. It supports both high-level category overviews and deep
+ * pagination for specific collections.
+ */
 interface ExploreRepository {
+
     /**
-     * Fetch the explore page content. Explore page can be filtered by a specific genre by passing the genre id.
+     * Fetches the primary explore page content or a filtered view of categories.
      *
-     * Leaving the genreId and themeId empty or passing null will return the global explore page
-     * which contains hand picked and staff curated shows.
+     * Providing no parameters returns the global explore page, featuring staff-curated
+     * selections. If identifiers are provided, it filters the explore content
+     * specifically for that category.
      *
-     * @param genreId The id of a genre by which the explore page should be filtered.
-     * @param themeId The id of a theme by which the explore page should be filtered.
+     * @param genreId The unique identifier of a genre to filter the curated content.
+     * @param themeId The unique identifier of a theme to filter the curated content.
+     * @return A [Result] containing the [ExploreCategoryResponse] with a list of curated categories.
      */
     suspend fun getExplore(genreId: String? = null, themeId: String? = null): Result<ExploreCategoryResponse>
 
     /**
-     * Fetch the content of an explore category.
+     * Retrieves the specific media items contained within a particular explore category.
      *
-     * @param exploreCategoryId The id of a explore category for which the content is fetched.
-     * @param next The URL string of the next page in the paginated response. Use null to get first page.
-     * @param limit The limit on the number of objects, or number of objects in the specified relationship,
-     *              that are returned. The default value is 5 and the maximum value is 25.
+     * Used when a user selects a "See More" option or expands a specific category
+     * (e.g., "Trending Now") to view its full paginated contents.
+     *
+     * @param exploreCategoryId The unique ID of the explore category to fetch content for.
+     * @param next Pagination cursor for the next set of items in the category.
+     * @param limit The number of items to return; defaults to 5, maximum allowed is 25.
+     * @return A [Result] containing the [ExploreCategoryResponse] with detailed items for the category.
      */
     suspend fun getExplore(
         exploreCategoryId: String,
@@ -32,6 +46,12 @@ interface ExploreRepository {
     ): Result<ExploreCategoryResponse>
 }
 
+/**
+ * Implementation of [ExploreRepository] that utilizes [KurozoraApiClient] to fetch
+ * discovery data and curated content recommendations.
+ *
+ * @property apiClient The client used to communicate with the curated content and discovery endpoints.
+ */
 open class ExploreRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : ExploreRepository {

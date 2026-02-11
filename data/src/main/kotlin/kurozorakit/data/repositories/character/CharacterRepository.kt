@@ -19,21 +19,101 @@ import kurozorakit.data.models.show.ShowIdentityResponse
 import kurozorakit.shared.Result
 import java.util.*
 
+ /**
+  * Data repository responsible for managing and retrieving character-related information.
+  *
+  * This repository handles requests for character profiles, their appearances across
+  * various media (shows, literature, games), the real-life people associated with them
+  * (voice actors/models), and user-generated ratings or reviews.
+  */
  interface CharacterRepository {
-    // Basic operations
-    suspend fun getCharacters(next: String? = null, limit: Int = 20, filter: CharacterFilter? = null): Result<CharacterIdentityResponse>
-    suspend fun getCharacter(characterId: String, relationships: List<String> = emptyList<String>()): Result<CharacterResponse>
-    // Related content
-    suspend fun getCharacterPeople(characterId: String, next: String? = null, limit: Int = 20): Result<PersonIdentityResponse>
-    suspend fun getCharacterShows(characterId: String, next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
-    suspend fun getCharacterLiteratures(characterId: String, next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
-    suspend fun getCharacterGames(characterId: String, next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
-    suspend fun getCharacterReviews(characterId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
-    // Rating
-    suspend fun rateCharacter(characterId: String, rating: Double, review: String? = null): Result<Unit>
-    suspend fun deleteCharacterRating(characterId: String): Result<Unit>
-}
 
+     /**
+      * Retrieves a paginated list of characters, optionally filtered by specific criteria.
+      *
+      * @param next Pagination cursor for the next set of characters.
+      * @param limit The maximum number of characters to return per request.
+      * @param filter Optional [CharacterFilter] to narrow down results (e.g., by gender or role).
+      * @return A [Result] containing the [CharacterIdentityResponse].
+      */
+     suspend fun getCharacters(next: String? = null, limit: Int = 20, filter: CharacterFilter? = null): Result<CharacterIdentityResponse>
+
+     /**
+      * Fetches detailed information for a specific character.
+      *
+      * @param characterId The unique identifier of the character.
+      * @param relationships A list of related data to include in the response (e.g., "media", "quotes").
+      * @return A [Result] containing the [CharacterResponse].
+      */
+     suspend fun getCharacter(characterId: String, relationships: List<String> = emptyList<String>()): Result<CharacterResponse>
+
+     /**
+      * Retrieves the people (e.g., voice actors, motion capture actors) associated with a character.
+      *
+      * @param characterId The unique identifier of the character.
+      * @param next Pagination cursor.
+      * @param limit Maximum number of records.
+      * @return A [Result] containing the [PersonIdentityResponse].
+      */
+     suspend fun getCharacterPeople(characterId: String, next: String? = null, limit: Int = 20): Result<PersonIdentityResponse>
+
+     /**
+      * Fetches the list of shows (Anime, TV, etc.) in which this character appears.
+      *
+      * @param characterId The unique identifier of the character.
+      * @return A [Result] containing the [ShowIdentityResponse].
+      */
+     suspend fun getCharacterShows(characterId: String, next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
+
+     /**
+      * Fetches the list of literature (Manga, Light Novels, etc.) in which this character appears.
+      *
+      * @param characterId The unique identifier of the character.
+      * @return A [Result] containing the [LiteratureIdentityResponse].
+      */
+     suspend fun getCharacterLiteratures(characterId: String, next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
+
+     /**
+      * Fetches the list of video games in which this character appears.
+      *
+      * @param characterId The unique identifier of the character.
+      * @return A [Result] containing the [GameIdentityResponse].
+      */
+     suspend fun getCharacterGames(characterId: String, next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
+
+     /**
+      * Retrieves user-written reviews for a specific character.
+      *
+      * @param characterId The unique identifier of the character.
+      * @return A [Result] containing the [ReviewResponse].
+      */
+     suspend fun getCharacterReviews(characterId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
+
+     /**
+      * Submits or updates a user's rating and optional review for a character.
+      *
+      * @param characterId The unique identifier of the character.
+      * @param rating The numerical score given by the user.
+      * @param review An optional text-based review.
+      * @return A [Result] indicating the outcome of the operation.
+      */
+     suspend fun rateCharacter(characterId: String, rating: Double, review: String? = null): Result<Unit>
+
+     /**
+      * Removes the user's rating and review for a specific character.
+      *
+      * @param characterId The unique identifier of the character.
+      * @return A [Result] indicating the outcome of the operation.
+      */
+     suspend fun deleteCharacterRating(characterId: String): Result<Unit>
+ }
+
+ /**
+  * Implementation of [CharacterRepository] that utilizes [KurozoraApiClient] for
+  * character data management and social interaction.
+  *
+  * @property apiClient The client used to communicate with character and rating endpoints.
+  */
 open class CharacterRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : CharacterRepository {

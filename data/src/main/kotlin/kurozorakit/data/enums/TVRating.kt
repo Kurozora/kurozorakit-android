@@ -1,20 +1,38 @@
 package kurozorakit.data.enums
 
 /**
- * TV rating enum
+ * Defines the age-appropriateness and content maturity levels for media.
+ *
+ * This classification is used to filter content globally across the platform.
+ * High-maturity ratings (R15+ and R18+) trigger safety warnings and may be
+ * hidden based on user profile settings or local regulations.
+ *
+ * @property rawValue The unique integer identifier for the rating level.
  */
 enum class TVRating(val rawValue: Int) {
-    // Cases
+    /** The content has not been officially rated or the rating is pending. */
     NOT_RATED(1),
+
+    /** Suitable for all audiences. Contains little to no violence or strong language. */
     ALL_AGES(2),
+
+    /** * Parental Guidance Suggested.
+     * May contain mild themes or imagery that requires adult supervision for younger viewers.
+     */
     PG_12(3),
+
+    /** * Restricted 15+.
+     * Contains significant violence, profanity, or mature themes. Not suitable for minors.
+     */
     R_15(4),
+
+    /** * Adults Only 18+.
+     * Contains explicit content intended solely for adult audiences.
+     */
     R_18(5);
 
-    // Properties
-
     /**
-     * The name of a TV rating.
+     * The standard abbreviated label for the rating (e.g., "G", "PG-12").
      */
     val displayName: String
         get() = when (this) {
@@ -26,7 +44,7 @@ enum class TVRating(val rawValue: Int) {
         }
 
     /**
-     * The description of a TV rating.
+     * A brief explanation of the rating's content restrictions.
      */
     val description: String
         get() = when (this) {
@@ -38,7 +56,8 @@ enum class TVRating(val rawValue: Int) {
         }
 
     /**
-     * Whether a TV rating is not safe for work.
+     * Indicates if the content is classified as "Not Safe For Work" or highly mature.
+     * When `true`, the UI should blur thumbnails or require explicit consent to view.
      */
     val isNSFW: Boolean
         get() = when (this) {
@@ -51,7 +70,7 @@ enum class TVRating(val rawValue: Int) {
 
     companion object {
         /**
-         * Returns all cases of TVRating
+         * Returns an array containing all defined [TVRating] constants.
          */
         val allCases: Array<TVRating>
             get() = entries.toTypedArray()

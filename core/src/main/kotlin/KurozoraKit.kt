@@ -63,8 +63,11 @@ import kurozorakit.data.repositories.user.UserRepository
 import kurozorakit.data.repositories.user.UserRepositoryImpl
 
 /**
- * Main entry point for the KurozoraKit library.
- * This class provides access to all the functionality of the library.
+ * The main entry point for the KurozoraKit library.
+ *
+ * This class acts as a facade, providing a unified access point to all repositories and features
+ * within the Kurozora ecosystem. It should be initialized using the [Builder] class to configure
+ * API keys, platform details, and caching mechanisms.
  */
 class KurozoraKit private constructor(
     private val apiClient: KurozoraApiClient,
@@ -95,129 +98,79 @@ class KurozoraKit private constructor(
     private val airSeasonRepository: AirSeasonRepository,
 ) {
 
-    /**
-     * Access to the show repository.
-     */
+    /** Provides access to Anime (Show) related data and operations. */
     fun show(): ShowRepository = showRepository
 
-    /**
-     * Access to the literature repository.
-     */
+    /** Provides access to Literature (Manga/Novels) related data and operations. */
     fun literature(): LiteratureRepository = literatureRepository
 
-    /**
-     * Access to the game repository.
-     */
+    /** Provides access to Game related data and operations. */
     fun game(): GameRepository = gameRepository
 
-    /**
-     * Access to the character repository.
-     */
+    /** Provides access to fictional Character data and biographies. */
     fun character(): CharacterRepository = characterRepository
 
-    /**
-     * Access to the person repository.
-     */
+    /** Provides access to People (Voice Actors, Staff) related data. */
     fun people(): PersonRepository = personRepository
 
-    /**
-     * Access to the studio repository.
-     */
+    /** Provides access to production Studios and Publisher information. */
     fun studio(): StudioRepository = studioRepository
 
-    /**
-     * Access to the genre repository.
-     */
+    /** Provides access to Genre and category listings. */
     fun genre(): GenreRepository = genreRepository
 
-    /**
-     * Access to the auth repository.
-     */
+    /** Handles authentication tasks such as Sign In, Sign Up, and account recovery. */
     fun auth(): AuthRepository = authRepository
 
-    /**
-     * Access to the user repository.
-     */
+    /** Manages User profiles, libraries, and social interactions. */
     fun user(): UserRepository = userRepository
 
-    /**
-     * Access to the search repository.
-     */
+    /** Provides global search functionality across all media types. */
     fun search(): SearchRepository = searchRepository
 
-    /**
-     * Access to the cast repository.
-     */
+    /** Manages Cast and staff listings for specific media items. */
     fun cast(): CastRepository = castRepository
 
-    /**
-     * Access to the episode repository.
-     */
+    /** Provides access to Episode-specific details and tracking. */
     fun episode(): EpisodeRepository = episodeRepository
 
-    /**
-     * Access to the explore repository.
-     */
+    /** Accesses curated content and discovery feeds. */
     fun explore(): ExploreRepository = exploreRepository
 
-    /**
-     * Access to the feed repository.
-     */
+    /** Manages the social activity feed and user posts. */
     fun feed(): FeedRepository = feedRepository
 
-    /**
-     * Access to the image repository.
-     */
+    /** Provides access to image resources and random media. */
     fun image(): ImageRepository = imageRepository
 
-    /**
-     * Access to the legal repository.
-     */
+    /** Accesses legal documents like Privacy Policy and Terms of Use. */
     fun legal(): LegalRepository = legalRepository
 
-    /**
-     * Access to the misc repository.
-     */
+    /** Accesses general system information and application settings. */
     fun misc(): MiscRepository = miscRepository
 
-    /**
-     * Access to the review repository.
-     */
+    /** Manages user Reviews and ratings for various media. */
     fun review(): ReviewRepository = reviewRepository
 
-    /**
-     * Access to the schedule repository.
-     */
+    /** Provides access to airing schedules and release dates. */
     fun schedule(): ScheduleRepository = scheduleRepository
 
-    /**
-     * Access to the season repository.
-     */
+    /** Accesses media organized by calendar seasons (e.g., Summer 2024). */
     fun season(): SeasonRepository = seasonRepository
 
-    /**
-     * Access to the song repository.
-     */
+    /** Accesses Song data, including OSTs, Openings, and Endings. */
     fun song(): SongRepository = songRepository
 
-    /**
-     * Access to the store repository.
-     */
+    /** Manages Store-related operations and purchase verification. */
     fun store(): StoreRepository = storeRepository
 
-    /**
-     * Access to the theme repository.
-     */
+    /** Accesses UI themes and styling data. */
     fun theme(): ThemeRepository = themeRepository
 
-    /**
-     * Access to the theme store repository.
-     */
+    /** Accesses the theme marketplace for browsing and acquiring new themes. */
     fun themeStore(): ThemeStoreRepository = themeStoreRepository
 
-    /**
-     * Access to the air season repository.
-     */
+    /** Provides information about seasonal airing status. */
     fun airSeason(): AirSeasonRepository = airSeasonRepository
 
     companion object {
@@ -228,7 +181,10 @@ class KurozoraKit private constructor(
     }
 
     /**
-     * Builder class for creating a KurozoraKit instance.
+     * Builder class for constructing a [KurozoraKit] instance with custom configuration.
+     *
+     * Use this class to define the environment, credentials, and performance settings
+     * before initializing the library.
      */
     class Builder {
         private var apiEndpoint: String = KurozoraApi.V1.baseUrl
@@ -240,74 +196,80 @@ class KurozoraKit private constructor(
         private var maxBackoffDelayMs: Long = 30000
         private var backoffFactor: Double = 2.0
         private var userAgent: UserAgent = UserAgent()
-        // cache
         private var cacheManager: CacheManager? = null
         private lateinit var platform: Platform
 
         /**
-         * Sets the API endpoint.
+         * Sets the base API endpoint URL. Defaults to [KurozoraApi.V1.baseUrl].
          */
         fun apiEndpoint(apiEndpoint: String) = apply { this.apiEndpoint = apiEndpoint }
 
         /**
-         * Sets the API key.
+         * Sets the API Key required for authenticating requests.
          */
         fun apiKey(apiKey: String) = apply { this.apiKey = apiKey }
 
         /**
-         * Sets the Platform
+         * Sets the [Platform] implementation providing device-specific info.
          */
         fun platform(platform: Platform) = apply { this.platform = platform }
 
         /**
-         * Sets the token provider.
+         * Sets a custom [TokenProvider] for managing authentication tokens.
          */
         fun tokenProvider(tokenProvider: TokenProvider) = apply { this.tokenProvider = tokenProvider }
 
         /**
-         * Sets the log level.
+         * Configures the library's internal logging level.
          */
         fun logLevel(level: LogLevel) = apply { this.logLevel = level }
 
         /**
-         * Sets the maximum number of retries for API requests.
+         * Configures the maximum number of retries for failed network requests.
          */
         fun maxRetries(retries: Int) = apply { this.maxRetries = retries }
 
         /**
-         * Sets the initial backoff delay in milliseconds for retries.
+         * Sets the starting delay for exponential backoff during retries.
          */
         fun initialBackoffDelayMs(delay: Long) = apply { this.initialBackoffDelayMs = delay }
 
         /**
-         * Sets the maximum backoff delay in milliseconds for retries.
+         * Sets the maximum upper limit for backoff delay during retries.
          */
         fun maxBackoffDelayMs(delay: Long) = apply { this.maxBackoffDelayMs = delay }
 
         /**
-         * Sets the backoff factor for retries.
+         * Sets the multiplier for the exponential backoff logic.
          */
         fun backoffFactor(factor: Double) = apply { this.backoffFactor = factor }
 
+        /**
+         * Configures a [CacheManager] to handle local data caching.
+         */
         fun cacheManager(cacheManager: CacheManager) = apply { this.cacheManager = cacheManager }
 
         /**
-         * Sets the User Agent
+         * Sets a custom [UserAgent] to be sent with every request.
          */
         fun userAgent(userAgent: UserAgent) = apply { this.userAgent = userAgent }
 
         /**
-         * Builds a new KurozoraKit instance.
+         * Finalizes the configuration and returns a fully initialized [KurozoraKit] instance.
+         *
+         * This method sets up the logging system, initializes the HTTP client,
+         * and wires up all internal repositories.
+         * * @throws UninitializedPropertyAccessException if [platform] is not set.
          */
         fun build(): KurozoraKit {
-            // Set up logging
+            // Initialize logging infrastructure
             val logger = CompositeLogger(
                 listOf(ConsoleLogger(logLevel)),
                 logLevel
             )
             KurozoraLogger.setLogger(logger)
 
-            // Create the API client
+            // Initialize the shared API client
             val apiClient = KurozoraApiClient(
                 baseUrl = apiEndpoint,
                 apiKey = apiKey,
@@ -317,7 +279,7 @@ class KurozoraKit private constructor(
                 userAgent = userAgent,
             )
 
-            // Create all repositories
+            // Instantiate repository implementations
             val showRepository = ShowRepositoryImpl(apiClient)
             val literatureRepository = LiteratureRepositoryImpl(apiClient)
             val gameRepository = GameRepositoryImpl(apiClient)

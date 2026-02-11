@@ -23,27 +23,154 @@ import kurozorakit.data.models.user.update.block.BlockUpdateResponse
 import kurozorakit.data.models.user.update.follow.FollowUpdateResponse
 import kurozorakit.shared.Result
 
+/**
+ * Data repository responsible for authentication and user-related operations.
+ *
+ * This repository serves as the primary gateway for user identity management,
+ * including registration, session handling, social login, and comprehensive
+ * profile-related data retrieval such as follows, blocks, and library contents.
+ */
 interface AuthRepository {
+
+    /**
+     * Registers a new user account.
+     *
+     * @param username The unique display name for the user.
+     * @param email The user's email address.
+     * @param password The secure password for the account.
+     * @param profileImage Optional byte array for the user's initial avatar.
+     * @return A [Result] indicating success or failure of the registration.
+     */
     suspend fun signUp(username: String, email: String, password: String, profileImage: ByteArray? = null): Result<Unit>
+
+    /**
+     * Authenticates a user using email and password credentials.
+     *
+     * @param email The registered email address.
+     * @param password The account password.
+     * @return A [Result] containing the [SignInResponse] with session tokens.
+     */
     suspend fun signIn(email: String, password: String): Result<SignInResponse>
+
+    /**
+     * Performs authentication using Apple's OAuth identity provider.
+     *
+     * @param identityToken The JSON Web Token (JWT) provided by Apple.
+     * @param authorizationCode The short-lived code used for server-side validation.
+     * @return A [Result] containing the [OAuthResponse].
+     */
     suspend fun signInWithApple(identityToken: String, authorizationCode: String): Result<OAuthResponse>
+
+    /**
+     * Initiates a password recovery process for the specified email.
+     *
+     * @param email The email address associated with the account.
+     * @return A [Result] confirming if the reset email was triggered.
+     */
     suspend fun resetPassword(email: String): Result<Unit>
+
+    /**
+     * Retrieves a list of users based on a specific relationship type.
+     *
+     * @param userId The ID of the target user.
+     * @param followList The type of list to fetch (e.g., Followers or Following).
+     * @param next Pagination cursor for the next set of results.
+     * @param limit The maximum number of records to return.
+     * @return A [Result] containing the [UserIdentityResponse].
+     */
     suspend fun getFollowList(userId: String, followList: UsersListType, next: String? = null, limit: Int = 25): Result<UserIdentityResponse>
+
+    /**
+     * Toggles the follow status (Follow/Unfollow) for a specific user.
+     *
+     * @param userId The ID of the user to follow or unfollow.
+     * @return A [Result] containing the updated [FollowUpdateResponse].
+     */
     suspend fun updateFollowStatus(userId: String): Result<FollowUpdateResponse>
+
+    /**
+     * Toggles the block status for a specific user.
+     *
+     * @param userId The ID of the user to block or unblock.
+     * @return A [Result] containing the updated [BlockUpdateResponse].
+     */
     suspend fun updateBlockStatus(userId: String): Result<BlockUpdateResponse>
-    // User operations
+
+    /**
+     * Fetches the list of users currently blocked by the authenticated user.
+     *
+     * @param userId The ID of the requester.
+     * @param next Pagination cursor.
+     * @param limit Maximum number of records.
+     * @return A [Result] containing the [UserIdentityResponse].
+     */
     suspend fun getBlockedUsers(userId: String, next: String? = null, limit: Int = 20): Result<UserIdentityResponse>
+
+    /**
+     * Retrieves personal feed messages or status updates for a specific user.
+     *
+     * @param userId The ID of the user whose feed is being viewed.
+     * @return A [Result] containing the [FeedMessageResponse].
+     */
     suspend fun getUserFeedMessages(userId: String, next: String? = null, limit: Int = 20): Result<FeedMessageResponse>
+
+    /**
+     * Retrieves the followers of a specific user.
+     */
     suspend fun getUserFollowers(userId: String, next: String? = null, limit: Int = 20): Result<UserIdentityResponse>
+
+    /**
+     * Retrieves the list of users that a specific user is following.
+     */
     suspend fun getUserFollowing(userId: String, next: String? = null, limit: Int = 20): Result<UserIdentityResponse>
+
+    /**
+     * Fetches the media items marked as "Favorite" by a user.
+     *
+     * @param libraryKind The media type (e.g., Anime, Manga).
+     * @return A [Result] containing the [FavoriteLibraryResponse].
+     */
     suspend fun getUserFavorites(userId: String, libraryKind: KKLibrary.Kind, next: String? = null, limit: Int = 20): Result<FavoriteLibraryResponse>
+
+    /**
+     * Retrieves the comprehensive media library for a user, filtered by status and sorted.
+     *
+     * @param libraryKind The media category.
+     * @param libraryStatus The status (e.g., Watching, Completed, Dropped).
+     * @param sortType The criteria for sorting (e.g., Score, Date).
+     * @return A [Result] containing the [LibraryResponse].
+     */
     suspend fun getUserLibrary(userId: String, libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, sortType: KKLibrary.SortType? = KKLibrary.SortType.NONE, sortOption: KKLibrary.Option? = null, next: String? = null, limit: Int = 20): Result<LibraryResponse>
+
+    /**
+     * Fetches the full profile details of a specific user.
+     */
     suspend fun getUserProfile(userId: String): Result<UserResponse>
+
+    /**
+     * Retrieves all media reviews written by a specific user.
+     */
     suspend fun getUserReviews(userId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
+
+    /**
+     * Searches for users within the platform by their username.
+     */
     suspend fun searchUsers(username: String): Result<UserIdentityResponse>
+
+    /**
+     * Permanently deletes the user's account.
+     *
+     * @param password Confirmation password to authorize deletion.
+     */
     suspend fun deleteUser(password: String): Result<Unit>
 }
 
+/**
+ * Implementation of [AuthRepository] that interacts with the [KurozoraApiClient]
+ * for identity management and user social data.
+ *
+ * @property apiClient The client used to execute HTTP requests against Auth and User endpoints.
+ */
 open class AuthRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : AuthRepository {

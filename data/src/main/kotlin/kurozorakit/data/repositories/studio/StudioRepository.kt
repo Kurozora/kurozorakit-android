@@ -22,18 +22,83 @@ import kurozorakit.data.models.studio.StudioResponse
 import kurozorakit.shared.Result
 import java.util.*
 
+/**
+ * Data repository responsible for managing and retrieving information about production studios.
+ *
+ * This repository handles data for animation studios, game developers, and publishing houses.
+ * It provides access to their corporate profiles, the media projects they have produced
+ * (Shows, Games, Literature), and community-driven social feedback.
+ */
 interface StudioRepository {
+
+    /**
+     * Retrieves a paginated list of studios, optionally filtered by specific criteria.
+     *
+     * @param next Pagination cursor for the next set of results.
+     * @param limit The maximum number of studios to return per page.
+     * @param filter Optional [StudioFilter] to narrow results (e.g., by country or studio type).
+     * @return A [Result] containing the [StudioIdentityResponse].
+     */
     suspend fun getStudios(next: String? = null, limit: Int = 20, filter: StudioFilter? = null): Result<StudioIdentityResponse>
+
+    /**
+     * Fetches detailed information for a specific studio.
+     *
+     * @param studioId The unique identifier of the studio.
+     * @param relationships A list of related data to include (e.g., "external_links", "sub_studios").
+     * @return A [Result] containing the [StudioResponse].
+     */
     suspend fun getStudio(studioId: String, relationships: List<String> = emptyList<String>()): Result<StudioResponse>
-    // Related content
+
+    /**
+     * Retrieves the video games developed or published by this studio.
+     *
+     * @param studioId The unique identifier of the studio.
+     * @return A [Result] containing the [GameIdentityResponse].
+     */
     suspend fun getStudioGames(studioId: String, next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
+
+    /**
+     * Retrieves the literature entries (Manga/Novels) published by this studio.
+     *
+     * @param studioId The unique identifier of the studio.
+     * @return A [Result] containing the [LiteratureIdentityResponse].
+     */
     suspend fun getStudioLiteratures(studioId: String, next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
+
+    /**
+     * Retrieves the shows (Anime/TV) produced by this studio.
+     *
+     * @param studioId The unique identifier of the studio.
+     * @return A [Result] containing the [ShowIdentityResponse].
+     */
     suspend fun getStudioShows(studioId: String, next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
+
+    /**
+     * Retrieves user-written reviews or company ratings for a specific studio.
+     *
+     * @param studioId The unique identifier of the studio.
+     * @return A [Result] containing the [ReviewResponse].
+     */
     suspend fun getStudioReviews(studioId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
-    // Rating
+
+    /**
+     * Submits or updates a user's rating and optional review for a specific studio.
+     *
+     * @param studioId The unique identifier of the studio.
+     * @param rating The numerical score given by the user.
+     * @param review An optional text-based review.
+     * @return A [Result] indicating the outcome of the operation.
+     */
     suspend fun rateStudio(studioId: String, rating: Double, review: String? = null): Result<Unit>
 }
 
+/**
+ * Implementation of [StudioRepository] that utilizes [KurozoraApiClient] to
+ * manage studio profiles and their associated media portfolios.
+ *
+ * @property apiClient The client used to communicate with the studio and production endpoints.
+ */
 open class StudioRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : StudioRepository {

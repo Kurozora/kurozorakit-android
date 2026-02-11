@@ -18,7 +18,25 @@ import kurozorakit.shared.Result
 import java.nio.charset.StandardCharsets
 import java.util.*
 
+/**
+ * Data repository responsible for executing search queries and retrieving suggestions.
+ * * This repository serves as the central search engine for the platform, allowing users
+ * to find content across different scopes and types. It supports advanced filtering,
+ * pagination, and real-time search suggestions to improve the discovery experience.
+ */
 interface SearchRepository {
+
+    /**
+     * Executes a comprehensive search across the platform based on specified criteria.
+     *
+     * @param scope The [KKSearchScope] defining where to search (e.g., Global, Library).
+     * @param types A list of [KKSearchType] to include (e.g., Anime, Manga, User, Character).
+     * @param query The search term or string entered by the user.
+     * @param next Pagination cursor for fetching subsequent pages of results.
+     * @param limit The maximum number of results to return per page.
+     * @param filter Optional [KKSearchFilter] to apply advanced constraints like genres or years.
+     * @return A [Result] containing the [SearchResponse] with the matching entities.
+     */
     suspend fun search(
         scope: KKSearchScope,
         types: List<KKSearchType>,
@@ -28,6 +46,14 @@ interface SearchRepository {
         filter: KKSearchFilter? = null,
     ): Result<SearchResponse>
 
+    /**
+     * Retrieves instant search suggestions or "auto-complete" results for a partial query.
+     *
+     * @param scope The [KKSearchScope] defining the context of the suggestions.
+     * @param types A list of [KKSearchType] to narrow the suggestion categories.
+     * @param query The partial search string entered by the user.
+     * @return A [Result] containing the [SearchSuggesitonsResponse].
+     */
     suspend fun getSearchSuggestions(
         scope: KKSearchScope,
         types: List<KKSearchType>,
@@ -35,6 +61,12 @@ interface SearchRepository {
     ): Result<SearchSuggesitonsResponse>
 }
 
+/**
+ * Implementation of [SearchRepository] that utilizes [KurozoraApiClient] to
+ * query the platform's search index and suggestion engine.
+ *
+ * @property apiClient The client used to communicate with the search and discovery endpoints.
+ */
 open class SearchRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : SearchRepository {

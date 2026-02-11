@@ -11,24 +11,48 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlin.enums.EnumEntries
 
+/**
+ * Defines the functional role of a musical track within a production.
+ *
+ * This enum helps users identify whether a song is used as a series introduction,
+ * a credit sequence, or as part of the incidental background score.
+ *
+ * @property value The unique integer identifier for the song category used by the API.
+ */
 @Serializable(with = SongTypeSerializer::class)
 enum class SongType(val value: Int) {
+    /** The theme song played at the beginning of an episode. */
     opening(0),
+
+    /** The theme song played during or after the closing credits. */
     ending(1),
+
+    /** Incidental music, soundtracks (OST), or insert songs played during scenes. */
     background(2);
 
+    /**
+     * The full human-readable name of the song type.
+     */
     val stringValue: String
         get() = when (this) {
             opening -> "Opening"
             ending -> "Ending"
             background -> "Background"
         }
+
+    /**
+     * The standard industry abbreviation for the track type.
+     */
     val abbreviatedStringValue: String
         get() = when (this) {
             opening -> "OP"
             ending -> "ED"
             background -> "BG"
         }
+
+    /**
+     * The UI brand color associated with this specific category.
+     */
     val backgroundColorValue: Color
         get() = when (this) {
             opening -> Color.Blue
@@ -37,13 +61,19 @@ enum class SongType(val value: Int) {
         }
 }
 
+/**
+ * Basic color representation for UI theme mapping.
+ */
 enum class Color {
-    Blue,
-    Red,
-    Yellow
+    Blue, Red, Yellow
 }
 
+/**
+ * A custom serializer that maps [SongType] to its integer [SongType.value]
+ * during JSON encoding and decoding.
+ */
 class SongTypeSerializer : EnumIntSerializer<SongType>(SongType.entries)
+
 open class EnumIntSerializer<T : Enum<T>>(
     private val entries: EnumEntries<T>,
 ) : KSerializer<T> {
@@ -53,16 +83,17 @@ open class EnumIntSerializer<T : Enum<T>>(
     private val clazz = entries[0]::class.java
 
     init {
+        // Default mapping based on enum order
         for ((i, entry) in entries.withIndex()) {
             namesByValue[i] = entry.name
             valuesByName[entry.name] = i
         }
 
+        // Override with @SerialName if present to support custom API values
         for (field in clazz.fields) {
-            val fieldType = field.type
-            if (fieldType != clazz) continue
+            if (field.type != clazz) continue
             val annotation = field.getAnnotation(SerialName::class.java) ?: continue
-            val value = annotation.value.toInt()
+            val value = annotation.value.toIntOrNull() ?: continue
             namesByValue[value] = field.name
             valuesByName[field.name] = value
         }
@@ -72,8 +103,6 @@ open class EnumIntSerializer<T : Enum<T>>(
         PrimitiveSerialDescriptor(clazz.toString(), PrimitiveKind.INT)
 
     override fun serialize(encoder: Encoder, value: T) {
-        val index = entries.indexOf(value)
-        if (index == -1) throw error(value)
         val name = value.name
         val valueInt = valuesByName[name] ?: throw error(value)
         encoder.encodeInt(valueInt)
@@ -86,7 +115,6 @@ open class EnumIntSerializer<T : Enum<T>>(
     }
 
     private fun error(value: Any) = SerializationException(
-        "$value is not a valid enum ${descriptor.serialName}, " +
-                "must be one of $entries"
+        "$value is not a valid enum ${descriptor.serialName}, must be one of $entries"
     )
 }

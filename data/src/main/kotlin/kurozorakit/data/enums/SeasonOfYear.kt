@@ -1,20 +1,29 @@
 package kurozorakit.data.enums
 
-
 /**
- * Season of year enum
+ * Represents the four major broadcasting and publication seasons.
+ *
+ * In the context of media like Anime, these seasons dictate the primary release
+ * windows for new series. This enum is used for filtering the discovery feed,
+ * organizing user libraries by "Year/Season," and triggering seasonal recaps.
+ *
+ * @property rawValue The unique integer identifier for the season.
  */
 enum class SeasonOfYear(val rawValue: Int) {
-    // Cases
+    /** * Winter Season. Typically covers January, February, and March. */
     WINTER(0),
+
+    /** * Spring Season. Typically covers April, May, and June. */
     SPRING(1),
+
+    /** * Summer Season. Typically covers July, August, and September. */
     SUMMER(2),
+
+    /** * Fall Season. Typically covers October, November, and December. */
     FALL(3);
 
-    // Properties
-
     /**
-     * The display name value of a season.
+     * The human-readable label for the season.
      */
     val displayName: String
         get() = when (this) {
@@ -24,20 +33,10 @@ enum class SeasonOfYear(val rawValue: Int) {
             FALL -> "Fall"
         }
 
-    /**
-     * The image resource ID of a season.
-     */
-//    val imageResId: Int
-//        get() = when (this) {
-//            WINTER -> R.drawable.ic_snowflake
-//            SPRING -> R.drawable.ic_leaf_fill
-//            SUMMER -> R.drawable.ic_sun_max_fill
-//            FALL -> R.drawable.ic_wind
-//        }
-
     companion object {
         /**
-         * Returns all cases of SeasonOfYear
+         * Returns an array containing all defined [SeasonOfYear] constants.
+         * Useful for populating seasonal selection menus or tabs.
          */
         val allCases: Array<SeasonOfYear>
             get() = entries.toTypedArray()

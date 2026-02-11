@@ -29,47 +29,200 @@ import kurozorakit.data.models.user.update.UserUpdateResponse
 import kurozorakit.shared.Result
 import java.net.URL
 
+/**
+ * Data repository responsible for managing the authenticated user's private data and account settings.
+ *
+ * This is the most comprehensive repository in the system, handling a wide array of user-centric
+ * features including profile management, library tracking (Anime, Manga, Games), social
+ * notifications, security sessions, and personal archives (Recaps).
+ */
 interface UserRepository {
-    // Profile operations
+
+    // --- Profile Operations ---
+
+    /**
+     * Retrieves the private profile details of the currently authenticated user.
+     */
     suspend fun getMyProfile(): Result<UserResponse>
+
+    /**
+     * Updates the user's profile information (e.g., bio, avatar, display name).
+     */
     suspend fun updateMyProfile(update: UserUpdate): Result<UserUpdateResponse>
+
+    /**
+     * Retrieves a paginated list of users following the current account.
+     */
     suspend fun getMyFollowers(next: String? = null, limit: Int = 20): Result<UserIdentityResponse>
+
+    /**
+     * Retrieves a paginated list of users the current account is following.
+     */
     suspend fun getMyFollowing(next: String? = null, limit: Int = 20): Result<UserIdentityResponse>
-    // Access tokens
+
+
+    // --- Access Tokens (Security & Notifications) ---
+
+    /**
+     * Fetches all active access tokens associated with the user account.
+     */
     suspend fun getAccessTokens(next: String? = null, limit: Int = 20): Result<AccessTokenResponse>
+
+    /**
+     * Retrieves specific details for a single access token.
+     */
     suspend fun getAccessToken(accessToken: String): Result<AccessTokenResponse>
+
+    /**
+     * Links an APNs (Apple Push Notification) device token to an access token for push services.
+     */
     suspend fun updateAccessToken(accessToken: String, apnDeviceToken: String): Result<Unit>
+
+    /**
+     * Revokes a specific access token, effectively logging out that instance/device.
+     */
     suspend fun deleteAccessToken(accessToken: String): Result<Unit>
-    // Favorites
+
+
+    // --- Favorites ---
+
+    /**
+     * Retrieves the user's favorite items within a specific library kind (e.g., Favorite Anime).
+     */
     suspend fun getMyFavorites(libraryKind: KKLibrary.Kind, next: String? = null, limit: Int = 20): Result<FavoriteLibraryResponse>
+
+    /**
+     * Toggles the favorite status of a specific media item.
+     */
     suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelID: String): Result<FavoriteResponse>
-    // Feed
+
+
+    // --- Feed ---
+
+    /**
+     * Retrieves a list of social feed messages authored by the current user.
+     */
     suspend fun getMyFeedMessages(next: String? = null, limit: Int = 20): Result<FeedMessageIdentityResponse>
-    // Library
-    suspend fun getMyLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, sortType: KKLibrary.SortType? = KKLibrary.SortType.NONE, sortOption: KKLibrary.Option? = null, next: String? = null, limit: Int = 20): Result<LibraryResponse>
+
+
+    // --- Library Management ---
+
+    /**
+     * Fetches the user's personal collection filtered by kind (Anime/Manga) and status (Watching/Completed).
+     */
+    suspend fun getMyLibrary(
+        libraryKind: KKLibrary.Kind,
+        libraryStatus: KKLibrary.Status,
+        sortType: KKLibrary.SortType? = KKLibrary.SortType.NONE,
+        sortOption: KKLibrary.Option? = null,
+        next: String? = null,
+        limit: Int = 20
+    ): Result<LibraryResponse>
+
+    /**
+     * Adds a media item to the user's library with an initial status.
+     */
     suspend fun addToLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelID: String): Result<LibraryUpdateResponse>
+
+    /**
+     * Updates specific library entry metadata like rewatch counts or visibility settings.
+     */
     suspend fun updateMyLibrary(libraryKind: KKLibrary.Kind, modelID: String, rewatchCount: Int? = null, isHidden: Boolean? = null): Result<LibraryUpdateResponse>
+
+    /**
+     * Removes an item from the user's library.
+     */
     suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelID: String): Result<LibraryUpdateResponse>
+
+    /**
+     * Nukes an entire library category. Requires password confirmation for safety.
+     */
     suspend fun clearMyLibrary(libraryKind: KKLibrary.Kind, password: String): Result<Unit>
+
+    /**
+     * Imports library data from external services (e.g., MyAnimeList, AniList).
+     */
     suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, file: URL): Result<LibraryImport>
-    // Notifications
+
+
+    // --- Notifications ---
+
+    /**
+     * Retrieves the current user's notification inbox.
+     */
     suspend fun getMyNotifications(): Result<UserNotificationResponse>
+
+    /**
+     * Fetches detailed information about a specific notification.
+     */
     suspend fun getMyNotification(notificationId: String): Result<SingleNotificationResponse>
+
+    /**
+     * Permanently deletes a notification.
+     */
     suspend fun deleteMyNotification(notificationId: String): Result<Unit>
+
+    /**
+     * Updates the status (Read/Unread) of a notification.
+     */
     suspend fun updateMyNotification(notificationID: String, readStatus: ReadStatus): Result<UserNotificationUpdateResponse>
-    // Recap
+
+
+    // --- Recap (Analytics) ---
+
+    /**
+     * Retrieves a list of available monthly or yearly "Recaps" of the user's activity.
+     */
     suspend fun getMyRecaps(): Result<RecapResponse>
+
+    /**
+     * Fetches detailed statistics for a specific recap period.
+     */
     suspend fun getMyRecapDetails(year: String, month: String): Result<RecapItemResponse>
-    // Reminders
+
+
+    // --- Reminders ---
+
+    /**
+     * Retrieves the user's active reminders for upcoming episodes or releases.
+     */
     suspend fun getMyReminders(libraryKind: KKLibrary.Kind, next: String? = null, limit: Int = 20): Result<ReminderLibraryResponse>
+
+    /**
+     * Toggles reminders for a specific media item.
+     */
     suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelID: String): Result<ReminderLibraryResponse>
+
+    /**
+     * Exports all reminders as a file (e.g., iCal format).
+     */
     suspend fun downloadMyReminders(): Result<ByteArray>
-    // Sessions
+
+
+    // --- Sessions ---
+
+    /**
+     * Lists active login sessions and devices currently using the account.
+     */
     suspend fun getMySessions(next: String? = null, limit: Int = 20): Result<SessionIdentityResponse>
+
+    /**
+     * Gets detailed metadata for a specific session (IP, Device, Location).
+     */
     suspend fun getMySession(sessionId: String): Result<SessionResponse>
+
+    /**
+     * Terminates a specific active session.
+     */
     suspend fun deleteMySession(sessionId: String): Result<Unit>
 }
 
+/**
+ * Implementation of [UserRepository] that utilizes [KurozoraApiClient] to
+ * manage the user's profile, library, favorites, and session information.
+ *
+ * @property apiClient The client used to communicate with the theme store and asset endpoints.
+ */
 open class UserRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : UserRepository {

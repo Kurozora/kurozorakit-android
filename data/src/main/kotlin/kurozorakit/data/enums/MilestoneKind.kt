@@ -1,48 +1,40 @@
 package kurozorakit.data.enums
 
 /**
- * The set of available milestone kinds.
+ * Defines the specific metrics used for user achievements and milestones.
+ *
+ * This enum tracks a user's progress across various activities such as watching,
+ * reading, or playing. These milestones are often used for profile badges,
+ * level-up logic, and community leaderboards.
+ *
+ * @property rawValue The unique integer identifier for the milestone category.
  */
 enum class MilestoneKind(val rawValue: Int) {
-    // MARK: - Cases
-    /**
-     * The milestone indicating a user's watched minutes.
-     */
+    /** Total accumulated time spent watching [MediaKind.shows]. */
     MINUTES_WATCHED(0),
 
-    /**
-     * The milestone indicating a user's number of watched episodes.
-     */
+    /** Total count of unique episodes completed. */
     EPISODES_WATCHED(1),
 
-    /**
-     * The milestone indicating a user's read minutes.
-     */
+    /** Total accumulated time spent reading [MediaKind.literatures]. */
     MINUTES_READ(2),
 
-    /**
-     * The milestone indicating a user's number of read chapters.
-     */
+    /** Total count of unique chapters completed. */
     CHAPTERS_READ(3),
 
-    /**
-     * The milestone indicating a user's played minutes.
-     */
+    /** Total accumulated time spent playing [MediaKind.games]. */
     MINUTES_PLAYED(4),
 
-    /**
-     * The milestone indicating a user's number of played games.
-     */
+    /** Total count of unique games played or completed. */
     GAMES_PLAYED(5),
 
-    /**
-     * The milestone indicating a user's top percentile.
+    /** * The user's standing relative to the rest of the community based
+     * on global activity scores.
      */
     TOP_PERCENTILE(6);
 
-    // MARK: - Properties
     /**
-     * The string value of a `MilestoneKind` type.
+     * The human-readable label for the milestone.
      */
     val stringValue: String
         get() = when (this) {
@@ -56,7 +48,7 @@ enum class MilestoneKind(val rawValue: Int) {
         }
 
     /**
-     * The unit value of a `MilestoneKind` type.
+     * The measurement unit associated with the milestone value.
      */
     val unitValue: String
         get() = when (this) {
@@ -69,7 +61,7 @@ enum class MilestoneKind(val rawValue: Int) {
 
     companion object {
         /**
-         * Returns all cases of MilestoneKind
+         * Returns an array containing all defined [MilestoneKind] constants.
          */
         val allCases: Array<MilestoneKind>
             get() = entries.toTypedArray()

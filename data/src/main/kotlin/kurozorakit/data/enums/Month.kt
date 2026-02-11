@@ -1,10 +1,14 @@
 package kurozorakit.data.enums
 
 /**
- * Month enum
+ * Represents the twelve months of the Gregorian calendar.
+ *
+ * This enum is used for precise date handling, release schedules, and seasonal
+ * grouping (e.g., determining if a show belongs to the Winter or Spring season).
+ *
+ * @property rawValue The standard calendar month index (1 for January, 12 for December).
  */
 enum class Month(val rawValue: Int) {
-    // Cases
     JANUARY(1),
     FEBRUARY(2),
     MARCH(3),
@@ -18,10 +22,8 @@ enum class Month(val rawValue: Int) {
     NOVEMBER(11),
     DECEMBER(12);
 
-    // Properties
-
     /**
-     * The display name value of a month.
+     * The full human-readable English name of the month.
      */
     val displayName: String
         get() = when (this) {
@@ -40,7 +42,8 @@ enum class Month(val rawValue: Int) {
         }
 
     /**
-     * The next month.
+     * Returns the [Month] that follows this one in a standard annual cycle.
+     * Wraps from [DECEMBER] back to [JANUARY].
      */
     val next: Month
         get() = when (this) {
@@ -59,7 +62,8 @@ enum class Month(val rawValue: Int) {
         }
 
     /**
-     * The previous month.
+     * Returns the [Month] that preceded this one in a standard annual cycle.
+     * Wraps from [JANUARY] back to [DECEMBER].
      */
     val previous: Month
         get() = when (this) {
@@ -79,7 +83,7 @@ enum class Month(val rawValue: Int) {
 
     companion object {
         /**
-         * Returns all cases of Month
+         * Returns an array containing all defined [Month] constants in chronological order.
          */
         val allCases: Array<Month>
             get() = entries.toTypedArray()

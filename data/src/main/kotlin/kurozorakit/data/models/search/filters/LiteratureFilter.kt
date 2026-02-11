@@ -3,6 +3,34 @@ package kurozorakit.data.models.search.filters
 import kotlinx.serialization.Serializable
 import kurozorakit.data.models.Filterable
 
+/**
+ * Filter criteria for querying literature (Manga, Light Novels, etc.).
+ *
+ * This model supports two distinct filtering modes:
+ * 1. **Global Search**: Filtering the entire database by publication metadata,
+ * counts (volume/chapter/page), and content flags.
+ * 2. **Library Search**: Filtering a user's personal collection using the `trackable`
+ * prefix to target their personal reading status and history.
+ *
+ * @property publicationDay Specific day of publication.
+ * @property publicationSeason The release season (e.g., Summer 2024).
+ * @property publicationTime Time of day or specific slot for release.
+ * @property countryOfOrigin The origin country of the work using [FilterValue].
+ * @property duration Average reading duration in minutes.
+ * @property startedAt Unix timestamp of when the work first started publishing.
+ * @property endedAt Unix timestamp of when the work finished publishing.
+ * @property isNSFW Toggle for adult-oriented content.
+ * @property mediaType Format of the literature (e.g., Manga, Manhwa, One-shot).
+ * @property source The original source material (e.g., Web Novel, 4-Koma).
+ * @property status Current publishing status (e.g., Ongoing, Completed).
+ * @property tvRating Content maturity rating.
+ * @property volumeCount Number of physical/digital volumes.
+ * @property chapterCount Total number of chapters.
+ * @property pageCount Total page count.
+ * @property libraryStatus User's personal status (e.g., Reading, Plan to Read).
+ * @property libraryStartedAt When the user started reading this item.
+ * @property libraryEndedAt When the user finished reading this item.
+ */
 @Serializable
 data class LiteratureFilter(
     val publicationDay: String? = null,
@@ -27,6 +55,15 @@ data class LiteratureFilter(
     val libraryEndedAt: Long? = null
 ) : Filterable {
 
+    /**
+     * Converts properties into an API-ready query map.
+     * * If [forLibrary] is true, it uses the `trackable.` prefix for media attributes
+     * to match the library management endpoint requirements and includes user-specific
+     * tracking fields. Otherwise, it generates a standard global search map.
+     *
+     * @param forLibrary Whether the filters are applied to a user's collection.
+     * @return A map of non-null parameters.
+     */
     override fun toFilterMap(forLibrary: Boolean): Map<String, Any?> {
         return if (forLibrary) {
             mapOf(

@@ -1,11 +1,15 @@
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.KotlinJvm
+
 plugins {
     kotlin("jvm") version "2.2.0"
     kotlin("plugin.serialization") version "2.2.0" apply false
     id("com.vanniktech.maven.publish") version "0.35.0"
+    id("org.jetbrains.dokka") version "1.9.10"
 }
 
 group = "app.kurozora"
-version = "1.2.4"
+version = "1.2.5"
 
 allprojects {
     repositories {
@@ -16,6 +20,26 @@ allprojects {
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "org.jetbrains.dokka")
+
+    // Alt projelerin dökümantasyon ayarlarını buradan yapabilirsin
+    tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
+        dokkaSourceSets {
+            configureEach {
+                reportUndocumented.set(true)
+                //çalışmadı en son tekrar dene sonra
+//                pluginsMapConfiguration.set(
+//                    mapOf(
+//                        "org.jetbrains.dokka.base.DokkaBase" to """
+//                            {
+//                              "footerMessage": "© 2026 Kurozora Team - KurozoraKit Documentation",
+//                            }
+//                        """.trimIndent()
+//                    )
+//                )
+            }
+        }
+    }
 
     dependencies {
         testImplementation(kotlin("test"))
@@ -31,24 +55,35 @@ subprojects {
 }
 
 dependencies {
+    implementation(project(":api"))
     implementation(project(":core"))
     implementation(project(":data"))
     implementation(project(":shared"))
 }
 
-/**
- * Build a single fat JAR combining root + all subprojects.
- */
-tasks.register<Jar>("fatJar") {
-    archiveBaseName.set(rootProject.name)
+// --- KRİTİK BÖLÜM: FAT JAR OLUŞTURMA ---
+// Yeni bir task yaratmak yerine, var olan 'jar' taskını modifiye ediyoruz.
+// Böylece Maven plugin'i otomatik olarak bu dolu jar'ı alıp yayınlar.
+tasks.named<Jar>("jar") {
+    archiveBaseName.set("kurozora-kit")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    // main module outputs
+    // 1. Root projenin çıktılarını al
     from(sourceSets.main.get().output)
 
-    // include all subproject outputs
-    from(subprojects.map { it.sourceSets["main"].output })
+    // 2. Tüm alt projelerin çıktılarını al ve içine göm
+    subprojects.forEach { subproject ->
+        from(subproject.sourceSets.main.get().output)
+    }
 }
+
+// Kaynak kodları da (Sources) birleştirmek istersen (Opsiyonel ama önerilir):
+//tasks.named<Jar>("sourcesJar") {
+//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//    subprojects.forEach { subproject ->
+//        from(subproject.sourceSets.main.get().allSource)
+//    }
+//}
 
 mavenPublishing {
     publishToMavenCentral()
@@ -56,6 +91,13 @@ mavenPublishing {
     signAllPublications()
 
     coordinates(group.toString(), project.rootProject.name, version.toString())
+
+    configure(
+        KotlinJvm(
+            javadocJar = JavadocJar.Dokka("dokkaHtml"),
+            sourcesJar = true
+        )
+    )
 
     pom {
         name = "KurozoraKit"
@@ -81,4 +123,21 @@ mavenPublishing {
             developerConnection = "scm:git:ssh://git@github.com/Kurozora/kurozorakit-android.git"
         }
     }
+}
+
+// Çoklu modül birleştirme taskı
+tasks.withType<org.jetbrains.dokka.gradle.DokkaMultiModuleTask>().configureEach {
+    outputDirectory.set(layout.buildDirectory.dir("dokka/htmlMultiModule"))
+    moduleName.set("KurozoraKit SDK")
+
+    pluginsMapConfiguration.set(
+        mapOf(
+            "org.jetbrains.dokka.base.DokkaBase" to """
+                {
+                  "footerMessage": "© 2026 Kurozora Team - KurozoraKit Documentation",
+                  "separateInheritedMembers": true
+                }
+            """.trimIndent()
+        )
+    )
 }

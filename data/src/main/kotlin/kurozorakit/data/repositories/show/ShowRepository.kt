@@ -27,29 +27,165 @@ import kurozorakit.data.models.studio.StudioResponse
 import kurozorakit.shared.Result
 import java.util.*
 
+/**
+ * Data repository responsible for managing and retrieving television shows and anime content.
+ *
+ * This repository serves as the central authority for show-related data, including
+ * seasonal breakdowns, episode soundtracks, production studios, and multi-media
+ * relationships (e.g., source material or game adaptations).
+ */
 interface ShowRepository {
-    // Basic operations
+
+    /**
+     * Retrieves a paginated list of shows, optionally filtered by specific criteria.
+     *
+     * @param next Pagination cursor for the next set of results.
+     * @param limit The maximum number of shows to return per page.
+     * @param filter Optional [ShowFilter] to narrow results (e.g., by genre, air date, or status).
+     * @return A [Result] containing the [ShowIdentityResponse].
+     */
     suspend fun getShows(next: String? = null, limit: Int = 20, filter: ShowFilter? = null): Result<ShowIdentityResponse>
+
+    /**
+     * Fetches a specific set of shows based on a list of identifiers.
+     *
+     * @param ids A list of unique show identifiers to retrieve.
+     * @param relationships A list of related data to include in the response.
+     * @return A [Result] containing the [ShowIdentityResponse].
+     */
     suspend fun getShows(ids: List<String>, relationships: List<String> = emptyList()): Result<ShowIdentityResponse>
+
+    /**
+     * Fetches detailed information for a single specific show.
+     *
+     * @param id The unique identifier of the show.
+     * @param relationships A list of related data to include (e.g., "genres", "seasons").
+     * @return A [Result] containing the [ShowResponse].
+     */
     suspend fun getShow(id: String, relationships: List<String> = emptyList()): Result<ShowResponse>
+
+    /**
+     * Retrieves a list of shows scheduled to air in the future.
+     *
+     * @param next Pagination cursor.
+     * @param limit Maximum number of records.
+     * @return A [Result] containing the [ShowIdentityResponse].
+     */
     suspend fun getUpcomingShows(next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
-    // Related content
+
+    /**
+     * Retrieves the voice cast associated with a specific show.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [CastIdentityResponse].
+     */
     suspend fun getShowCast(showId: String, next: String? = null, limit: Int = 20): Result<CastIdentityResponse>
+
+    /**
+     * Fetches the production staff and crew for a specific show.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [StaffIdentityResponse].
+     */
     suspend fun getShowStaff(showId: String, next: String? = null, limit: Int = 20): Result<StaffIdentityResponse>
+
+    /**
+     * Retrieves the characters featured within the show.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [CharacterIdentityResponse].
+     */
     suspend fun getShowCharacters(showId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
+
+    /**
+     * Retrieves real-life people associated with the show (e.g., Directors, Creators).
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [PersonIdentityResponse].
+     */
     suspend fun getShowPeople(showId: String, next: String? = null, limit: Int = 20): Result<PersonIdentityResponse>
+
+    /**
+     * Retrieves user-written reviews for a specific show.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [ReviewResponse].
+     */
     suspend fun getShowReviews(showId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
+
+    /**
+     * Fetches the list of all seasons available for a specific show.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [SeasonIdentityResponse].
+     */
     suspend fun getShowSeasons(showId: String, next: String? = null, limit: Int = 20): Result<SeasonIdentityResponse>
+
+    /**
+     * Retrieves the theme songs (Opening/Ending) and soundtrack info for the show.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [ShowSongResponse].
+     */
     suspend fun getShowSongs(showId: String, next: String? = null, limit: Int = 20): Result<ShowSongResponse>
+
+    /**
+     * Fetches the animation or production studios responsible for the show.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [StudioResponse].
+     */
     suspend fun getShowStudios(showId: String, next: String? = null, limit: Int = 20): Result<StudioResponse>
+
+    /**
+     * Retrieves other shows produced by the same studios.
+     *
+     * @param showId The reference show ID used to identify the studio.
+     * @return A [Result] containing the [ShowIdentityResponse].
+     */
     suspend fun getMoreByStudio(showId: String, next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
+
+    /**
+     * Fetches other shows that are related to or part of the same franchise.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [RelatedShowResponse].
+     */
     suspend fun getRelatedShows(showId: String, next: String? = null, limit: Int = 20): Result<RelatedShowResponse>
+
+    /**
+     * Fetches literature (Manga/Novels) related to or adapted by this show.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [RelatedLiteratureResponse].
+     */
     suspend fun getRelatedLiteratures(showId: String, next: String? = null, limit: Int = 20): Result<RelatedLiteratureResponse>
+
+    /**
+     * Retrieves video games related to or adapted from this show.
+     *
+     * @param showId The unique ID of the show.
+     * @return A [Result] containing the [RelatedGameResponse].
+     */
     suspend fun getRelatedGames(showId: String, next: String? = null, limit: Int = 20): Result<RelatedGameResponse>
-    // Rating
+
+    /**
+     * Submits or updates a user's rating and optional review for a show.
+     *
+     * @param showId The unique ID of the show.
+     * @param rating The numerical score given by the user.
+     * @param review An optional text-based review.
+     * @return A [Result] indicating the outcome of the operation.
+     */
     suspend fun rateShow(showId: String, rating: Double, review: String? = null): Result<Unit>
 }
 
+/**
+ * Implementation of [ShowRepository] that utilizes [KurozoraApiClient] to
+ * manage show content, media relationships, and user interactions.
+ *
+ * @property apiClient The client used to communicate with the show and production endpoints.
+ */
 open class ShowRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : ShowRepository {

@@ -28,26 +28,141 @@ import kurozorakit.data.models.studio.StudioResponse
 import kurozorakit.shared.Result
 import java.util.*
 
+/**
+ * Data repository responsible for managing and retrieving literature-based media.
+ *
+ * This repository handles requests for various forms of literature, including
+ * Manga, Light Novels, and Webtoons. It provides access to metadata,
+ * contributor information (authors/illustrators), and cross-media
+ * connections like anime or game adaptations.
+ */
 interface LiteratureRepository {
-    // Basic operations
+
+    /**
+     * Retrieves a paginated list of literature entries, optionally filtered by specific criteria.
+     *
+     * @param next Pagination cursor for the next set of results.
+     * @param limit The maximum number of literature items to return.
+     * @param filter Optional [LiteratureFilter] to narrow results (e.g., by format, genre, or status).
+     * @return A [Result] containing the [LiteratureIdentityResponse].
+     */
     suspend fun getLiteratures(next: String? = null, limit: Int = 20, filter: LiteratureFilter? = null): Result<LiteratureIdentityResponse>
+
+    /**
+     * Fetches detailed information for a specific literature entry.
+     *
+     * @param id The unique identifier of the literature.
+     * @param relationships A list of related data to include (e.g., "genres", "themes").
+     * @return A [Result] containing the [LiteratureResponse].
+     */
     suspend fun getLiterature(id: String, relationships: List<String> = emptyList<String>()): Result<LiteratureResponse>
+
+    /**
+     * Retrieves a list of literature items scheduled for future release or publication.
+     *
+     * @param next Pagination cursor.
+     * @param limit Maximum number of records.
+     * @return A [Result] containing the [LiteratureIdentityResponse].
+     */
     suspend fun getUpcomingLiteratures(next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
-    // Related content
+
+    /**
+     * Retrieves the cast (e.g., voice actors for audio dramas) associated with a literature piece.
+     *
+     * @param literatureId The unique ID of the literature.
+     * @return A [Result] containing the [CastIdentityResponse].
+     */
     suspend fun getLiteratureCast(literatureId: String, next: String? = null, limit: Int = 20): Result<CastIdentityResponse>
+
+    /**
+     * Fetches the production staff (e.g., editors, publishers) for the literature.
+     *
+     * @param literatureId The unique ID of the literature.
+     * @return A [Result] containing the [StaffIdentityResponse].
+     */
     suspend fun getLiteratureStaff(literatureId: String, next: String? = null, limit: Int = 20): Result<StaffIdentityResponse>
+
+    /**
+     * Retrieves the characters featured within the specific literature.
+     *
+     * @param literatureId The unique ID of the literature.
+     * @return A [Result] containing the [CharacterIdentityResponse].
+     */
     suspend fun getLiteratureCharacters(literatureId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
+
+    /**
+     * Retrieves real-life people associated with the literature (e.g., Authors, Illustrators).
+     *
+     * @param literatureId The unique ID of the literature.
+     * @return A [Result] containing the [PersonIdentityResponse].
+     */
     suspend fun getLiteraturePeople(literatureId: String, next: String? = null, limit: Int = 20): Result<PersonIdentityResponse>
+
+    /**
+     * Retrieves user-written reviews for a specific literature entry.
+     *
+     * @param literatureId The unique ID of the literature.
+     * @return A [Result] containing the [ReviewResponse].
+     */
     suspend fun getLiteratureReviews(literatureId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
+
+    /**
+     * Fetches the studios or publishing houses responsible for this literature.
+     *
+     * @param literatureId The unique ID of the literature.
+     * @return A [Result] containing the [StudioResponse].
+     */
     suspend fun getLiteratureStudios(literatureId: String, next: String? = null, limit: Int = 20): Result<StudioResponse>
+
+    /**
+     * Retrieves other literature entries published by the same studio or publisher.
+     *
+     * @param literatureId The reference ID used to identify the studio.
+     * @return A [Result] containing the [LiteratureIdentityResponse].
+     */
     suspend fun getMoreByStudio(literatureId: String, next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
+
+    /**
+     * Fetches shows (Anime/TV) that are related to or adapted from this literature.
+     *
+     * @param literatureId The unique ID of the literature.
+     * @return A [Result] containing the [RelatedShowResponse].
+     */
     suspend fun getRelatedShows(literatureId: String, next: String? = null, limit: Int = 20): Result<RelatedShowResponse>
+
+    /**
+     * Fetches other literature entries that are part of the same franchise or series.
+     *
+     * @param literatureId The unique ID of the literature.
+     * @return A [Result] containing the [RelatedLiteratureResponse].
+     */
     suspend fun getRelatedLiteratures(literatureId: String, next: String? = null, limit: Int = 20): Result<RelatedLiteratureResponse>
+
+    /**
+     * Retrieves video games related to or adapted from this literature.
+     *
+     * @param literatureId The unique ID of the literature.
+     * @return A [Result] containing the [RelatedGameResponse].
+     */
     suspend fun getRelatedGames(literatureId: String, next: String? = null, limit: Int = 20): Result<RelatedGameResponse>
-    // Rating
+
+    /**
+     * Submits or updates a user's rating and optional review for a literature entry.
+     *
+     * @param literatureId The unique ID of the literature.
+     * @param rating The numerical score given by the user.
+     * @param review An optional text-based review.
+     * @return A [Result] indicating the outcome of the operation.
+     */
     suspend fun rateLiterature(literatureId: String, rating: Double, review: String? = null): Result<Unit>
 }
 
+/**
+ * Implementation of [LiteratureRepository] that utilizes [KurozoraApiClient] to
+ * manage literature content and community data.
+ *
+ * @property apiClient The client used to communicate with the literature and relationship endpoints.
+ */
 open class LiteratureRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : LiteratureRepository {

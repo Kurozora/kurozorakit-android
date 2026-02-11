@@ -6,6 +6,24 @@ import kurozorakit.data.models.game.GameIdentityResponse
 import kurozorakit.data.models.literature.LiteratureIdentityResponse
 import kurozorakit.data.models.show.ShowIdentityResponse
 
+/**
+ * Represents a versatile media asset (Image, Poster, Banner) within the Kurozora ecosystem.
+ *
+ * This model not only holds the physical properties of a media file like its URL and dimensions
+ * but also includes metadata for UI styling (color palettes) and relational links to the
+ * resources it belongs to.
+ *
+ * @property url The absolute web address where the media resource is hosted.
+ * @property height The vertical dimension of the media in pixels.
+ * @property width The horizontal dimension of the media in pixels.
+ * @property backgroundColor A hex color code intended for use as a placeholder or background
+ * during image loading or UI styling.
+ * @property textColor1 Primary foreground color extracted from the image for UI accessibility.
+ * @property textColor2 Secondary foreground color extracted from the image.
+ * @property textColor3 Tertiary foreground color extracted from the image.
+ * @property textColor4 Quaternary foreground color, typically used for subtle UI accents.
+ * @property relationships Connections indicating which entities (Shows, Games, etc.) use this media.
+ */
 @Serializable
 data class Media(
     val url: String,
@@ -18,6 +36,16 @@ data class Media(
     val textColor4: String? = null,
     val relationships: Relationships? = null,
 ) {
+    /**
+     * Defines the entities associated with this specific [Media] asset.
+     * * This is particularly useful for reverse-lookup scenarios, such as finding which
+     * show a specific background image belongs to.
+     *
+     * @property episodes The [EpisodeIdentityResponse] if this media is an episode thumbnail or still.
+     * @property games The [GameIdentityResponse] if this media is associated with a game resource.
+     * @property literatures The [LiteratureIdentityResponse] if this media is a book cover or manga page.
+     * @property shows The [ShowIdentityResponse] if this media belongs to an anime or live-action series.
+     */
     @Serializable
     data class Relationships(
         val episodes: EpisodeIdentityResponse? = null,

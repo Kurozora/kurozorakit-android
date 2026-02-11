@@ -20,17 +20,77 @@ import kurozorakit.data.models.song.SongResponse
 import kurozorakit.shared.Result
 import java.util.*
 
+/**
+ * Data repository responsible for managing and retrieving musical content.
+ *
+ * This repository handles requests for songs, themes, and soundtracks associated
+ * with various media. It provides access to song metadata, their usage in
+ * shows or games, and user-driven social interactions like ratings and reviews.
+ */
 interface SongRepository {
+
+    /**
+     * Retrieves a paginated list of songs, optionally filtered by specific criteria.
+     *
+     * @param next Pagination cursor for the next set of results.
+     * @param limit The maximum number of songs to return per request.
+     * @param filter Optional [SongFilter] to narrow results (e.g., by artist, genre, or release year).
+     * @return A [Result] containing the [SongIdentityResponse].
+     */
     suspend fun getSongs(next: String? = null, limit: Int = 20, filter: SongFilter? = null): Result<SongIdentityResponse>
+
+    /**
+     * Fetches detailed information for a specific song.
+     *
+     * @param songId The unique identifier of the song.
+     * @param relationships A list of related resources to include (e.g., "artists", "albums").
+     * @return A [Result] containing the [SongResponse].
+     */
     suspend fun getSong(songId: String, relationships: List<String> = emptyList()): Result<SongResponse>
-    // Related content
+
+    /**
+     * Retrieves the list of shows (Anime/TV) where this song is featured.
+     *
+     * Often used to identify Opening (OP) or Ending (ED) themes.
+     *
+     * @param songId The unique identifier of the song.
+     * @return A [Result] containing the [ShowIdentityResponse].
+     */
     suspend fun getSongShows(songId: String, next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
+
+    /**
+     * Retrieves the list of video games that feature this song in their soundtrack.
+     *
+     * @param songId The unique identifier of the song.
+     * @return A [Result] containing the [GameIdentityResponse].
+     */
     suspend fun getSongGames(songId: String, next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
-    // Rating and reviews
+
+    /**
+     * Submits or updates a user's rating and optional review for a specific song.
+     *
+     * @param songId The unique identifier of the song.
+     * @param rating The numerical score assigned by the user.
+     * @param review An optional text-based review.
+     * @return A [Result] indicating the outcome of the operation.
+     */
     suspend fun rateSong(songId: String, rating: Double, review: String? = null): Result<Unit>
+
+    /**
+     * Retrieves a paginated list of user reviews for a specific song.
+     *
+     * @param songId The unique identifier of the song.
+     * @return A [Result] containing the [ReviewResponse].
+     */
     suspend fun getSongReviews(songId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
 }
 
+/**
+ * Implementation of [SongRepository] that utilizes [KurozoraApiClient] to
+ * manage musical metadata and social interactions.
+ *
+ * @property apiClient The client used to communicate with the song and social endpoints.
+ */
 open class SongRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : SongRepository {

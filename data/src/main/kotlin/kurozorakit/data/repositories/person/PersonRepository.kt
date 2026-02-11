@@ -22,20 +22,91 @@ import kurozorakit.data.models.show.ShowIdentityResponse
 import kurozorakit.shared.Result
 import java.util.*
 
+/**
+ * Data repository responsible for managing and retrieving information about real-world individuals.
+ *
+ * This repository handles data for industry professionals such as voice actors, authors,
+ * directors, and staff members. It provides access to their professional biographies,
+ * the characters they have portrayed, and the media projects they have contributed to.
+ */
 interface PersonRepository {
-    // Basic operations
+
+    /**
+     * Retrieves a paginated list of people, optionally filtered by specific criteria.
+     *
+     * @param next Pagination cursor for the next set of results.
+     * @param limit The maximum number of individuals to return.
+     * @param filter Optional [PersonFilter] to narrow results (e.g., by role or nationality).
+     * @return A [Result] containing the [PersonIdentityResponse].
+     */
     suspend fun getPeople(next: String? = null, limit: Int = 20, filter: PersonFilter? = null): Result<PersonIdentityResponse>
+
+    /**
+     * Fetches detailed profile information for a specific person.
+     *
+     * @param personId The unique identifier of the person.
+     * @param relationships A list of related data to include (e.g., "voices", "staff_positions").
+     * @return A [Result] containing the [PersonResponse].
+     */
     suspend fun getPerson(personId: String, relationships: List<String> = emptyList()): Result<PersonResponse>
-    // Related content
+
+    /**
+     * Retrieves the list of shows (Anime/TV) this person has worked on.
+     *
+     * @param personId The unique identifier of the person.
+     * @return A [Result] containing the [ShowIdentityResponse].
+     */
     suspend fun getPersonShows(personId: String, next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
+
+    /**
+     * Retrieves the video games this person has contributed to.
+     *
+     * @param personId The unique identifier of the person.
+     * @return A [Result] containing the [GameIdentityResponse].
+     */
     suspend fun getPersonGames(personId: String, next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
+
+    /**
+     * Retrieves the literature entries (Manga/Novels) this person has created or worked on.
+     *
+     * @param personId The unique identifier of the person.
+     * @return A [Result] containing the [LiteratureIdentityResponse].
+     */
     suspend fun getPersonLiteratures(personId: String, next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
+
+    /**
+     * Fetches the characters associated with this person (e.g., roles voiced by an actor).
+     *
+     * @param personId The unique identifier of the person.
+     * @return A [Result] containing the [CharacterIdentityResponse].
+     */
     suspend fun getPersonCharacters(personId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
+
+    /**
+     * Retrieves user-written reviews or testimonials for a specific person.
+     *
+     * @param personId The unique identifier of the person.
+     * @return A [Result] containing the [ReviewResponse].
+     */
     suspend fun getPersonReviews(personId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
-    // Rating
+
+    /**
+     * Submits or updates a user's rating and optional review for a specific person.
+     *
+     * @param personId The unique identifier of the person.
+     * @param rating The numerical score given by the user.
+     * @param review An optional text-based review.
+     * @return A [Result] indicating the outcome of the operation.
+     */
     suspend fun ratePerson(personId: String, rating: Double, review: String? = null): Result<Unit>
 }
 
+/**
+ * Implementation of [PersonRepository] that utilizes [KurozoraApiClient] to
+ * manage staff data, biographies, and industry professional relationships.
+ *
+ * @property apiClient The client used to communicate with the people and contribution endpoints.
+ */
 open class PersonRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : PersonRepository {
