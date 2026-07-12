@@ -3,6 +3,7 @@ name: Publish to Maven Central
 on:
   release:
     types: [released]
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -17,7 +18,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version:
+          java-version: '17'
 
       - name: Build and Publish to Maven Central
         run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache --stacktrace
