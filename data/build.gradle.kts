@@ -4,8 +4,8 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":shared"))
-    implementation(project(":api"))
+    api(project(":shared"))
+    api(project(":api"))
     implementation(Deps.Kotlin.stdlib)
     implementation(Deps.Kotlin.coroutinesCore)
     implementation(Deps.Kotlin.serialization)

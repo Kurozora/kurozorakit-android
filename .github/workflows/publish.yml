@@ -7,7 +7,7 @@ on:
 jobs:
   publish:
     name: Release build and publish
-    runs-on: ubuntu-latest # Linux daha hızlı ve ucuzdur
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out code
@@ -17,17 +17,15 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: 17 # Build.gradle içindeki toolchain ile uyumlu olmalı
+          java-version:
 
       - name: Build and Publish to Maven Central
-        run: ./gradlew publishToMavenCentral --no-configuration-cache --stacktrace
+        run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache --stacktrace
         env:
-          # Maven Central Kullanıcı Adı ve Şifresi
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
 
           # İmzalama (GPG) Bilgileri
-          # Vanniktech plugin 'in-memory' imzalama için bu değişkenleri arar:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}

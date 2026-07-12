@@ -9,9 +9,18 @@ plugins {
 }
 
 group = "app.kurozora"
-version = "1.2.5"
+version = "1.2.6"
+
+dependencies {
+    api(project(":api"))
+    api(project(":core"))
+    api(project(":data"))
+    api(project(":shared"))
+}
 
 allprojects {
+    project.group = rootProject.group
+    project.version = rootProject.version
     repositories {
         mavenCentral()
         mavenLocal()
@@ -20,23 +29,13 @@ allprojects {
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "com.vanniktech.maven.publish")
     apply(plugin = "org.jetbrains.dokka")
 
-    // Alt projelerin dökümantasyon ayarlarını buradan yapabilirsin
     tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
         dokkaSourceSets {
             configureEach {
                 reportUndocumented.set(true)
-                //çalışmadı en son tekrar dene sonra
-//                pluginsMapConfiguration.set(
-//                    mapOf(
-//                        "org.jetbrains.dokka.base.DokkaBase" to """
-//                            {
-//                              "footerMessage": "© 2026 Kurozora Team - KurozoraKit Documentation",
-//                            }
-//                        """.trimIndent()
-//                    )
-//                )
             }
         }
     }
@@ -52,84 +51,93 @@ subprojects {
     kotlin {
         jvmToolchain(17)
     }
-}
 
-dependencies {
-    implementation(project(":api"))
-    implementation(project(":core"))
-    implementation(project(":data"))
-    implementation(project(":shared"))
-}
+    // Her alt modül kendi adıyla mavenLocal veya MavenCentral'e basılacak
+    mavenPublishing {
+        publishToMavenCentral()
 
-// --- KRİTİK BÖLÜM: FAT JAR OLUŞTURMA ---
-// Yeni bir task yaratmak yerine, var olan 'jar' taskını modifiye ediyoruz.
-// Böylece Maven plugin'i otomatik olarak bu dolu jar'ı alıp yayınlar.
-tasks.named<Jar>("jar") {
-    archiveBaseName.set("kurozora-kit")
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        if (!project.gradle.startParameter.taskNames.any { it.contains("Local") }) {
+            signAllPublications()
+        }
 
-    // 1. Root projenin çıktılarını al
-    from(sourceSets.main.get().output)
+        // artifactId dinamik olarak alt modülün adı olacak (örn: kurozora-kit-api)
+        coordinates(rootProject.group.toString(), "kurozorakit-${project.name}", rootProject.version.toString())
 
-    // 2. Tüm alt projelerin çıktılarını al ve içine göm
-    subprojects.forEach { subproject ->
-        from(subproject.sourceSets.main.get().output)
+        configure(
+            KotlinJvm(
+                javadocJar = JavadocJar.Dokka("dokkaHtml"), // Her modülün kendi dokümantasyonu
+                sourcesJar = true
+            )
+        )
+
+        pom {
+            name.set("KurozoraKit ${project.name.capitalize()}")
+            description.set("KurozoraKit ${project.name} module lets users manage their anime, manga, games and music library.")
+            inceptionYear.set("2025")
+            url.set("https://github.com/Kurozora/kurozorakit-android")
+            licenses {
+                license {
+                    name.set("MIT")
+                    url.set("https://github.com/Kurozora/kurozorakit-android/blob/main/LICENSE")
+                }
+            }
+            developers {
+                developer {
+                    id.set("kurozora")
+                    name.set("Kurozora")
+                    url.set("https://github.com/Kurozora/")
+                }
+            }
+            scm {
+                url.set("https://github.com/Kurozora/kurozorakit-android")
+                connection.set("scm:git:git://github.com/Kurozora/kurozorakit-android.git")
+                developerConnection.set("scm:git:ssh://git@github.com/Kurozora/kurozorakit-android.git")
+            }
+        }
     }
 }
 
-// Kaynak kodları da (Sources) birleştirmek istersen (Opsiyonel ama önerilir):
-//tasks.named<Jar>("sourcesJar") {
-//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-//    subprojects.forEach { subproject ->
-//        from(subproject.sourceSets.main.get().allSource)
-//    }
-//}
-
 mavenPublishing {
     publishToMavenCentral()
+    if (!project.gradle.startParameter.taskNames.any { it.contains("Local") }) { signAllPublications() }
 
-    signAllPublications()
+    coordinates(group.toString(), "kurozorakit", version.toString())
 
-    coordinates(group.toString(), project.rootProject.name, version.toString())
-
-    configure(
-        KotlinJvm(
-            javadocJar = JavadocJar.Dokka("dokkaHtml"),
-            sourcesJar = true
-        )
-    )
+    configure(com.vanniktech.maven.publish.KotlinJvm(
+        javadocJar = com.vanniktech.maven.publish.JavadocJar.Dokka("dokkaHtml"),
+        sourcesJar = true
+    ))
 
     pom {
-        name = "KurozoraKit"
-        description = "KurozoraKit lets users manage their anime, manga, games and music library and access many other services from your app. When users provide permission to access their Kurozora account, they can use your app to share anime, add it to their library, and discover any of the thousands of content in the Kurozora catalog. If your app detects that the user is not yet a Kurozora member, you can offer them to create an account within your app."
-        inceptionYear = "2025"
-        url = "https://github.com/Kurozora/kurozorakit-android"
+        name.set("KurozoraKit ${project.name.capitalize()}")
+        description.set("KurozoraKit ${project.name} module lets users manage their anime, manga, games and music library.")
+        inceptionYear.set("2025")
+        url.set("https://github.com/Kurozora/kurozorakit-android")
         licenses {
             license {
-                name = "MIT"
-                url = "https://github.com/Kurozora/kurozorakit-android/blob/main/LICENSE"
+                name.set("MIT")
+                url.set("https://github.com/Kurozora/kurozorakit-android/blob/main/LICENSE")
             }
         }
         developers {
             developer {
-                id = "kurozora"
-                name = "Kurozora"
-                url = "https://github.com/Kurozora/"
+                id.set("kurozora")
+                name.set("Kurozora")
+                url.set("https://github.com/Kurozora/")
             }
         }
         scm {
-            url = "https://github.com/Kurozora/kurozorakit-android"
-            connection = "scm:git:git://github.com/Kurozora/kurozorakit-android.git"
-            developerConnection = "scm:git:ssh://git@github.com/Kurozora/kurozorakit-android.git"
+            url.set("https://github.com/Kurozora/kurozorakit-android")
+            connection.set("scm:git:git://github.com/Kurozora/kurozorakit-android.git")
+            developerConnection.set("scm:git:ssh://git@github.com/Kurozora/kurozorakit-android.git")
         }
     }
 }
 
-// Çoklu modül birleştirme taskı
+// Opsiyonel: Tüm modüllerin dokümantasyonunu tek bir web sitesinde toplamak istersen root'ta kalabilir
 tasks.withType<org.jetbrains.dokka.gradle.DokkaMultiModuleTask>().configureEach {
     outputDirectory.set(layout.buildDirectory.dir("dokka/htmlMultiModule"))
     moduleName.set("KurozoraKit SDK")
-
     pluginsMapConfiguration.set(
         mapOf(
             "org.jetbrains.dokka.base.DokkaBase" to """

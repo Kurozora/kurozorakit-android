@@ -4,10 +4,9 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":data"))
-    implementation(project(":api"))
-    implementation(project(":shared"))
-    implementation(project(":cache"))
+    api(project(":data"))
+    api(project(":api"))
+    api(project(":shared"))
     implementation(Deps.Kotlin.stdlib)
     implementation(Deps.Kotlin.coroutinesCore)
     implementation(Deps.Kotlin.serialization)
