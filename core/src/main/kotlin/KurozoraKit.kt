@@ -4,7 +4,6 @@ import kurozorakit.api.KurozoraApiClient
 import kurozorakit.api.Platform
 import kurozorakit.api.TokenProvider
 import kurozorakit.shared.UserAgent
-import kurozorakit.cache.CacheManager
 import kurozorakit.data.DefaultTokenProvider
 import kurozorakit.data.models.user.User
 import kurozorakit.data.repositories.airseason.AirSeasonRepository
@@ -196,7 +195,6 @@ class KurozoraKit private constructor(
         private var maxBackoffDelayMs: Long = 30000
         private var backoffFactor: Double = 2.0
         private var userAgent: UserAgent = UserAgent()
-        private var cacheManager: CacheManager? = null
         private lateinit var platform: Platform
 
         /**
@@ -245,11 +243,6 @@ class KurozoraKit private constructor(
         fun backoffFactor(factor: Double) = apply { this.backoffFactor = factor }
 
         /**
-         * Configures a [CacheManager] to handle local data caching.
-         */
-        fun cacheManager(cacheManager: CacheManager) = apply { this.cacheManager = cacheManager }
-
-        /**
          * Sets a custom [UserAgent] to be sent with every request.
          */
         fun userAgent(userAgent: UserAgent) = apply { this.userAgent = userAgent }
@@ -274,7 +267,6 @@ class KurozoraKit private constructor(
                 baseUrl = apiEndpoint,
                 apiKey = apiKey,
                 tokenProvider = tokenProvider,
-                cacheManager = cacheManager,
                 platform = platform,
                 userAgent = userAgent,
             )

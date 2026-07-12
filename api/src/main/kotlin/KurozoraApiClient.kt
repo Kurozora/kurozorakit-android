@@ -13,8 +13,6 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
-import kurozorakit.cache.CacheEntry
-import kurozorakit.cache.CacheManager
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.MetaResponse
 import kurozorakit.shared.logging.KurozoraLogger
@@ -39,7 +37,6 @@ class KurozoraApiClient(
     val baseUrl: String,
     private val apiKey: String,
     val tokenProvider: TokenProvider? = null,
-    val cacheManager: CacheManager? = null,
     val platform: Platform,
     private val userAgent: UserAgent,
 ) {
@@ -237,48 +234,12 @@ class KurozoraApiClient(
                 }
             }
 
-            val cacheKey = cacheManager?.let {
-                generateCacheKey(
-                    url = url,
-                    parameters = parameters,
-                    extras = extractRequestInfoFromBlock(block)
-                )
-            }
-
-            // Check Cache (if forceRefresh is false)
-            if (cacheManager != null && !forceRefresh) {
-                val cached = cacheManager.get(cacheKey!!)
-                if (cached != null && !cached.isExpired()) {
-                    KurozoraLogger.debug("[KurozoraApiClient]", "Cache HIT for ${endpoint.path}")
-                    val json = Json { ignoreUnknownKeys = true }
-                    val data = json.decodeFromString<T>(cached.data)
-                    return Result.Success(data)
-                }
-            }
-
             KurozoraLogger.debug("[KurozoraApiClient]", "GET request to ${endpoint.path}")
             val response = httpClient.get("$baseUrl/${endpoint.path}") {
                 parameters.forEach { (key, value) -> parameter(key, value) }
                 block()
             }
             val body: T = response.body()
-
-            // Save to Cache
-            if (cacheManager != null) {
-                val json = Json { prettyPrint = false }
-                val jsonElement = json.encodeToString(body)
-                val entry = CacheEntry(
-                    key = cacheKey!!,
-                    data = jsonElement,
-                    timestamp = System.currentTimeMillis(),
-                    expirationTime = System.currentTimeMillis() + ttlMillis,
-                    size = jsonElement.toString().length.toLong(),
-                    url = url
-                )
-                cacheManager.put(entry)
-                KurozoraLogger.debug("[KurozoraApiClient]", "Cache SAVED for ${endpoint.path}")
-            }
-
             Result.Success(body)
         } catch (e: KurozoraError) {
             KurozoraLogger.error("[KurozoraApiClient]", "Error in GET request to ${endpoint.path}", e)

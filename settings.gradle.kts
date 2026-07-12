@@ -4,7 +4,6 @@ plugins {
 
 rootProject.name = "kurozorakit"
 
-include("cache")
 include("core")
 include("api")
 include("data")
