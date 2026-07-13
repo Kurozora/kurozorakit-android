@@ -62,14 +62,9 @@ class KurozoraApiClient(
         }
 
         install(Logging) {
-//            logger = object : Logger {
-//                override fun log(message: String) {
-//                    KurozoraLogger.debug("[KurozoraApiClient]", message)
-//                }
-//            }
             logger = object : Logger {
                 override fun log(message: String) {
-                    println("💬 [HTTP LOG] $message")
+                    KurozoraLogger.debug("[HTTP]", message)
                 }
             }
             level = LogLevel.ALL

@@ -12,6 +12,11 @@ import kurozorakit.shared.logging.CompositeLogger
 import kurozorakit.shared.logging.ConsoleLogger
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.shared.logging.LogLevel
+import kurozorakit.shared.logging.Logger
+import kurozorakit.shared.logging.MemoryBufferSink
+import kurozorakit.shared.logging.RotatingFileLogger
+import kurozorakit.shared.logging.RotationStrategy
+import kotlinx.coroutines.CoroutineScope
 import kurozorakit.data.repositories.auth.AuthRepository
 import kurozorakit.data.repositories.auth.AuthRepositoryImpl
 import kurozorakit.data.repositories.cast.CastRepository
@@ -202,6 +207,18 @@ class KurozoraKit private constructor(
         private var userAgent: UserAgent = UserAgent()
         private lateinit var platform: Platform
         private lateinit var databaseDriverFactory: DatabaseDriverFactory
+        private var consoleLoggingEnabled: Boolean = true
+        private var fileLoggingConfig: FileLoggingConfig? = null
+        private var memoryBufferCapacity: Int? = null
+        private var customSinks: MutableList<Logger> = mutableListOf()
+        private var loggingScope: CoroutineScope? = null
+
+        data class FileLoggingConfig(
+            val path: String,
+            val maxSize: Long,
+            val maxBackupFiles: Int,
+            val rotationStrategy: RotationStrategy
+        )
 
         /**
          * Sets the base API endpoint URL. Defaults to [KurozoraApi.V1.baseUrl].
@@ -259,6 +276,36 @@ class KurozoraKit private constructor(
         fun databaseDriverFactory(factory: DatabaseDriverFactory) = apply { this.databaseDriverFactory = factory }
 
         /**
+         * Enables or disables console logging output. Enabled by default.
+         */
+        fun consoleLogging(enable: Boolean) = apply { this.consoleLoggingEnabled = enable }
+
+        /**
+         * Enables file logging with the given configuration. Requires [loggingScope] to be set.
+         */
+        fun fileLogging(
+            path: String,
+            maxSize: Long = 5 * 1024 * 1024,
+            maxBackupFiles: Int = 3,
+            rotationStrategy: RotationStrategy = RotationStrategy.SIZE
+        ) = apply { this.fileLoggingConfig = FileLoggingConfig(path, maxSize, maxBackupFiles, rotationStrategy) }
+
+        /**
+         * Enables an in-memory ring buffer that stores recent logs for diagnostic/debug overlays.
+         */
+        fun memoryBuffer(capacity: Int = 500) = apply { this.memoryBufferCapacity = capacity }
+
+        /**
+         * Adds a custom [Logger] sink to the logging pipeline.
+         */
+        fun customSink(sink: Logger) = apply { this.customSinks.add(sink) }
+
+        /**
+         * Sets the [CoroutineScope] used by sinks that require async operations (e.g. file logging).
+         */
+        fun loggingScope(scope: CoroutineScope) = apply { this.loggingScope = scope }
+
+        /**
          * Finalizes the configuration and returns a fully initialized [KurozoraKit] instance.
          *
          * This method sets up the logging system, initializes the HTTP client,
@@ -267,10 +314,35 @@ class KurozoraKit private constructor(
          */
         fun build(): KurozoraKit {
             // Initialize logging infrastructure
-            val logger = CompositeLogger(
-                listOf(ConsoleLogger(logLevel)),
-                logLevel
-            )
+            val sinks = mutableListOf<Logger>()
+            if (consoleLoggingEnabled) {
+                sinks.add(ConsoleLogger(minLogLevel = logLevel))
+            }
+            fileLoggingConfig?.let { config ->
+                val scope = loggingScope ?: throw IllegalStateException(
+                    "File logging requires a CoroutineScope. Set one via loggingScope()."
+                )
+                sinks.add(
+                    RotatingFileLogger(
+                        filePath = config.path,
+                        maxFileSizeBytes = config.maxSize,
+                        maxBackupFiles = config.maxBackupFiles,
+                        rotationStrategy = config.rotationStrategy,
+                        coroutineScope = scope,
+                        minLogLevel = logLevel
+                    )
+                )
+            }
+            memoryBufferCapacity?.let { capacity ->
+                sinks.add(MemoryBufferSink(capacity = capacity))
+            }
+            sinks.addAll(customSinks)
+
+            val logger: Logger = if (sinks.size == 1) {
+                sinks.first()
+            } else {
+                CompositeLogger(sinks, logLevel)
+            }
             KurozoraLogger.setLogger(logger)
 
             // Initialize the shared API client

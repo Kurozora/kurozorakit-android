@@ -5,4 +5,5 @@ plugins {
 dependencies {
     implementation(Deps.Kotlin.dateTime)
     implementation(Deps.Kotlin.serialization)
+    implementation(Deps.Kotlin.coroutinesCore)
 }
