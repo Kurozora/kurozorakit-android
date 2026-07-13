@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    api(project(":data"))
+    api(project(":domain"))
     api(project(":api"))
     api(project(":shared"))
     api(project(":store"))

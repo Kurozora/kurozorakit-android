@@ -124,24 +124,6 @@ data class User(
             get() = _followStatus ?: FollowStatus.fromBoolean(isFollowed)
             set(value) { _followStatus = value }
 
-        // --- Update Helper Methods ---
-
-        fun update(using: UserUpdate) {
-            slug = using.username.toString()
-            username = using.nickname.toString()
-            biography = using.biography
-            profile = using.profile
-            banner = using.banner
-            preferredLanguage = using.preferredLanguage
-            preferredTVRating = using.preferredTVRating
-            preferredTimezone = using.preferredTimezone
-        }
-
-        fun updateSubscription(from: Receipt) {
-            val valid = from.attributes.isValid
-            isSubscribed = valid
-            isPro = valid
-        }
     }
 
     @Serializable

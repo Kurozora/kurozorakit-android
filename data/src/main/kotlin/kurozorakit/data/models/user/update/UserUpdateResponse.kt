@@ -16,6 +16,18 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class UserUpdateResponse(
-    val data: UserUpdate,
+    val data: UserUpdateResponseModel,
     val message: String
+)
+
+@Serializable
+data class UserUpdateResponseModel(
+    var username: String? = null,
+    var nickname: String? = null,
+    var biography: String? = null,
+    var profileImageURL: String? = null,
+    var bannerImageURL: String? = null,
+    var preferredLanguage: String? = null,
+    var preferredTVRating: Int? = null,
+    var preferredTimezone: String? = null
 )

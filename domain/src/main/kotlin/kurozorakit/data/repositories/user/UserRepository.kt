@@ -142,7 +142,7 @@ interface UserRepository {
     /**
      * Imports library data from external services (e.g., MyAnimeList, AniList).
      */
-    suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, file: URL): Result<LibraryImport>
+    suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, xmlBytes: ByteArray): Result<LibraryImport>
 
 
     // --- Notifications ---
@@ -231,7 +231,6 @@ open class UserRepositoryImpl(
         return apiClient.get<UserResponse>(KKEndpoint.Me.Profile)
     }
 
-    // TODO()
     override suspend fun updateMyProfile(update: UserUpdate): Result<UserUpdateResponse> {
         return apiClient.post<UserUpdateResponse, Unit>(
             KKEndpoint.Me.Update,
@@ -244,11 +243,21 @@ open class UserRepositoryImpl(
                         update.username?.let { append("username", it) }
                         update.nickname?.let { append("nickname", it) }
                         update.biography?.let { append("biography", it) }
-                        // update.profile?.let { append("profile", it.id) }
-                        // update.banner?.let { append("banner", it.id) }
                         update.preferredLanguage?.let { append("preferredLanguage", it) }
                         update.preferredTVRating?.let { append("preferredTVRating", it.toString()) }
                         update.preferredTimezone?.let { append("preferredTimezone", it) }
+                        update.profile?.let { byteArray ->
+                            append("profileImage", byteArray, Headers.build {
+                                append(HttpHeaders.ContentType, "image/jpeg")
+                                append(HttpHeaders.ContentDisposition, "filename=\"profile.jpg\"")
+                            })
+                        }
+                        update.banner?.let { byteArray ->
+                            append("bannerImage", byteArray, Headers.build {
+                                append(HttpHeaders.ContentType, "image/jpeg")
+                                append(HttpHeaders.ContentDisposition, "filename=\"banner.jpg\"")
+                            })
+                        }
                     }
 
                 )
@@ -383,14 +392,14 @@ open class UserRepositoryImpl(
         return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.Library.Clear, body)
     }
 
-    override suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, file: URL): Result<LibraryImport> {
+    override suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, xmlBytes: ByteArray): Result<LibraryImport> {
         return apiClient.post<LibraryImport, MultiPartFormDataContent>(
             KKEndpoint.Me.Library.Import,
             body = MultiPartFormDataContent(
                 formData {
                     append(
                         key = "file",
-                        value = file.toURI().toURL().openStream().readBytes(),
+                        value = xmlBytes,
                         headers = Headers.build {
                             append(HttpHeaders.ContentDisposition, "form-data; name=\"file\"; filename=\"LibraryImport.xml\"")
                             append(HttpHeaders.ContentType, "text/xml")

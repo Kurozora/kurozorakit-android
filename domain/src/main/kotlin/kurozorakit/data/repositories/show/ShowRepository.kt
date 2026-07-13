@@ -187,7 +187,7 @@ interface ShowRepository {
  * @property apiClient The client used to communicate with the show and production endpoints.
  */
 open class ShowRepositoryImpl(
-    private val apiClient: KurozoraApiClient
+    private val apiClient: KurozoraApiClient,
 ) : ShowRepository {
 
     override suspend fun getShows(next: String?, limit: Int, filter: ShowFilter?): Result<ShowIdentityResponse> {

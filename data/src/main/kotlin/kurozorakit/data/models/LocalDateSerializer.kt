@@ -20,6 +20,7 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.long
 import kurozorakit.data.enums.KKLibrary
 import kurozorakit.data.models.user.update.block.BlockInfo
 import kurozorakit.data.models.user.update.block.BlockInfoOrBoolean
@@ -46,13 +47,46 @@ object LocalDateSerializer : KSerializer<LocalDate?> {
     }
 
     override fun deserialize(decoder: Decoder): LocalDate? {
-        val timestamp = decoder.decodeLong()
-        if (timestamp <= 0L) return null
+        val input = decoder as? JsonDecoder
+        if (input != null) {
+            val element = input.decodeJsonElement()
+            if (element is JsonPrimitive) {
+                if (!element.isString) {
+                    val timestamp = element.long
+                    if (timestamp <= 0L) return null
+                    return Instant.fromEpochSeconds(timestamp)
+                        .toLocalDateTime(TimeZone.UTC)
+                        .date
+                } else {
+                    val raw = element.content
+                    if (raw.matches(Regex("""^\d+$"""))) {
+                        val timestamp = raw.toLong()
+                        if (timestamp <= 0L) return null
+                        return Instant.fromEpochSeconds(timestamp)
+                            .toLocalDateTime(TimeZone.UTC)
+                            .date
+                    }
+                    return try {
+                        LocalDate.parse(raw)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+            }
+            return null
+        }
 
-        val millis = timestamp * 1000
-        return Instant.fromEpochMilliseconds(millis)
-            .toLocalDateTime(TimeZone.UTC)
-            .date
+        return try {
+            val timestamp = decoder.decodeLong()
+            if (timestamp <= 0L) return null
+
+            val millis = timestamp * 1000
+            Instant.fromEpochMilliseconds(millis)
+                .toLocalDateTime(TimeZone.UTC)
+                .date
+        } catch (e: Exception) {
+            null
+        }
     }
 }
 
@@ -71,8 +105,23 @@ object InstantAsEpochSecondsSerializer : KSerializer<Instant> {
     }
 
     override fun deserialize(decoder: Decoder): Instant {
-        val seconds = decoder.decodeLong()
-        return Instant.fromEpochSeconds(seconds)
+        val input = decoder as? JsonDecoder
+        if (input != null) {
+            val element = input.decodeJsonElement()
+            if (element is JsonPrimitive) {
+                return if (!element.isString) {
+                    Instant.fromEpochSeconds(element.long)
+                } else {
+                    val raw = element.content
+                    if (raw.matches(Regex("""^\d+$"""))) {
+                        Instant.fromEpochSeconds(raw.toLong())
+                    } else {
+                        Instant.parse(raw)
+                    }
+                }
+            }
+        }
+        return Instant.fromEpochSeconds(decoder.decodeLong())
     }
 }
 
@@ -89,6 +138,37 @@ object FlexibleInstantSerializer : KSerializer<Instant?> {
         PrimitiveSerialDescriptor("FlexibleInstant", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): Instant? {
+        val input = decoder as? JsonDecoder
+        if (input != null) {
+            val element = input.decodeJsonElement()
+            if (element is JsonPrimitive) {
+                if (element.isString) {
+                    val raw = element.content
+
+                    if (raw.matches(Regex("""^\d{2}:\d{2}$"""))) {
+                        return null
+                    }
+
+                    if (raw.matches(Regex("""^\d+$"""))) {
+                        return Instant.fromEpochSeconds(raw.toLong())
+                    }
+
+                    return try {
+                        Instant.parse(raw)
+                    } catch (e: Exception) {
+                        null
+                    }
+                } else {
+                    return try {
+                        Instant.fromEpochSeconds(element.long)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+            }
+            return null
+        }
+
         val raw = decoder.decodeString()
 
         if (raw.matches(Regex("""^\d{2}:\d{2}$"""))) {

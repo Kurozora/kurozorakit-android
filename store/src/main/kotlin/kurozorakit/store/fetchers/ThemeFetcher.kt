@@ -14,7 +14,7 @@ import java.io.IOException
 class ThemeFetcher(private val apiClient: KurozoraApiClient) {
 
     fun forSingleTheme(): Fetcher<ThemeKey.ById, Theme> = Fetcher.of { key ->
-        val result = apiClient.get<ThemeResponse>(KKEndpoint.Theme.Details(key.id))
+        val result = apiClient.get<ThemeResponse>(KKEndpoint.Themes.Details(key.id))
         when (result) {
             is Result.Success -> result.data.data.firstOrNull() ?: throw NoSuchElementException("Theme not found")
             is Result.Error -> throw result.error.toException()
@@ -22,7 +22,7 @@ class ThemeFetcher(private val apiClient: KurozoraApiClient) {
     }
 
     fun forThemeList(): Fetcher<ThemeKey.All, List<Theme>> = Fetcher.ofResult {
-        val result = apiClient.get<ThemeResponse>(KKEndpoint.Theme.Index())
+        val result = apiClient.get<ThemeResponse>(KKEndpoint.Themes.Index)
         when (result) {
             is Result.Success -> FetcherResult.Data(result.data.data)
             is Result.Error -> FetcherResult.Error.Exception(result.error.toException())

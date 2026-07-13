@@ -43,7 +43,7 @@ open class StoreRepositoryImpl(
 
         result.onSuccess { response ->
             response.data.firstOrNull()?.let { receipt ->
-                User.current?.attributes?.updateSubscription(from = receipt)
+                //User.current?.attributes?.updateSubscription(from = receipt)
             }
         }.onError { error ->
             println("Received validate receipt error: ${error.message}")

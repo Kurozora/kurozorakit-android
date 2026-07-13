@@ -135,14 +135,18 @@ data class Show(
         val episodeCount: Int,
         val seasonCount: Int,
         val stats: MediaStat? = null,
+        @Serializable(with = FlexibleInstantSerializer::class)
         val startedAt: Instant? = null,
+        @Serializable(with = FlexibleInstantSerializer::class)
         val endedAt: Instant? = null,
+        @Serializable(with = FlexibleInstantSerializer::class)
         val nextBroadcastAt: Instant? = null,
         val duration: String,
         val durationCount: Int,
         val durationTotal: String,
         val durationTotalCount: Int,
         val airSeason: String? = null,
+        @Serializable(with = FlexibleInstantSerializer::class)
         val airTime: Instant? = null,
         val airDay: String? = null,
         val isNSFW: Boolean,

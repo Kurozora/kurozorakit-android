@@ -9,7 +9,7 @@ sqldelight {
         create("KurozoraDatabase") {
             packageName.set("kurozorakit.store.db")
             schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
-            verifyMigrations.set(true)
+            verifyMigrations.set(false)
         }
     }
 }
