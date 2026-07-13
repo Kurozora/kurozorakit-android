@@ -87,7 +87,7 @@ data class User(
         var biography: String? = null,
         var biographyHTML: String? = null,
         var biographyMarkdown: String? = null,
-        val activityStatus: ActivityStatus,
+        val activityStatus: String,
         var profile: Media? = null,
         var banner: Media? = null,
         var isDeveloper: Boolean,
