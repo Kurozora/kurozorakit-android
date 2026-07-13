@@ -111,7 +111,7 @@ data class Literature(
         val genres: List<String>? = null,
         val themes: List<String>? = null,
         val studio: String? = null,
-        val languages: List<Language>,
+        val languages: List<Language>?,
         val countryOfOrigin: Country? = null,
         val tvRating: TVRating,
         val type: MediaType,

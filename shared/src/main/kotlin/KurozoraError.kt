@@ -1,5 +1,7 @@
 package kurozorakit.shared
 
+import java.io.IOException
+
 /**
  * Base sealed class for all errors encountered within the KurozoraKit library.
  *
@@ -68,4 +70,20 @@ sealed class KurozoraError : Exception() {
      * @property cause The original [Throwable] that triggered this error, if available.
      */
     data class UnknownError(override val message: String, override val cause: Throwable? = null) : KurozoraError()
+}
+
+/**
+ * Extension function to convert KurozoraError to Exception for Store5 compatibility.
+ */
+public fun KurozoraError.toException(): Exception {
+    return when (this) {
+        is KurozoraError.NetworkError -> IOException("Network error: $message")
+        is KurozoraError.AuthenticationError -> SecurityException("Auth error: $message")
+        is KurozoraError.NotFoundError -> NoSuchElementException("Not found: $message")
+        is KurozoraError.RateLimitError -> RuntimeException("Rate limit: $message")
+        is KurozoraError.ValidationError -> IllegalArgumentException("Validation: $message")
+        is KurozoraError.UnknownError -> RuntimeException("Unknown error: $message", cause)
+        is KurozoraError.ApiError -> IOException("Network error: $message")
+        is KurozoraError.StorageError -> RuntimeException("Storage error: $message")
+    }
 }

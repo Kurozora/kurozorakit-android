@@ -7,6 +7,7 @@ dependencies {
     api(project(":data"))
     api(project(":api"))
     api(project(":shared"))
+    api(project(":store"))
     implementation(Deps.Kotlin.stdlib)
     implementation(Deps.Kotlin.coroutinesCore)
     implementation(Deps.Kotlin.serialization)

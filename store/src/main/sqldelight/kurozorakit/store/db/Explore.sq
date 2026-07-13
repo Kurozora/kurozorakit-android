@@ -1,0 +1,35 @@
+CREATE TABLE IF NOT EXISTS ExploreEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    type TEXT NOT NULL,
+    href TEXT NOT NULL,
+
+    -- Attributes
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    position INTEGER NOT NULL,
+    content_type TEXT NOT NULL,
+    size TEXT NOT NULL,
+
+    -- Complex Fields (JSON)
+    relationships_json TEXT,
+
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+selectById:
+SELECT * FROM ExploreEntity WHERE id = ?;
+
+-- Pozisyona göre sıralı getir (Keşfet ekranı sırası)
+selectAll:
+SELECT * FROM ExploreEntity ORDER BY position ASC;
+
+insertOrReplace:
+INSERT OR REPLACE INTO ExploreEntity VALUES ?;
+
+deleteById:
+DELETE FROM ExploreEntity WHERE id = ?;
+
+deleteAll:
+DELETE FROM ExploreEntity;

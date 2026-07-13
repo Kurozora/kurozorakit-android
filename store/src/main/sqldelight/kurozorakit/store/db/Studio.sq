@@ -1,0 +1,58 @@
+CREATE TABLE IF NOT EXISTS StudioEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    type TEXT NOT NULL,
+    href TEXT NOT NULL,
+
+    -- Attributes
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    japanese_name TEXT,
+    successor TEXT,
+    about TEXT,
+    address TEXT,
+
+    -- Booleans (1/0)
+    is_producer INTEGER,
+    is_studio INTEGER,
+    is_licensor INTEGER,
+    is_nsfw INTEGER NOT NULL,
+
+    -- Dates (ISO String)
+    founded_at TEXT,
+    defunct_at TEXT,
+
+    -- Complex Fields (JSON)
+    profile_json TEXT,
+    banner_json TEXT,
+    logo_json TEXT,
+    tv_rating_json TEXT NOT NULL,
+    alternative_names_json TEXT,
+    predecessors_json TEXT,
+    social_urls_json TEXT,
+    website_urls_json TEXT,
+    stats_json TEXT,
+    library_json TEXT,
+    relationships_json TEXT,
+
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+selectById:
+SELECT * FROM StudioEntity WHERE id = ?;
+
+selectAll:
+SELECT * FROM StudioEntity ORDER BY name ASC;
+
+-- Senin sorduğun profesyonel yöntem:
+insertOrReplace:
+INSERT OR REPLACE INTO StudioEntity VALUES ?;
+
+deleteById:
+DELETE FROM StudioEntity WHERE id = ?;
+
+deleteStale:
+DELETE FROM StudioEntity WHERE updated_at < ?;
+
+countAll:
+SELECT COUNT(*) FROM StudioEntity;

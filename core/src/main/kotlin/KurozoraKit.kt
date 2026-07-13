@@ -60,6 +60,8 @@ import kurozorakit.data.repositories.themestore.ThemeStoreRepository
 import kurozorakit.data.repositories.themestore.ThemeStoreRepositoryImpl
 import kurozorakit.data.repositories.user.UserRepository
 import kurozorakit.data.repositories.user.UserRepositoryImpl
+import kurozorakit.store.DatabaseDriverFactory
+import kurozorakit.store.KurozoraStore
 
 /**
  * The main entry point for the KurozoraKit library.
@@ -70,6 +72,7 @@ import kurozorakit.data.repositories.user.UserRepositoryImpl
  */
 class KurozoraKit private constructor(
     private val apiClient: KurozoraApiClient,
+    private val store: KurozoraStore,
     private val showRepository: ShowRepository,
     private val literatureRepository: LiteratureRepository,
     private val gameRepository: GameRepository,
@@ -161,7 +164,7 @@ class KurozoraKit private constructor(
     fun song(): SongRepository = songRepository
 
     /** Manages Store-related operations and purchase verification. */
-    fun store(): StoreRepository = storeRepository
+    fun kurozoraStore(): StoreRepository = storeRepository
 
     /** Accesses UI themes and styling data. */
     fun theme(): ThemeRepository = themeRepository
@@ -171,6 +174,8 @@ class KurozoraKit private constructor(
 
     /** Provides information about seasonal airing status. */
     fun airSeason(): AirSeasonRepository = airSeasonRepository
+
+    fun store(): KurozoraStore = store
 
     companion object {
         /**
@@ -196,6 +201,7 @@ class KurozoraKit private constructor(
         private var backoffFactor: Double = 2.0
         private var userAgent: UserAgent = UserAgent()
         private lateinit var platform: Platform
+        private lateinit var databaseDriverFactory: DatabaseDriverFactory
 
         /**
          * Sets the base API endpoint URL. Defaults to [KurozoraApi.V1.baseUrl].
@@ -248,6 +254,11 @@ class KurozoraKit private constructor(
         fun userAgent(userAgent: UserAgent) = apply { this.userAgent = userAgent }
 
         /**
+         * Sets the [DatabaseDriverFactory] implementation providing device-specific info.
+         */
+        fun databaseDriverFactory(factory: DatabaseDriverFactory) = apply { this.databaseDriverFactory = factory }
+
+        /**
          * Finalizes the configuration and returns a fully initialized [KurozoraKit] instance.
          *
          * This method sets up the logging system, initializes the HTTP client,
@@ -270,6 +281,11 @@ class KurozoraKit private constructor(
                 platform = platform,
                 userAgent = userAgent,
             )
+
+            val store = KurozoraStore.builder()
+                .apiClient(apiClient)
+                .databaseDriverFactory(databaseDriverFactory)
+                .build()
 
             // Instantiate repository implementations
             val showRepository = ShowRepositoryImpl(apiClient)
@@ -300,6 +316,7 @@ class KurozoraKit private constructor(
 
             return KurozoraKit(
                 apiClient = apiClient,
+                store = store,
                 showRepository = showRepository,
                 literatureRepository = literatureRepository,
                 gameRepository = gameRepository,

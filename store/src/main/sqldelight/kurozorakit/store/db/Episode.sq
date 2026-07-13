@@ -1,0 +1,56 @@
+CREATE TABLE IF NOT EXISTS EpisodeEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    type TEXT NOT NULL,
+    href TEXT NOT NULL,
+
+    -- Attributes
+    number INTEGER NOT NULL,
+    number_total INTEGER NOT NULL,
+    season_number INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    synopsis TEXT,
+    previous_episode_title TEXT,
+    next_episode_title TEXT,
+    show_title TEXT NOT NULL,
+    duration TEXT NOT NULL,
+    started_at_timestamp INTEGER,
+    view_count INTEGER NOT NULL,
+
+    -- Booleans (1/0)
+    is_filler INTEGER NOT NULL,
+    is_verified INTEGER NOT NULL,
+
+    -- User Specific (Mutable)
+    given_rating REAL,
+    given_review TEXT,
+
+    -- Watch Status (JSON veya String olarak saklanabilir, biz JSON tercih ediyoruz)
+    watch_status_json TEXT,
+
+    -- Complex Fields (JSON)
+    poster_json TEXT,
+    banner_json TEXT,
+    stats_json TEXT,
+    relationships_json TEXT,
+
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+selectById:
+SELECT * FROM EpisodeEntity WHERE id = ?;
+
+selectByIds:
+SELECT * FROM EpisodeEntity WHERE id IN ?;
+
+insertOrReplace:
+INSERT OR REPLACE INTO EpisodeEntity VALUES ?;
+
+deleteById:
+DELETE FROM EpisodeEntity WHERE id = ?;
+
+deleteStale:
+DELETE FROM EpisodeEntity WHERE updated_at < ?;
+
+countAll:
+SELECT COUNT(*) FROM EpisodeEntity;

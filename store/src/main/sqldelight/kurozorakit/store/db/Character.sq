@@ -1,0 +1,59 @@
+CREATE TABLE IF NOT EXISTS CharacterEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    type TEXT NOT NULL,
+    href TEXT NOT NULL,
+
+    -- Attributes
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    about TEXT,
+    short_description TEXT,
+    debut TEXT,
+    status TEXT,
+    blood_type TEXT,
+    favorite_food TEXT,
+
+    -- Physical Stats (REAL for Double)
+    bust_size REAL,
+    waist_size REAL,
+    hip_size REAL,
+    height TEXT,
+    weight TEXT,
+
+    age TEXT,
+    birthdate TEXT,
+    astrological_sign TEXT,
+
+    -- User Generated (Mutable)
+    given_rating REAL,
+    given_review TEXT,
+
+    -- Complex Fields (JSON)
+    profile_json TEXT,
+    stats_json TEXT,
+    relationships_json TEXT,
+
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+selectById:
+SELECT * FROM CharacterEntity WHERE id = ?;
+
+selectByIds:
+SELECT * FROM CharacterEntity WHERE id IN ?;
+
+insertOrReplace:
+INSERT OR REPLACE INTO CharacterEntity VALUES ?;
+
+deleteById:
+DELETE FROM CharacterEntity WHERE id = ?;
+
+deleteAll:
+DELETE FROM CharacterEntity;
+
+deleteStale:
+DELETE FROM CharacterEntity WHERE updated_at < ?;
+
+countAll:
+SELECT COUNT(*) FROM CharacterEntity;
