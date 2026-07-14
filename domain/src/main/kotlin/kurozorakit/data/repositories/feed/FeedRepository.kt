@@ -4,6 +4,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.enums.ReSharesSortType
 import kurozorakit.data.models.feed.message.FeedMessageRequest
 import kurozorakit.data.models.feed.message.FeedMessageResponse
 import kurozorakit.data.models.feed.message.toStringMap
@@ -65,6 +66,28 @@ interface FeedRepository {
      * @return A [Result] containing the [FeedMessageResponse] listing the replies.
      */
     suspend fun getFeedMessageReplies(messageId: String, next: String? = null, limit: Int = 20): Result<FeedMessageResponse>
+
+    /**
+     * Fetches a paginated list of quote re-shares for a specific feed message.
+     *
+     * @param messageId The unique ID of the feed message.
+     * @param next Pagination cursor.
+     * @param limit Maximum number of quotes to return.
+     * @param sort Sort order for the returned quotes.
+     * @return A [Result] containing the [FeedMessageResponse].
+     */
+    suspend fun getFeedMessageQuotes(messageId: String, next: String? = null, limit: Int = 20, sort: ReSharesSortType = ReSharesSortType.default): Result<FeedMessageResponse>
+
+    /**
+     * Fetches a paginated list of simple re-shares for a specific feed message.
+     *
+     * @param messageId The unique ID of the feed message.
+     * @param next Pagination cursor.
+     * @param limit Maximum number of re-shares to return.
+     * @param sort Sort order for the returned re-shares.
+     * @return A [Result] containing the [FeedMessageResponse].
+     */
+    suspend fun getFeedMessageReShares(messageId: String, next: String? = null, limit: Int = 20, sort: ReSharesSortType = ReSharesSortType.default): Result<FeedMessageResponse>
 
     /**
      * Toggles the "heart" (like) status for a specific feed message.
@@ -141,6 +164,20 @@ open class FeedRepositoryImpl(
     override suspend fun getFeedMessageReplies(messageId: String, next: String?, limit: Int): Result<FeedMessageResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Feed.Messages.Replies(messageId)
+        return apiClient.get<FeedMessageResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getFeedMessageQuotes(messageId: String, next: String?, limit: Int, sort: ReSharesSortType): Result<FeedMessageResponse> {
+        val parameters = mutableMapOf("limit" to limit.toString())
+        sort.queryValue?.let { parameters["sort"] = it }
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Feed.Messages.Quotes(messageId)
+        return apiClient.get<FeedMessageResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getFeedMessageReShares(messageId: String, next: String?, limit: Int, sort: ReSharesSortType): Result<FeedMessageResponse> {
+        val parameters = mutableMapOf("limit" to limit.toString())
+        sort.queryValue?.let { parameters["sort"] = it }
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Feed.Messages.ReShares(messageId)
         return apiClient.get<FeedMessageResponse>(endpoint, parameters)
     }
 

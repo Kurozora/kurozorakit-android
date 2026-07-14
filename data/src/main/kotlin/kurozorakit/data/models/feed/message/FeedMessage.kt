@@ -80,7 +80,8 @@ data class FeedMessage(
         var isPinned: Boolean,
         val isReply: Boolean,
         val isReShare: Boolean,
-        val isReShared: Boolean,
+        var isReShared: Boolean,
+        var myReShareID: String? = null,
         var isSpoiler: Boolean,
         @SerialName("createdAt")
         val createdAtTimestamp: Long
@@ -112,6 +113,15 @@ data class FeedMessage(
                 isHearted = hearted
                 // Logic: Keep the UI consistent by manually incrementing/decrementing local metrics
                 if (hearted) metrics.heartCount++ else metrics.heartCount--
+            }
+
+            using.isReShared?.let { reShared ->
+                isReShared = reShared
+                if (reShared) metrics.reShareCount++ else metrics.reShareCount = maxOf(0, metrics.reShareCount - 1)
+            }
+
+            using.myReShareID?.let { id ->
+                myReShareID = id
             }
         }
 

@@ -365,6 +365,10 @@ sealed class KKEndpoint(val path: String) {
             class Details(messageId: String) : Messages("feed/messages/$messageId")
             /** Replies/Comments on a message. */
             class Replies(messageId: String) : Messages("feed/messages/$messageId/replies")
+            /** Quote re-shares of a message. */
+            class Quotes(messageId: String) : Messages("feed/messages/$messageId/quotes")
+            /** Simple re-shares of a message. */
+            class ReShares(messageId: String) : Messages("feed/messages/$messageId/re-shares")
             /** Like/Heart a message. */
             class Heart(messageId: String) : Messages("feed/messages/$messageId/heart")
             /** Pin a message (usually for profile owners). */
