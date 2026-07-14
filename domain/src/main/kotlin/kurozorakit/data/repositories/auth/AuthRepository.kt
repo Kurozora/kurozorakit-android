@@ -14,13 +14,16 @@ import kurozorakit.data.models.favorite.library.FavoriteLibraryResponse
 import kurozorakit.data.models.feed.message.FeedMessageResponse
 import kurozorakit.data.models.library.LibraryResponse
 import kurozorakit.data.models.misc.OAuthResponse
+import kurozorakit.data.models.misc.SignInAttemptResponse
 import kurozorakit.data.models.misc.SignInResponse
+import kurozorakit.data.models.misc.SignInResult
 import kurozorakit.data.models.review.ReviewResponse
 import kurozorakit.data.models.user.User
 import kurozorakit.data.models.user.UserIdentityResponse
 import kurozorakit.data.models.user.UserResponse
 import kurozorakit.data.models.user.update.block.BlockUpdateResponse
 import kurozorakit.data.models.user.update.follow.FollowUpdateResponse
+import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
 
 /**
@@ -46,11 +49,27 @@ interface AuthRepository {
     /**
      * Authenticates a user using email and password credentials.
      *
+     * If the account has two-factor authentication enabled, the result will be
+     * [SignInResult.RequiresTwoFactor] carrying a challenge token. Use
+     * [submitTwoFactorChallenge] to complete sign-in.
+     *
      * @param email The registered email address.
      * @param password The account password.
+     * @return A [Result] containing the [SignInResult] describing the outcome.
+     */
+    suspend fun signIn(email: String, password: String): Result<SignInResult>
+
+    /**
+     * Resolves a two-factor authentication challenge using a TOTP code or recovery code.
+     *
+     * Exactly one of [otp] or [recoveryCode] must be provided.
+     *
+     * @param challengeToken The short-lived challenge token from [SignInResult.RequiresTwoFactor].
+     * @param otp A six-digit TOTP code from the user's authenticator app.
+     * @param recoveryCode A single-use recovery code from 2FA enrollment.
      * @return A [Result] containing the [SignInResponse] with session tokens.
      */
-    suspend fun signIn(email: String, password: String): Result<SignInResponse>
+    suspend fun submitTwoFactorChallenge(challengeToken: String, otp: String? = null, recoveryCode: String? = null): Result<SignInResponse>
 
     /**
      * Performs authentication using Apple's OAuth identity provider.
@@ -205,17 +224,18 @@ open class AuthRepositoryImpl(
         }
     }
 
-    override suspend fun signIn(email: String, password: String): Result<SignInResponse> {
+    override suspend fun signIn(email: String, password: String): Result<SignInResult> {
         val p = apiClient.platform
         val body = listOf(
             "email" to email,
             "password" to password,
+            "client_supports_2fa" to "1",
             "platform" to p.platform,
             "platform_version" to p.platformVersion,
             "device_vendor" to p.deviceVendor,
             "device_model" to p.deviceModel
         )
-        val response = apiClient.post<SignInResponse, Unit>(
+        return when (val result = apiClient.post<SignInAttemptResponse, Unit>(
             KKEndpoint.Auth.SignIn,
             body = null
         ) {
@@ -223,6 +243,56 @@ open class AuthRepositoryImpl(
             setBody(FormDataContent(Parameters.build {
                 body.forEach { (key, value) -> append(key, value) }
             }))
+        }) {
+            is Result.Error -> result
+            is Result.Success -> {
+                val attempt = result.data
+                val challengeToken = attempt.challengeToken
+                val authToken = attempt.authenticationToken
+                val users = attempt.data
+                if (attempt.twoFactor == true && challengeToken != null) {
+                    Result.Success(SignInResult.RequiresTwoFactor(challengeToken = challengeToken))
+                } else if (authToken != null && users != null) {
+                    val user = users.first()
+                    User.current = user
+                    apiClient.tokenProvider?.saveToken(
+                        AccountUser(
+                            id = user.id,
+                            username = user.attributes.username,
+                            token = authToken,
+                            profileUrl = user.attributes.profile?.url,
+                            userJson = Json.encodeToString(user)
+                        )
+                    )
+                    Result.Success(SignInResult.SignedIn(SignInResponse(users, authToken)))
+                } else {
+                    Result.Error(KurozoraError.ApiError(code = "200", message = "The service returned an unexpected sign-in response."))
+                }
+            }
+        }
+    }
+
+    override suspend fun submitTwoFactorChallenge(challengeToken: String, otp: String?, recoveryCode: String?): Result<SignInResponse> {
+        require(otp != null || recoveryCode != null) {
+            "A TOTP code or recovery code is required to complete the two-factor challenge."
+        }
+        require(otp == null || recoveryCode == null) {
+            "Provide either a TOTP code or a recovery code, not both."
+        }
+        val body = Parameters.build {
+            append("challenge_token", challengeToken)
+            if (otp != null) {
+                append("otp", otp)
+            }
+            if (recoveryCode != null) {
+                append("recovery_code", recoveryCode)
+            }
+        }
+        val response = apiClient.post<SignInResponse, FormDataContent>(
+            KKEndpoint.Auth.TwoFactorChallenge,
+            FormDataContent(body)
+        ) {
+            contentType(ContentType.Application.FormUrlEncoded)
         }
         response.onSuccess {
             val user = it.data.first()

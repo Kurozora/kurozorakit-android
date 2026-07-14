@@ -427,6 +427,8 @@ sealed class KKEndpoint(val path: String) {
         object SignIn     : Auth("users/signin")
         /** Sign in with Apple (SIWA). */
         object SiwaSignIn : Auth("users/siwa/signin")
+        /** Resolve a two-factor authentication challenge. */
+        object TwoFactorChallenge : Auth("users/two-factor-challenge")
         /** Initiate password reset flow. */
         object ResetPassword : Auth("users/reset-password")
         /** Block a user. */
