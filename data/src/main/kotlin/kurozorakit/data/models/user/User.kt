@@ -10,7 +10,6 @@ import kurozorakit.data.enums.UserRole
 import kurozorakit.data.models.IdentityResource
 import kurozorakit.data.models.LocalDateSerializer
 import kurozorakit.data.models.media.Media
-import kurozorakit.data.models.user.achievement.AchievementResponse
 import kurozorakit.data.models.user.receipt.Receipt
 import kurozorakit.data.models.user.tokens.AccessTokenResponse
 import kurozorakit.data.models.user.update.UserUpdate
@@ -104,6 +103,7 @@ data class User(
         var followingCount: Int,
         val reputationCount: Int,
         val ratingsCount: Int,
+        val achievementsCount: Int? = null,
         var preferredLanguage: String? = null,
         var preferredTVRating: Int? = null,
         var preferredTimezone: String? = null,
@@ -129,7 +129,6 @@ data class User(
 
     @Serializable
     data class Relationships(
-        val accessTokens: AccessTokenResponse? = null,
-        val achievements: AchievementResponse? = null
+        val accessTokens: AccessTokenResponse? = null
     )
 }

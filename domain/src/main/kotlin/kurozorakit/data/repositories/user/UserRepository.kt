@@ -17,6 +17,7 @@ import kurozorakit.data.models.recap.RecapResponse
 import kurozorakit.data.models.recap.item.RecapItemResponse
 import kurozorakit.data.models.user.UserIdentityResponse
 import kurozorakit.data.models.user.UserResponse
+import kurozorakit.data.models.user.achievement.AchievementResponse
 import kurozorakit.data.models.user.notification.SingleNotificationResponse
 import kurozorakit.data.models.user.notification.UserNotificationResponse
 import kurozorakit.data.models.user.notification.update.UserNotificationUpdateResponse
@@ -149,6 +150,18 @@ interface UserRepository {
      */
     suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, xmlBytes: ByteArray): Result<LibraryImport>
 
+
+    // --- Achievements ---
+
+    /**
+     * Fetches the achievements available to the specified user, including each achievement's locked or unlocked state.
+     *
+     * @param userId The unique identifier of the user.
+     * @param next Pagination cursor for fetching the next page.
+     * @param limit Maximum number of achievements to return per page.
+     * @return A [Result] containing the [AchievementResponse] with a list of achievements.
+     */
+    suspend fun getUserAchievements(userId: String, next: String? = null, limit: Int = 25): Result<AchievementResponse>
 
     // --- Notifications ---
 
@@ -476,6 +489,12 @@ open class UserRepositoryImpl(
         }
     }
 
+
+    override suspend fun getUserAchievements(userId: String, next: String?, limit: Int): Result<AchievementResponse> {
+        val parameters = mapOf("limit" to limit.toString())
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Achievements(userId)
+        return apiClient.get<AchievementResponse>(endpoint, parameters)
+    }
 
     override suspend fun getMyNotifications(): Result<UserNotificationResponse> {
         return apiClient.get<UserNotificationResponse>(KKEndpoint.Me.Notifications.Index)

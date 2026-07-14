@@ -478,6 +478,8 @@ sealed class KKEndpoint(val path: String) {
         class Profile(id: String)   : Auth("users/$id/profile")
         /** Reviews written by a user. */
         class Reviews(id: String)   : Auth("users/$id/reviews")
+        /** Achievements unlocked by a user. */
+        class Achievements(id: String) : Auth("users/$id/achievements")
         /** Search for users by username. */
         class Search(username: String) : Auth("users/search/$username")
         /** Delete own account. */
