@@ -163,9 +163,19 @@ interface UserRepository {
     suspend fun getMyNotification(notificationId: String): Result<SingleNotificationResponse>
 
     /**
-     * Permanently deletes a notification.
+     * Permanently deletes a single notification.
      */
     suspend fun deleteMyNotification(notificationId: String): Result<Unit>
+
+    /**
+     * Permanently deletes multiple notifications in a single call.
+     */
+    suspend fun deleteMyNotifications(notificationIds: List<String>): Result<Unit>
+
+    /**
+     * Permanently deletes all notifications belonging to the authenticated user.
+     */
+    suspend fun deleteAllMyNotifications(): Result<Unit>
 
     /**
      * Updates the status (Read/Unread) of a notification.
@@ -476,8 +486,30 @@ open class UserRepositoryImpl(
     }
 
     override suspend fun deleteMyNotification(notificationId: String): Result<Unit> {
-        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.Notifications.Delete(notificationId)) {
-            contentType(ContentType.Application.Json)
+        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.Notifications.Delete, mapOf("notification" to notificationId)) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                append("notification", notificationId)
+            }))
+        }
+    }
+
+    override suspend fun deleteMyNotifications(notificationIds: List<String>): Result<Unit> {
+        val ids = notificationIds.joinToString(",")
+        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.Notifications.Delete, mapOf("notification" to ids)) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                append("notification", ids)
+            }))
+        }
+    }
+
+    override suspend fun deleteAllMyNotifications(): Result<Unit> {
+        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.Notifications.Delete, mapOf("notification" to "all")) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                append("notification", "all")
+            }))
         }
     }
 

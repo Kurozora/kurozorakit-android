@@ -532,8 +532,8 @@ sealed class KKEndpoint(val path: String) {
             object Index : Notifications("me/notifications")
             /** Get specific notification details. */
             class Details(notificationID: String) : Notifications("me/notifications/$notificationID")
-            /** Delete a notification. */
-            class Delete(notificationID: String) : Notifications("me/notifications/$notificationID/delete")
+            /** Delete one, multiple, or all notifications. */
+            object Delete : Notifications("me/notifications/delete")
             /** Mark notifications as read/update. */
             object Update : Notifications("me/notifications/update")
         }
