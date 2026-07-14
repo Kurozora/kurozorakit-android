@@ -101,6 +101,8 @@ sealed class KKEndpoint(val path: String) {
         object Upcoming : Show("anime/upcoming")
         /** Endpoint to rate a specific show. */
         class Rate(showId: String) : Show("anime/${showId}/rate")
+        /** Parental guide stats and entries for a show. */
+        class ParentalGuide(showId: String) : Show("anime/${showId}/parentalguide")
     }
 
     // --- Literature ---
@@ -142,6 +144,8 @@ sealed class KKEndpoint(val path: String) {
         object Upcoming           : Literature("manga/upcoming")
         /** Endpoint to rate a specific literature item. */
         class Rate(id: String)    : Literature("manga/$id/rate")
+        /** Parental guide stats and entries for a literature item. */
+        class ParentalGuide(id: String) : Literature("manga/$id/parentalguide")
     }
 
     /**
@@ -179,6 +183,8 @@ sealed class KKEndpoint(val path: String) {
         object Upcoming : Game("games/upcoming")
         /** Endpoint to rate a specific game. */
         class Rate(gameId: String) : Game("games/$gameId/rate")
+        /** Parental guide stats and entries for a game. */
+        class ParentalGuide(gameId: String) : Game("games/$gameId/parentalguide")
     }
 
     /**
@@ -334,6 +340,23 @@ sealed class KKEndpoint(val path: String) {
     sealed class Reviews(path: String): KKEndpoint(path) {
         /** Deletes a specific review. */
         class Delete(reviewId: String) : Reviews("reviews/$reviewId/delete")
+    }
+
+    // --- Parental Guide ---
+    /**
+     * Endpoints for managing Parental Guide entries.
+     */
+    sealed class ParentalGuideEntry(path: String): KKEndpoint(path) {
+        /** Fetches a specific entry. */
+        class Details(entryId: String) : ParentalGuideEntry("parentalguide/entries/$entryId")
+        /** Deletes a specific entry. */
+        class Delete(entryId: String) : ParentalGuideEntry("parentalguide/entries/$entryId/delete")
+        /** Updates a specific entry in place. */
+        class Update(entryId: String) : ParentalGuideEntry("parentalguide/entries/$entryId/update")
+        /** Votes on a parental guide entry. */
+        class Vote(entryId: String) : ParentalGuideEntry("parentalguide/entries/$entryId/vote")
+        /** Reports a parental guide entry. */
+        class Report(entryId: String) : ParentalGuideEntry("parentalguide/entries/$entryId/report")
     }
 
     // --- Schedule ---

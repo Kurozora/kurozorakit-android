@@ -41,6 +41,8 @@ import kurozorakit.data.repositories.literature.LiteratureRepository
 import kurozorakit.data.repositories.literature.LiteratureRepositoryImpl
 import kurozorakit.data.repositories.misc.MiscRepository
 import kurozorakit.data.repositories.misc.MiscRepositoryImpl
+import kurozorakit.data.repositories.parentalguide.ParentalGuideRepository
+import kurozorakit.data.repositories.parentalguide.ParentalGuideRepositoryImpl
 import kurozorakit.data.repositories.person.PersonRepository
 import kurozorakit.data.repositories.person.PersonRepositoryImpl
 import kurozorakit.data.repositories.review.ReviewRepository
@@ -103,6 +105,7 @@ class KurozoraKit private constructor(
     private val themeRepository: ThemeRepository,
     private val themeStoreRepository: ThemeStoreRepository,
     private val airSeasonRepository: AirSeasonRepository,
+    private val parentalGuideRepository: ParentalGuideRepository,
 ) {
 
     /** Provides access to Anime (Show) related data and operations. */
@@ -179,6 +182,9 @@ class KurozoraKit private constructor(
 
     /** Provides information about seasonal airing status. */
     fun airSeason(): AirSeasonRepository = airSeasonRepository
+
+    /** Provides access to parental guide ratings and content advisories. */
+    fun parentalGuide(): ParentalGuideRepository = parentalGuideRepository
 
     fun store(): KurozoraStore = store
 
@@ -385,6 +391,7 @@ class KurozoraKit private constructor(
             val themeRepository = ThemeRepositoryImpl(apiClient)
             val themeStoreRepository = ThemeStoreRepositoryImpl(apiClient)
             val airSeasonRepository = AirSeasonRepositoryImpl(apiClient)
+            val parentalGuideRepository = ParentalGuideRepositoryImpl(apiClient)
 
             return KurozoraKit(
                 apiClient = apiClient,
@@ -414,6 +421,7 @@ class KurozoraKit private constructor(
                 themeRepository = themeRepository,
                 themeStoreRepository = themeStoreRepository,
                 airSeasonRepository = airSeasonRepository,
+                parentalGuideRepository = parentalGuideRepository,
             )
         }
     }
