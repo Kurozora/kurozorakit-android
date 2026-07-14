@@ -54,7 +54,7 @@ suspend fun main() {
 //        println(it)
 //    }
     //  ÇALIŞMADI
-//    kurozoraKit.user().updateMyFavorites(KKLibrary.Kind.SHOWS, "3").onSuccess {
+//    kurozoraKit.user().updateMyFavorites(KKLibrary.Kind.SHOWS, listOf("3")).onSuccess {
 //        println(it)
 //    }
 //    kurozoraKit.user().getMyFeedMessages().onSuccess {
@@ -68,10 +68,10 @@ suspend fun main() {
 //    ).onSuccess {
 //        println(it)
 //    }
-//    kurozoraKit.user().addToLibrary(KKLibrary.Kind.SHOWS, KKLibrary.Status.INPROGRESS, "213").onSuccess {
+//    kurozoraKit.user().addToLibrary(KKLibrary.Kind.SHOWS, KKLibrary.Status.INPROGRESS, listOf("213")).onSuccess {
 //        println(it)
 //    }
-//    kurozoraKit.user().addToLibrary(KKLibrary.Kind.SHOWS, KKLibrary.Status.INPROGRESS, "213").onSuccess {
+//    kurozoraKit.user().addToLibrary(KKLibrary.Kind.SHOWS, KKLibrary.Status.INPROGRESS, listOf("213")).onSuccess {
 //        println(it)
 //    }
 //    val file = File("""C:\Users\selman\Downloads\malanimelist.xml""")

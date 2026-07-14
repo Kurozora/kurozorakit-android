@@ -92,9 +92,9 @@ interface UserRepository {
     suspend fun getMyFavorites(libraryKind: KKLibrary.Kind, next: String? = null, limit: Int = 20): Result<FavoriteLibraryResponse>
 
     /**
-     * Toggles the favorite status of a specific media item.
+     * Toggles the favorite status for one or more media items.
      */
-    suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelID: String): Result<FavoriteResponse>
+    suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<FavoriteResponse>
 
 
     // --- Feed ---
@@ -120,19 +120,19 @@ interface UserRepository {
     ): Result<LibraryResponse>
 
     /**
-     * Adds a media item to the user's library with an initial status.
+     * Adds one or more media items to the user's library with an initial status.
      */
-    suspend fun addToLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelID: String): Result<LibraryUpdateResponse>
+    suspend fun addToLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelIDs: List<String>): Result<LibraryUpdateResponse>
 
     /**
-     * Updates specific library entry metadata like rewatch counts or visibility settings.
+     * Updates specific library entry metadata like rewatch counts or visibility settings for one or more items.
      */
-    suspend fun updateMyLibrary(libraryKind: KKLibrary.Kind, modelID: String, rewatchCount: Int? = null, isHidden: Boolean? = null): Result<LibraryUpdateResponse>
+    suspend fun updateMyLibrary(libraryKind: KKLibrary.Kind, modelIDs: List<String>, rewatchCount: Int? = null, isHidden: Boolean? = null): Result<LibraryUpdateResponse>
 
     /**
-     * Removes an item from the user's library.
+     * Removes one or more items from the user's library.
      */
-    suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelID: String): Result<LibraryUpdateResponse>
+    suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<LibraryUpdateResponse>
 
     /**
      * Nukes an entire library category. Requires password confirmation for safety.
@@ -189,9 +189,9 @@ interface UserRepository {
     suspend fun getMyReminders(libraryKind: KKLibrary.Kind, next: String? = null, limit: Int = 20): Result<ReminderLibraryResponse>
 
     /**
-     * Toggles reminders for a specific media item.
+     * Toggles reminders for one or more media items.
      */
-    suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelID: String): Result<ReminderLibraryResponse>
+    suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<ReminderLibraryResponse>
 
     /**
      * Exports all reminders as a file (e.g., iCal format).
@@ -311,16 +311,26 @@ open class UserRepositoryImpl(
         return apiClient.get<FavoriteLibraryResponse>(endpoint, parameters)
     }
 
-    override suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelID: String): Result<FavoriteResponse> {
-        val body = mapOf(
-            "library" to libraryKind.value.toString(),
-            "model_id" to modelID
-        )
-        return apiClient.post<FavoriteResponse, Map<String, String>>(KKEndpoint.Me.Favorites.Update) {
+    override suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<FavoriteResponse> {
+        require(modelIDs.isNotEmpty()) { "updateMyFavorites requires at least one modelID." }
+        val chunks = modelIDs.chunked(25)
+        val iterator = chunks.iterator()
+        val firstChunk = iterator.next()
+        var lastResponse = sendUpdateFavoritesChunk(libraryKind, firstChunk)
+        while (iterator.hasNext()) {
+            lastResponse = sendUpdateFavoritesChunk(libraryKind, iterator.next())
+        }
+        return lastResponse
+    }
+
+    private suspend fun sendUpdateFavoritesChunk(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<FavoriteResponse> {
+        val body = FormDataContent(Parameters.build {
+            append("library", libraryKind.value.toString())
+            modelIDs.forEach { append("model_ids", it) }
+        })
+        return apiClient.post<FavoriteResponse, FormDataContent>(KKEndpoint.Me.Favorites.Update) {
             contentType(ContentType.Application.FormUrlEncoded)
-            setBody(FormDataContent(Parameters.build {
-                body.forEach { (key, value) -> append(key, value) }
-            }))
+            setBody(body)
         }
     }
 
@@ -344,43 +354,73 @@ open class UserRepositoryImpl(
         return apiClient.get<LibraryResponse>(endpoint, parameters)
     }
 
-    override suspend fun addToLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelID: String): Result<LibraryUpdateResponse> {
+    override suspend fun addToLibrary(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelIDs: List<String>): Result<LibraryUpdateResponse> {
+        require(modelIDs.isNotEmpty()) { "addToLibrary requires at least one modelID." }
         if (libraryStatus == KKLibrary.Status.NONE) {
-            return removeFromMyLibrary(libraryKind, modelID)
+            return removeFromMyLibrary(libraryKind, modelIDs)
         }
-        val body = mapOf(
-            "library" to libraryKind.value.toString(),
-            "status" to libraryStatus.sectionValue,
-            "model_id" to modelID
-        )
-        return apiClient.post<LibraryUpdateResponse, Map<String, String>>(KKEndpoint.Me.Library.Index, body) {
+        val chunks = modelIDs.chunked(25)
+        val iterator = chunks.iterator()
+        val firstChunk = iterator.next()
+        var lastResponse = sendAddToLibraryChunk(libraryKind, libraryStatus, firstChunk)
+        while (iterator.hasNext()) {
+            lastResponse = sendAddToLibraryChunk(libraryKind, libraryStatus, iterator.next())
+        }
+        return lastResponse
+    }
+
+    private suspend fun sendAddToLibraryChunk(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelIDs: List<String>): Result<LibraryUpdateResponse> {
+        val body = FormDataContent(Parameters.build {
+            append("library", libraryKind.value.toString())
+            append("status", libraryStatus.sectionValue)
+            modelIDs.forEach { append("model_ids", it) }
+        })
+        return apiClient.post<LibraryUpdateResponse, FormDataContent>(KKEndpoint.Me.Library.Index, body) {
             contentType(ContentType.Application.FormUrlEncoded)
-            setBody(FormDataContent(Parameters.build {
-                body.forEach { (key, value) -> append(key, value) }
-            }))
         }
     }
 
-    override suspend fun updateMyLibrary(libraryKind: KKLibrary.Kind, modelID: String, rewatchCount: Int?, isHidden: Boolean?): Result<LibraryUpdateResponse> {
+    override suspend fun updateMyLibrary(libraryKind: KKLibrary.Kind, modelIDs: List<String>, rewatchCount: Int?, isHidden: Boolean?): Result<LibraryUpdateResponse> {
+        require(modelIDs.isNotEmpty()) { "updateMyLibrary requires at least one modelID." }
+        val chunks = modelIDs.chunked(25)
+        val iterator = chunks.iterator()
+        val firstChunk = iterator.next()
+        var lastResponse = sendUpdateLibraryChunk(libraryKind, firstChunk, rewatchCount, isHidden)
+        while (iterator.hasNext()) {
+            lastResponse = sendUpdateLibraryChunk(libraryKind, iterator.next(), rewatchCount, isHidden)
+        }
+        return lastResponse
+    }
+
+    private suspend fun sendUpdateLibraryChunk(libraryKind: KKLibrary.Kind, modelIDs: List<String>, rewatchCount: Int?, isHidden: Boolean?): Result<LibraryUpdateResponse> {
         val body = mapOf(
             "library" to libraryKind.stringValue,
-            "model_id" to modelID,
+            "model_ids" to modelIDs.joinToString(","),
             "rewatch_count" to rewatchCount,
             "is_hidden" to isHidden
         ).filterValues { it != null }
         return apiClient.post<LibraryUpdateResponse, Map<String, Any?>>(KKEndpoint.Me.Library.Update, body)
     }
 
-    override suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelID: String): Result<LibraryUpdateResponse> {
-        val body = mapOf(
-            "model_id" to modelID,
-            "library" to libraryKind.value.toString()
-        )
-        return apiClient.post<LibraryUpdateResponse, Map<String, String>>(KKEndpoint.Me.Library.Delete, body) {
+    override suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<LibraryUpdateResponse> {
+        require(modelIDs.isNotEmpty()) { "removeFromMyLibrary requires at least one modelID." }
+        val chunks = modelIDs.chunked(25)
+        val iterator = chunks.iterator()
+        val firstChunk = iterator.next()
+        var lastResponse = sendRemoveFromLibraryChunk(libraryKind, firstChunk)
+        while (iterator.hasNext()) {
+            lastResponse = sendRemoveFromLibraryChunk(libraryKind, iterator.next())
+        }
+        return lastResponse
+    }
+
+    private suspend fun sendRemoveFromLibraryChunk(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<LibraryUpdateResponse> {
+        val body = FormDataContent(Parameters.build {
+            append("library", libraryKind.value.toString())
+            modelIDs.forEach { append("model_ids", it) }
+        })
+        return apiClient.post<LibraryUpdateResponse, FormDataContent>(KKEndpoint.Me.Library.Delete, body) {
             contentType(ContentType.Application.FormUrlEncoded)
-            setBody(FormDataContent(Parameters.build {
-                body.forEach { (key, value) -> append(key, value) }
-            }))
         }
     }
 
@@ -460,10 +500,22 @@ open class UserRepositoryImpl(
         return apiClient.get<ReminderLibraryResponse>(endpoint, parameters)
     }
 
-    override suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelID: String): Result<ReminderLibraryResponse> {
+    override suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<ReminderLibraryResponse> {
+        require(modelIDs.isNotEmpty()) { "updateReminderStatus requires at least one modelID." }
+        val chunks = modelIDs.chunked(25)
+        val iterator = chunks.iterator()
+        val firstChunk = iterator.next()
+        var lastResponse = sendUpdateReminderStatusChunk(libraryKind, firstChunk)
+        while (iterator.hasNext()) {
+            lastResponse = sendUpdateReminderStatusChunk(libraryKind, iterator.next())
+        }
+        return lastResponse
+    }
+
+    private suspend fun sendUpdateReminderStatusChunk(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<ReminderLibraryResponse> {
         val body = mapOf(
             "library" to libraryKind.value.toString(),
-            "model_id" to modelID
+            "model_ids" to modelIDs.joinToString(",")
         )
         return apiClient.post<ReminderLibraryResponse, Map<String, String>>(KKEndpoint.Me.Reminders.Update, body) {
             contentType(ContentType.Application.Json)
