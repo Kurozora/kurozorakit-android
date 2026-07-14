@@ -60,6 +60,11 @@ interface UserRepository {
      */
     suspend fun getMyFollowing(next: String? = null, limit: Int = 20): Result<UserIdentityResponse>
 
+    /**
+     * Retrieves a paginated list of users blocked by the current account.
+     */
+    suspend fun getMyBlockedList(next: String? = null, limit: Int = 20): Result<UserIdentityResponse>
+
 
     // --- Access Tokens (Security & Notifications) ---
 
@@ -275,6 +280,12 @@ open class UserRepositoryImpl(
     override suspend fun getMyFollowing(next: String?, limit: Int): Result<UserIdentityResponse> {
         val parameters = mapOf("limit" to limit.toString())
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Following
+        return apiClient.get<UserIdentityResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getMyBlockedList(next: String?, limit: Int): Result<UserIdentityResponse> {
+        val parameters = mapOf("limit" to limit.toString())
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Blocked
         return apiClient.get<UserIdentityResponse>(endpoint, parameters)
     }
 

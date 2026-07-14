@@ -110,6 +110,7 @@ data class User(
         val canChangeUsername: Boolean? = null,
         val role: UserRole? = null,
         @SerialName("isBlocked") private val isBlocked: Boolean? = null,
+        @SerialName("isBlockedBy") val isBlockedBy: Boolean? = null,
         @SerialName("_blockStatus") private var _blockStatus: BlockStatus? = null,
         @SerialName("isFollowed") private val isFollowed: Boolean? = null,
         @SerialName("_followStatus") private var _followStatus: FollowStatus? = null

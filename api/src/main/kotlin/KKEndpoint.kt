@@ -472,6 +472,8 @@ sealed class KKEndpoint(val path: String) {
         object Followers : Me("me/followers")
         /** Get who I am following. */
         object Following : Me("me/following")
+        /** Get my blocked users list. */
+        object Blocked : Me("me/blocked")
 
         // Access Tokens
         /** Manage API Access Tokens / Devices. */

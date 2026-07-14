@@ -26,7 +26,10 @@ data class BlockUpdate(
     val blockInfo: BlockInfoOrBoolean? = null,
 
     @SerialName("_blockStatus")
-    private val _blockStatus: BlockStatus? = null
+    private val _blockStatus: BlockStatus? = null,
+
+    @SerialName("isBlockedBy")
+    val isBlockedBy: Boolean? = null
 ) {
     /**
      * Resolves the current block state.
