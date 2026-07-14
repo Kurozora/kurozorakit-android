@@ -613,6 +613,8 @@ sealed class KKEndpoint(val path: String) {
         object Index : ThemeStore("theme-store")
         /** Get store item details. */
         class Details(id: String) : ThemeStore("theme-store/$id")
+        /** Download a theme binary file. */
+        class Download(id: String) : ThemeStore("theme-store/$id/download")
     }
 
     // --- Store ---

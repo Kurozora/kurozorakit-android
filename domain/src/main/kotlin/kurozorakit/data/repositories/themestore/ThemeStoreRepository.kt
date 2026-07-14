@@ -30,6 +30,14 @@ interface ThemeStoreRepository {
      * @return A [Result] containing the [AppThemeResponse] with specific theme data.
      */
     suspend fun getThemeStoreItem(themeId: String): Result<AppThemeResponse>
+
+    /**
+     * Downloads the binary file for the specified application theme.
+     *
+     * @param themeId The unique identifier of the target theme.
+     * @return A [Result] containing the raw theme file bytes.
+     */
+    suspend fun downloadTheme(themeId: String): Result<ByteArray>
 }
 
 /**
@@ -48,5 +56,9 @@ open class ThemeStoreRepositoryImpl(
 
     override suspend fun getThemeStoreItem(themeId: String): Result<AppThemeResponse> {
         return apiClient.get<AppThemeResponse>(KKEndpoint.ThemeStore.Details(themeId))
+    }
+
+    override suspend fun downloadTheme(themeId: String): Result<ByteArray> {
+        return apiClient.download(KKEndpoint.ThemeStore.Download(themeId))
     }
 }

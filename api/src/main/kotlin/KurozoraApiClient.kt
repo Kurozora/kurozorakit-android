@@ -308,6 +308,37 @@ class KurozoraApiClient(
 
 
     /**
+     * Makes a GET request and returns the raw response body as bytes.
+     * Used for binary downloads (e.g. theme files).
+     *
+     * @param endpoint The API endpoint to request.
+     * @param parameters Query parameters to append to the URL.
+     * @param block Additional configuration for the [HttpRequestBuilder].
+     * @return A [Result] containing the raw bytes or an error.
+     */
+    suspend fun download(
+        endpoint: KKEndpoint,
+        parameters: Map<String, String> = emptyMap(),
+        block: HttpRequestBuilder.() -> Unit = {}
+    ): Result<ByteArray> {
+        return try {
+            KurozoraLogger.debug("[KurozoraApiClient]", "Download request to ${endpoint.path}")
+            val response = httpClient.get("$baseUrl/${endpoint.path}") {
+                parameters.forEach { (key, value) -> parameter(key, value) }
+                block()
+            }
+            val body: ByteArray = response.body()
+            Result.Success(body)
+        } catch (e: KurozoraError) {
+            KurozoraLogger.error("[KurozoraApiClient]", "Error in download request to ${endpoint.path}", e)
+            Result.Error(e)
+        } catch (e: Exception) {
+            KurozoraLogger.error("[KurozoraApiClient]", "Unknown error in download request to ${endpoint.path}", e)
+            Result.Error(KurozoraError.UnknownError(e.message ?: "Unknown error", e))
+        }
+    }
+
+    /**
      * Makes a POST request to the specified endpoint.
      *
      * @param T The expected response type.
