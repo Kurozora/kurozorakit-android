@@ -3,8 +3,6 @@ package kurozorakit.api
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
-import io.ktor.client.plugins.auth.*
-import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
@@ -46,7 +44,6 @@ class KurozoraApiClient(
      * It includes the following plugins:
      * - [ContentNegotiation]: Configured for JSON serialization (ignoring unknown keys).
      * - [Logging]: Custom logger to output HTTP logs.
-     * - [Auth]: Bearer token authentication logic.
      * - [HttpTimeout]: Connection and socket timeouts.
      * - [HttpRequestRetry]: Exponential backoff retry logic for server errors.
      * - [HttpResponseValidator]: Custom validation to map HTTP status codes to [KurozoraError].
@@ -68,30 +65,6 @@ class KurozoraApiClient(
                 }
             }
             level = LogLevel.ALL
-        }
-
-        install(Auth) {
-            bearer {
-                loadTokens {
-                    val token = tokenProvider?.getToken()
-                    if (token != null) {
-                        BearerTokens(token, "")
-                    } else {
-                        null
-                    }
-                }
-
-//                refreshTokens {
-//                    val newToken = tokenProvider?.getRefreshToken()
-//                    if (newToken != null) {
-//                        println("[Auth] Refresh token loaded: $newToken")
-//                        BearerTokens(newToken, "")
-//                    } else {
-//                        println("[Auth] No refresh token found.")
-//                        null
-//                    }
-//                }
-            }
         }
 
 
@@ -195,6 +168,18 @@ class KurozoraApiClient(
         install(HttpRequestRetry) {
             retryOnServerErrors(maxRetries = 3)
             exponentialDelay()
+        }
+    }
+
+    init {
+        httpClient.sendPipeline.intercept(HttpSendPipeline.Before) {
+            val token = tokenProvider?.getToken()
+            if (token != null) {
+                context.headers.apply {
+                    remove(HttpHeaders.Authorization)
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }
         }
     }
 
