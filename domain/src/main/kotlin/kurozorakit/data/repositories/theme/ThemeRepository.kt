@@ -25,6 +25,14 @@ interface ThemeRepository {
     suspend fun getThemes(): Result<ThemeResponse>
 
     /**
+     * Fetches specific themes by a list of identifiers in a single request.
+     *
+     * @param ids A list of unique theme identifiers to retrieve.
+     * @return A [Result] containing the [ThemeResponse].
+     */
+    suspend fun getThemes(ids: List<String>): Result<ThemeResponse>
+
+    /**
      * Retrieves detailed information for a specific theme by its unique identifier.
      *
      * @param themeId The unique ID of the theme to be retrieved.
@@ -45,6 +53,10 @@ open class ThemeRepositoryImpl(
 
     override suspend fun getThemes(): Result<ThemeResponse> {
         return apiClient.get<ThemeResponse>(KKEndpoint.Themes.Index)
+    }
+
+    override suspend fun getThemes(ids: List<String>): Result<ThemeResponse> {
+        return apiClient.get(KKEndpoint.Themes.Index, mapOf("ids" to ids.joinToString(",")))
     }
 
     override suspend fun getTheme(themeId: String): Result<ThemeResponse> {

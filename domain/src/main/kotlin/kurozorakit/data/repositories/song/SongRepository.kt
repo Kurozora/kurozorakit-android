@@ -1,7 +1,7 @@
 package kurozorakit.data.repositories.song
 
+import io.ktor.client.request.*
 import io.ktor.client.request.forms.FormDataContent
-import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
@@ -10,9 +10,11 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.models.BatchApiResponse
 import kurozorakit.data.models.game.GameIdentityResponse
 import kurozorakit.data.models.review.ReviewResponse
 import kurozorakit.data.models.search.SearchResponse
+import kurozorakit.data.models.song.Song
 import kurozorakit.data.models.search.filters.SongFilter
 import kurozorakit.data.models.show.ShowIdentityResponse
 import kurozorakit.data.models.song.SongIdentityResponse
@@ -38,6 +40,15 @@ interface SongRepository {
      * @return A [Result] containing the [SongIdentityResponse].
      */
     suspend fun getSongs(next: String? = null, limit: Int = 20, filter: SongFilter? = null): Result<SongIdentityResponse>
+
+    /**
+     * Fetches specific songs by a list of identifiers in a single request.
+     *
+     * @param ids A list of unique song identifiers to retrieve.
+     * @param relationships A list of related data to include in the response.
+     * @return A [Result] containing the [SongIdentityResponse].
+     */
+    suspend fun getSongs(ids: List<String>, relationships: List<String> = emptyList()): Result<SongResponse>
 
     /**
      * Fetches detailed information for a specific song.
@@ -123,6 +134,12 @@ open class SongRepositoryImpl(
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Songs.Index()
         return apiClient.get<SearchResponse>(endpoint, parameters).map { it.data.songs as SongIdentityResponse }
+    }
+
+    override suspend fun getSongs(ids: List<String>, relationships: List<String>): Result<SongResponse> {
+        return apiClient.get<SongResponse>(KKEndpoint.Songs.Index(*ids.toTypedArray())) {
+            url { relationships.forEach { parameters.append("include[]", it) } }
+        }
     }
 
     override suspend fun getSong(songId: String, relationships: List<String>): Result<SongResponse> {

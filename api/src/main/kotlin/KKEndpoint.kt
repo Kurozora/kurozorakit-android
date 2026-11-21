@@ -35,7 +35,7 @@ sealed class KKEndpoint(val path: String) {
      */
     sealed class Search(path: String): KKEndpoint(path) {
         /** The main search endpoint for executing queries. */
-        object Index       : Search("search/")
+        object Index       : Search("search")
         /** Provides auto-complete suggestions based on partial input. */
         object Suggestions : Search("search/suggestions")
     }
@@ -52,7 +52,7 @@ sealed class KKEndpoint(val path: String) {
          */
         class Index(vararg showIds: String) : Show(
             if (showIds.isEmpty()) "anime"
-            else "anime/${showIds.joinToString(",")}"
+            else "anime?ids=${showIds.joinToString(",")}"
         )
         /** Detailed information for a specific show. */
         class Details(showId: String) : Show("anime/${showId}")
@@ -75,7 +75,7 @@ sealed class KKEndpoint(val path: String) {
             /** Lists seasons for the show, or details for specific season IDs. */
             class Index(vararg seasonIds: String) : KKEndpoint(
                 if (seasonIds.isEmpty()) "seasons"
-                else "seasons/${seasonIds.joinToString(",")}"
+                else "seasons?ids=${seasonIds.joinToString(",")}"
             )
             /** Details for a specific season entity. */
             class Details(seasonId: String) : KKEndpoint("seasons/$seasonId")
@@ -116,7 +116,7 @@ sealed class KKEndpoint(val path: String) {
          */
         class Index(vararg litIds: String) : Literature(
             if (litIds.isEmpty()) "manga"
-            else "manga/${litIds.joinToString(",")}"
+            else "manga?ids=${litIds.joinToString(",")}"
         )
         /** Detailed information for a specific manga/novel. */
         class Details(id: String) : Literature("manga/$id")
@@ -153,16 +153,16 @@ sealed class KKEndpoint(val path: String) {
      */
     sealed class Game(path: String) : KKEndpoint(path) {
         /** Fetches a list of games or specific games by ID. */
-        class Index(vararg gameIds: String) : Show(
-            if (gameIds.isEmpty()) "game"
-            else "game/${gameIds.joinToString(",")}"
+        class Index(vararg gameIds: String) : Game(
+            if (gameIds.isEmpty()) "games"
+            else "games?ids=${gameIds.joinToString(",")}"
         )
         /** Detailed information for a specific game. */
         class Details(gameId: String) : Game("games/$gameId")
         /** Voice cast for the game. */
         class Cast(gameId: String) : Game("games/$gameId/cast")
         /** Developers and staff. */
-        class Staff(gameId: String) : Game("game/$gameId/staff")
+        class Staff(gameId: String) : Game("games/$gameId/staff")
         /** (Alias for Staff) People involved. */
         class People(gameId: String) : Game("games/$gameId/staff")
         /** Characters appearing in the game. */
@@ -192,9 +192,9 @@ sealed class KKEndpoint(val path: String) {
      */
     sealed class Character(path: String) : KKEndpoint(path) {
         /** Fetches a list of characters or specific characters by ID. */
-        class Index(vararg characterIds: String) : Show(
+        class Index(vararg characterIds: String) : Character(
             if (characterIds.isEmpty()) "characters"
-            else "characters/${characterIds.joinToString(",")}"
+            else "characters?ids=${characterIds.joinToString(",")}"
         )
         /** Detailed bio and info for a character. */
         class Details(characterId: String) : Character("characters/$characterId")
@@ -221,7 +221,7 @@ sealed class KKEndpoint(val path: String) {
         /** Fetches a list of people or specific people by ID. */
         class Index(vararg peopleIds: String) : Person(
             if (peopleIds.isEmpty()) "people"
-            else "people/${peopleIds.joinToString(",")}"
+            else "people?ids=${peopleIds.joinToString(",")}"
         )
         /** Detailed bio for a person. */
         class Details(peopleId: String) : Person("people/$peopleId")
@@ -247,7 +247,7 @@ sealed class KKEndpoint(val path: String) {
         /** Fetches a list of studios or specific studios by ID. */
         class Index(vararg studioIds: String) : Studios(
             if (studioIds.isEmpty()) "studios"
-            else "studios/${studioIds.joinToString(",")}"
+            else "studios?ids=${studioIds.joinToString(",")}"
         )
         /** Detailed info for a studio. */
         class Details(id: String) : Studios("studios/$id")
@@ -271,7 +271,7 @@ sealed class KKEndpoint(val path: String) {
         /** Fetches a list of episodes or specific episodes by ID. */
         class Index(vararg episodeIds: String) : Episodes(
             if (episodeIds.isEmpty()) "episodes"
-            else "episodes/${episodeIds.joinToString(",")}"
+            else "episodes?ids=${episodeIds.joinToString(",")}"
         )
         /** Detailed info for an episode. */
         class Details(epId: String)    : Episodes("episodes/$epId")
@@ -293,7 +293,7 @@ sealed class KKEndpoint(val path: String) {
         /** Fetches a list of songs or specific songs by ID. */
         class Index(vararg songIds: String) : Songs(
             if (songIds.isEmpty()) "songs"
-            else "songs/${songIds.joinToString(",")}"
+            else "songs?ids=${songIds.joinToString(",")}"
         )
         /** Detailed info for a song. */
         class Details(id: String) : Songs("songs/$id")
@@ -626,6 +626,8 @@ sealed class KKEndpoint(val path: String) {
     sealed class Store(path: String): KKEndpoint(path) {
         /** Verify a purchase receipt. */
         object Verify : Store("store/verify")
+        /** Verify a Google Play purchase. */
+        object GooglePlayVerify : Store("store/purchases/google-play/verify")
     }
 
     // --- Legal ---

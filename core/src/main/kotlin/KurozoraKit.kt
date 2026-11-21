@@ -2,6 +2,7 @@ package kurozorakit.core
 
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.api.Platform
+import kurozorakit.api.RetryConfig
 import kurozorakit.api.TokenProvider
 import kurozorakit.shared.UserAgent
 import kurozorakit.data.DefaultTokenProvider
@@ -191,8 +192,11 @@ class KurozoraKit private constructor(
     companion object {
         /**
          * The current version of the KurozoraKit library.
+         *
+         * Injected from the Gradle build configuration at compile time so it always
+         * matches the published artifact version.
          */
-        const val version = "1.0.0"
+        val version: String = KUROZORA_KIT_VERSION
     }
 
     /**
@@ -218,6 +222,8 @@ class KurozoraKit private constructor(
         private var memoryBufferCapacity: Int? = null
         private var customSinks: MutableList<Logger> = mutableListOf()
         private var loggingScope: CoroutineScope? = null
+        private var onSessionExpired: (() -> Unit)? = null
+        private var isOnline: (() -> Boolean)? = null
 
         data class FileLoggingConfig(
             val path: String,
@@ -245,6 +251,13 @@ class KurozoraKit private constructor(
          * Sets a custom [TokenProvider] for managing authentication tokens.
          */
         fun tokenProvider(tokenProvider: TokenProvider) = apply { this.tokenProvider = tokenProvider }
+
+        /**
+         * Sets a connectivity check invoked before every request. When it returns `false`,
+         * the request fails fast with a [kurozorakit.shared.KurozoraError.OfflineError]
+         * without performing any network I/O.
+         */
+        fun isOnline(block: (() -> Boolean)?) = apply { this.isOnline = block }
 
         /**
          * Configures the library's internal logging level.
@@ -312,6 +325,13 @@ class KurozoraKit private constructor(
         fun loggingScope(scope: CoroutineScope) = apply { this.loggingScope = scope }
 
         /**
+         * Sets a callback invoked when any API request receives a 401 (Unauthorized) response,
+         * indicating that the session has expired. The app should log the user out and
+         * redirect to the sign-in screen.
+         */
+        fun onSessionExpired(callback: () -> Unit) = apply { this.onSessionExpired = callback }
+
+        /**
          * Finalizes the configuration and returns a fully initialized [KurozoraKit] instance.
          *
          * This method sets up the logging system, initializes the HTTP client,
@@ -358,6 +378,14 @@ class KurozoraKit private constructor(
                 tokenProvider = tokenProvider,
                 platform = platform,
                 userAgent = userAgent,
+                onSessionExpired = onSessionExpired,
+                isOnline = isOnline,
+                retryConfig = RetryConfig(
+                    maxRetries = maxRetries,
+                    initialBackoffDelayMs = initialBackoffDelayMs,
+                    maxBackoffDelayMs = maxBackoffDelayMs,
+                    backoffFactor = backoffFactor,
+                ),
             )
 
             val store = KurozoraStore.builder()
@@ -366,19 +394,19 @@ class KurozoraKit private constructor(
                 .build()
 
             // Instantiate repository implementations
-            val showRepository = ShowRepositoryImpl(apiClient)
-            val literatureRepository = LiteratureRepositoryImpl(apiClient)
-            val gameRepository = GameRepositoryImpl(apiClient)
-            val characterRepository = CharacterRepositoryImpl(apiClient)
+            val showRepository = ShowRepositoryImpl(apiClient, store)
+            val literatureRepository = LiteratureRepositoryImpl(apiClient, store)
+            val gameRepository = GameRepositoryImpl(apiClient, store)
+            val characterRepository = CharacterRepositoryImpl(apiClient, store)
             val personRepository = PersonRepositoryImpl(apiClient)
             val studioRepository = StudioRepositoryImpl(apiClient)
             val genreRepository = GenreRepositoryImpl(apiClient)
             val authRepository = AuthRepositoryImpl(apiClient)
-            val userRepository = UserRepositoryImpl(apiClient)
+            val userRepository = UserRepositoryImpl(apiClient, store)
             val searchRepository = SearchRepositoryImpl(apiClient)
             val castRepository = CastRepositoryImpl(apiClient)
             val episodeRepository = EpisodeRepositoryImpl(apiClient)
-            val exploreRepository = ExploreRepositoryImpl(apiClient)
+            val exploreRepository = ExploreRepositoryImpl(apiClient, store)
             val feedRepository = FeedRepositoryImpl(apiClient)
             val imageRepository = ImageRepositoryImpl(apiClient)
             val legalRepository = LegalRepositoryImpl(apiClient)

@@ -9,12 +9,13 @@ import kurozorakit.data.models.show.Show
 import kurozorakit.data.models.show.ShowResponse
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
+import kurozorakit.shared.fromException
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.store.ShowKey
 import kurozorakit.store.db.KurozoraDatabase
 import kurozorakit.store.fetcher.ShowFetcher
 import kurozorakit.store.source.ShowSourceOfTruth
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import org.mobilenativefoundation.store.store5.MemoryPolicy
 import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreBuilder
@@ -68,7 +69,7 @@ class ShowStore(
     suspend fun getShow(
         id: String,
         relationships: List<String> = emptyList(),
-        forceRefresh: Boolean = false
+        forceRefresh: Boolean = !StoreConfig.storeEnabled
     ): Result<ShowResponse> {
         val key = ShowKey.ById(id, relationships)
         KurozoraLogger.debug("[ShowStore]", "getShow çağrıldı: $id (Refresh: $forceRefresh)")
@@ -83,8 +84,7 @@ class ShowStore(
             Result.Success(ShowResponse(data = listOf(show), next = null))
         } catch (e: Exception) {
             KurozoraLogger.error("[ShowStore]", "getShow Hatası: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get show", e))
-            throw e
+            Result.Error(fromException(e))
         }
     }
     // ==========================================================================
@@ -102,10 +102,17 @@ class ShowStore(
 
     /**
      * Clears cached data for a specific show.
+     *
+     * Deletes the show from the database source of truth (deletion is id-based, so this
+     * covers every relationships variant of the key) and evicts the memory entry for the
+     * canonical key shape. In-memory entries cached under other key variants expire via
+     * the configured memory policy.
      */
     @OptIn(ExperimentalStoreApi::class)
     suspend fun clearShow(id: String) {
-        //singleShowStore.clear(ShowKey.ById(id))
+        singleShowStore.clear(ShowKey.ById(id))
+        collectionShowStore.clear(ShowKey.ByIds(listOf(id)))
+        KurozoraLogger.debug("[ShowStore]", "Show cache cleared: $id")
     }
 
     companion object {

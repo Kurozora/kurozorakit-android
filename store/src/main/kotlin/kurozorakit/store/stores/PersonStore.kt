@@ -6,6 +6,7 @@ import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.person.Person
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
+import kurozorakit.shared.fromException
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.store.PersonKey
 import kurozorakit.store.db.KurozoraDatabase
@@ -17,7 +18,7 @@ import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class PersonStore(
@@ -32,24 +33,24 @@ class PersonStore(
     }
 
     // --- Direct Get Operations (Suspend) ---
-    suspend fun getPerson(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<Person> {
+    suspend fun getPerson(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<Person> {
         val key = PersonKey.ById(id, relationships)
         return try {
             val data = if (forceRefresh) singleStore.fresh(key) else singleStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
             KurozoraLogger.error("[PersonStore]", "getPerson Hatası: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get person", e))
+            Result.Error(fromException(e))
         }
     }
 
-    suspend fun getPeople(ids: List<String>, forceRefresh: Boolean = false): Result<List<Person>> {
+    suspend fun getPeople(ids: List<String>, forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<List<Person>> {
         val key = PersonKey.ByIds(ids)
         return try {
             val data = if (forceRefresh) listStore.fresh(key) else listStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get people", e))
+            Result.Error(fromException(e))
         }
     }
 

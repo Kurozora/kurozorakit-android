@@ -7,6 +7,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.models.BatchApiResponse
+import kurozorakit.data.models.character.Character
 import kurozorakit.data.models.character.CharacterIdentityResponse
 import kurozorakit.data.models.character.CharacterResponse
 import kurozorakit.data.models.game.GameIdentityResponse
@@ -17,6 +19,7 @@ import kurozorakit.data.models.search.SearchResponse
 import kurozorakit.data.models.search.filters.CharacterFilter
 import kurozorakit.data.models.show.ShowIdentityResponse
 import kurozorakit.shared.Result
+import kurozorakit.store.KurozoraStore
 import java.util.*
 
  /**
@@ -36,16 +39,25 @@ import java.util.*
       * @param filter Optional [CharacterFilter] to narrow down results (e.g., by gender or role).
       * @return A [Result] containing the [CharacterIdentityResponse].
       */
-     suspend fun getCharacters(next: String? = null, limit: Int = 20, filter: CharacterFilter? = null): Result<CharacterIdentityResponse>
+    suspend fun getCharacters(next: String? = null, limit: Int = 20, filter: CharacterFilter? = null): Result<CharacterIdentityResponse>
 
-     /**
-      * Fetches detailed information for a specific character.
-      *
-      * @param characterId The unique identifier of the character.
-      * @param relationships A list of related data to include in the response (e.g., "media", "quotes").
-      * @return A [Result] containing the [CharacterResponse].
-      */
-     suspend fun getCharacter(characterId: String, relationships: List<String> = emptyList<String>()): Result<CharacterResponse>
+    /**
+     * Fetches specific characters by a list of identifiers in a single request.
+     *
+     * @param ids A list of unique character identifiers to retrieve.
+     * @param relationships A list of related data to include in the response.
+     * @return A [Result] containing the [CharacterIdentityResponse].
+     */
+    suspend fun getCharacters(ids: List<String>, relationships: List<String> = emptyList()): Result<CharacterResponse>
+
+    /**
+     * Fetches detailed information for a specific character.
+     *
+     * @param characterId The unique identifier of the character.
+     * @param relationships A list of related data to include in the response (e.g., "media", "quotes").
+     * @return A [Result] containing the [CharacterResponse].
+     */
+    suspend fun getCharacter(characterId: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<CharacterResponse>
 
      /**
       * Retrieves the people (e.g., voice actors, motion capture actors) associated with a character.
@@ -115,7 +127,8 @@ import java.util.*
   * @property apiClient The client used to communicate with character and rating endpoints.
   */
 open class CharacterRepositoryImpl(
-    private val apiClient: KurozoraApiClient
+    private val apiClient: KurozoraApiClient,
+    private val store: KurozoraStore,
 ) : CharacterRepository {
 
     override suspend fun getCharacters(next: String?, limit: Int, filter: CharacterFilter?): Result<CharacterIdentityResponse> {
@@ -146,15 +159,24 @@ open class CharacterRepositoryImpl(
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Character.Index()
-        return apiClient.get<SearchResponse>(endpoint, parameters).map { it.data.characters as CharacterIdentityResponse }
+        return apiClient.get<SearchResponse>(endpoint, parameters)
+            .map { it.data.characters ?: CharacterIdentityResponse(data = emptyList()) }
     }
 
-    override suspend fun getCharacter(characterId: String, relationships: List<String>): Result<CharacterResponse> {
-        return apiClient.get<CharacterResponse>(KKEndpoint.Character.Details(characterId)) {
-            url {
-                relationships.forEach {
-                    parameters.append("include[]", it)
-                }
+    override suspend fun getCharacters(ids: List<String>, relationships: List<String>): Result<CharacterResponse> {
+        return apiClient.get<CharacterResponse>(KKEndpoint.Character.Index(*ids.toTypedArray())) {
+            url { relationships.forEach { parameters.append("include[]", it) } }
+        }
+    }
+
+    override suspend fun getCharacter(characterId: String, relationships: List<String>, forceRefresh: Boolean): Result<CharacterResponse> {
+        return if (store.enabled) {
+            store.characterStore.getCharacter(characterId, relationships, forceRefresh).map { character ->
+                CharacterResponse(data = listOf(character), next = null)
+            }
+        } else {
+            apiClient.get(KKEndpoint.Character.Details(characterId)) {
+                url { relationships.forEach { parameters.append("include[]", it) } }
             }
         }
     }
@@ -201,10 +223,11 @@ open class CharacterRepositoryImpl(
             setBody(FormDataContent(Parameters.build {
                 body.forEach { (key, value) -> append(key, value) }
             }))
-        }
+        }.onSuccess { store.characterStore.clearCache() }
     }
 
     override suspend fun deleteCharacterRating(characterId: String): Result<Unit> {
         return apiClient.delete<Unit>(KKEndpoint.Character.DeleteRate(characterId))
+            .onSuccess { store.characterStore.clearCache() }
     }
 }

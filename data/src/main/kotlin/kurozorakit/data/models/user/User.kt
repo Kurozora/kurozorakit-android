@@ -1,5 +1,6 @@
 package kurozorakit.data.models.user
 
+import kotlin.jvm.Volatile
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -41,6 +42,7 @@ data class User(
 
     companion object {
         /** The currently authenticated user instance. */
+        @Volatile
         var current: User? = null
 
         /** Checks if a user session is active. */

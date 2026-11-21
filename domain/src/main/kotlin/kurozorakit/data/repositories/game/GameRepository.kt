@@ -1,7 +1,7 @@
 package kurozorakit.data.repositories.game
 
+import io.ktor.client.request.*
 import io.ktor.client.request.forms.FormDataContent
-import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
@@ -10,7 +10,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.models.BatchApiResponse
 import kurozorakit.data.models.character.CharacterIdentityResponse
+import kurozorakit.data.models.game.Game
 import kurozorakit.data.models.game.GameIdentityResponse
 import kurozorakit.data.models.game.GameResponse
 import kurozorakit.data.models.person.PersonIdentityResponse
@@ -28,6 +30,7 @@ import kurozorakit.data.models.staff.StaffResponse
 import kurozorakit.data.models.studio.StudioIdentityResponse
 import kurozorakit.data.models.studio.StudioResponse
 import kurozorakit.shared.Result
+import kurozorakit.store.KurozoraStore
 import java.util.*
 
 /**
@@ -50,13 +53,22 @@ interface GameRepository {
     suspend fun getGames(next: String? = null, limit: Int = 20, filter: GameFilter? = null): Result<GameIdentityResponse>
 
     /**
+     * Fetches specific games by a list of identifiers in a single request.
+     *
+     * @param ids A list of unique game identifiers to retrieve.
+     * @param relationships A list of related data to include in the response.
+     * @return A [Result] containing the [GameIdentityResponse].
+     */
+    suspend fun getGames(ids: List<String>, relationships: List<String> = emptyList()): Result<GameResponse>
+
+    /**
      * Fetches detailed information for a specific game.
      *
      * @param id The unique identifier of the game.
      * @param relationships A list of related data to include in the response (e.g., "genres", "platforms").
      * @return A [Result] containing the [GameResponse].
      */
-    suspend fun getGame(id: String, relationships: List<String> = emptyList<String>()): Result<GameResponse>
+    suspend fun getGame(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<GameResponse>
 
     /**
      * Retrieves a list of games scheduled for future release.
@@ -157,7 +169,8 @@ interface GameRepository {
  * @property apiClient The client used to communicate with the game and relationship endpoints.
  */
 open class GameRepositoryImpl(
-    private val apiClient: KurozoraApiClient
+    private val apiClient: KurozoraApiClient,
+    private val store: KurozoraStore,
 ) : GameRepository {
 
     override suspend fun getGames(next: String?, limit: Int, filter: GameFilter?): Result<GameIdentityResponse> {
@@ -188,15 +201,24 @@ open class GameRepositoryImpl(
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Index()
-        return apiClient.get<SearchResponse>(endpoint, parameters).map { it.data.games as GameIdentityResponse }
+        return apiClient.get<SearchResponse>(endpoint, parameters)
+            .map { it.data.games ?: GameIdentityResponse(data = emptyList()) }
     }
 
-    override suspend fun getGame(id: String, relationships: List<String>): Result<GameResponse> {
-        return apiClient.get<GameResponse>(KKEndpoint.Game.Details(id)) {
-            url {
-                relationships.forEach {
-                    parameters.append("include[]", it)
-                }
+    override suspend fun getGames(ids: List<String>, relationships: List<String>): Result<GameResponse> {
+        return apiClient.get<GameResponse>(KKEndpoint.Game.Index(*ids.toTypedArray())) {
+            url { relationships.forEach { parameters.append("include[]", it) } }
+        }
+    }
+
+    override suspend fun getGame(id: String, relationships: List<String>, forceRefresh: Boolean): Result<GameResponse> {
+        return if (store.enabled) {
+            store.gameStore.getGame(id, relationships, forceRefresh).map { game ->
+                GameResponse(data = listOf(game), next = null)
+            }
+        } else {
+            apiClient.get(KKEndpoint.Game.Details(id)) {
+                url { relationships.forEach { parameters.append("include[]", it) } }
             }
         }
     }
@@ -272,6 +294,6 @@ open class GameRepositoryImpl(
             setBody(FormDataContent(Parameters.build {
                 body.forEach { (key, value) -> append(key, value) }
             }))
-        }
+        }.onSuccess { store.gameStore.clearCache() }
     }
 }

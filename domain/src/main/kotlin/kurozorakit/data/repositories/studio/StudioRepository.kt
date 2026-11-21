@@ -1,7 +1,7 @@
 package kurozorakit.data.repositories.studio
 
+import io.ktor.client.request.*
 import io.ktor.client.request.forms.FormDataContent
-import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.models.BatchApiResponse
 import kurozorakit.data.models.game.GameIdentityResponse
 import kurozorakit.data.models.literature.LiteratureIdentityResponse
 import kurozorakit.data.models.review.ReviewResponse
@@ -40,6 +41,15 @@ interface StudioRepository {
      * @return A [Result] containing the [StudioIdentityResponse].
      */
     suspend fun getStudios(next: String? = null, limit: Int = 20, filter: StudioFilter? = null): Result<StudioIdentityResponse>
+
+    /**
+     * Fetches specific studios by a list of identifiers in a single request.
+     *
+     * @param ids A list of unique studio identifiers to retrieve.
+     * @param relationships A list of related data to include in the response.
+     * @return A [Result] containing the [StudioIdentityResponse].
+     */
+    suspend fun getStudios(ids: List<String>, relationships: List<String> = emptyList()): Result<StudioResponse>
 
     /**
      * Fetches detailed information for a specific studio.
@@ -130,6 +140,12 @@ open class StudioRepositoryImpl(
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Studios.Index()
         return apiClient.get<SearchResponse>(endpoint, parameters).map { it.data.studios as StudioIdentityResponse }
+    }
+
+    override suspend fun getStudios(ids: List<String>, relationships: List<String>): Result<StudioResponse> {
+        return apiClient.get<StudioResponse>(KKEndpoint.Studios.Index(*ids.toTypedArray())) {
+            url { relationships.forEach { parameters.append("include[]", it) } }
+        }
     }
 
     override suspend fun getStudio(studioId: String, relationships: List<String>): Result<StudioResponse> {

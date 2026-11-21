@@ -7,6 +7,7 @@ import kurozorakit.data.models.literature.Literature
 import kurozorakit.data.models.literature.LiteratureResponse
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
+import kurozorakit.shared.fromException
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.store.LiteratureKey
 import kurozorakit.store.db.KurozoraDatabase
@@ -18,7 +19,7 @@ import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class LiteratureStore(
@@ -33,24 +34,24 @@ class LiteratureStore(
     }
 
     // --- Direct Get (Suspend) ---
-    suspend fun getLiterature(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<Literature> {
+    suspend fun getLiterature(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<Literature> {
         val key = LiteratureKey.ById(id, relationships)
         return try {
             val data = if (forceRefresh) singleStore.fresh(key) else singleStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
             KurozoraLogger.error("[LiteratureStore]", "Error: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed", e))
+            Result.Error(fromException(e))
         }
     }
 
-    suspend fun getLiteratures(ids: List<String>, forceRefresh: Boolean = false): Result<List<Literature>> {
+    suspend fun getLiteratures(ids: List<String>, forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<List<Literature>> {
         val key = LiteratureKey.ByIds(ids)
         return try {
             val data = if (forceRefresh) listStore.fresh(key) else listStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed", e))
+            Result.Error(fromException(e))
         }
     }
 
@@ -62,6 +63,20 @@ class LiteratureStore(
     suspend fun clearCache() {
         singleStore.clear()
         listStore.clear()
+    }
+
+    /**
+     * Clears cached data for a specific literature item.
+     *
+     * Deletes the item from the database source of truth (deletion is id-based, so this
+     * covers every relationships variant of the key) and evicts the memory entry for the
+     * canonical key shape. In-memory entries cached under other key variants expire via
+     * the configured memory policy.
+     */
+    @OptIn(ExperimentalStoreApi::class)
+    suspend fun clearLiterature(id: String) {
+        singleStore.clear(LiteratureKey.ById(id))
+        listStore.clear(LiteratureKey.ByIds(listOf(id)))
     }
 
     companion object {

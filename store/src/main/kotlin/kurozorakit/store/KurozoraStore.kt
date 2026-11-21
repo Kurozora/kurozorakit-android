@@ -24,6 +24,14 @@ class KurozoraStore private constructor(
 ) {
 
     /**
+     * Enables or disables the offline-first Store5 cache layer.
+     * When disabled, all getDetail calls bypass the store and fetch directly from the API.
+     * Default is `true`.
+     */
+    @Volatile
+    var enabled: Boolean = true
+
+    /**
      * Clears all cached data from memory and database for all stores.
      */
     suspend fun clearAllCaches() {

@@ -9,7 +9,7 @@ sqldelight {
         create("KurozoraDatabase") {
             packageName.set("kurozorakit.store.db")
             schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
-            verifyMigrations.set(false)
+            verifyMigrations.set(true)
         }
     }
 }
@@ -39,4 +39,8 @@ dependencies {
 
     // Ktor (for API client types)
     implementation(Deps.Ktor.core)
+
+    testImplementation(Deps.Ktor.mock)
+    testImplementation(Deps.Test.mockk)
+    testImplementation(Deps.Test.coroutinesTest)
 }

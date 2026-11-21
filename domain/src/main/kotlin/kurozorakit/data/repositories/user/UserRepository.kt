@@ -28,6 +28,7 @@ import kurozorakit.data.models.user.tokens.AccessTokenResponse
 import kurozorakit.data.models.user.update.UserUpdate
 import kurozorakit.data.models.user.update.UserUpdateResponse
 import kurozorakit.shared.Result
+import kurozorakit.store.KurozoraStore
 import java.net.URL
 
 /**
@@ -252,8 +253,25 @@ interface UserRepository {
  * @property apiClient The client used to communicate with the theme store and asset endpoints.
  */
 open class UserRepositoryImpl(
-    private val apiClient: KurozoraApiClient
+    private val apiClient: KurozoraApiClient,
+    private val store: KurozoraStore,
 ) : UserRepository {
+
+    private suspend fun invalidateCacheFor(kind: KKLibrary.Kind, modelIDs: List<String>) {
+        when (kind) {
+            KKLibrary.Kind.SHOWS -> modelIDs.forEach { store.showStore.clearShow(it) }
+            KKLibrary.Kind.LITERATURES -> modelIDs.forEach { store.literatureStore.clearLiterature(it) }
+            KKLibrary.Kind.GAMES -> modelIDs.forEach { store.gameStore.clearGame(it) }
+        }
+    }
+
+    private suspend fun invalidateCacheAll(kind: KKLibrary.Kind) {
+        when (kind) {
+            KKLibrary.Kind.SHOWS -> store.showStore.clearCache()
+            KKLibrary.Kind.LITERATURES -> store.literatureStore.clearCache()
+            KKLibrary.Kind.GAMES -> store.gameStore.clearCache()
+        }
+    }
 
     override suspend fun getMyProfile(): Result<UserResponse> {
         return apiClient.get<UserResponse>(KKEndpoint.Me.Profile)
@@ -347,14 +365,13 @@ open class UserRepositoryImpl(
 
     override suspend fun updateMyFavorites(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<FavoriteResponse> {
         require(modelIDs.isNotEmpty()) { "updateMyFavorites requires at least one modelID." }
-        val chunks = modelIDs.chunked(25)
-        val iterator = chunks.iterator()
-        val firstChunk = iterator.next()
-        var lastResponse = sendUpdateFavoritesChunk(libraryKind, firstChunk)
-        while (iterator.hasNext()) {
-            lastResponse = sendUpdateFavoritesChunk(libraryKind, iterator.next())
+        var lastResponse: Result<FavoriteResponse>? = null
+        for (chunk in modelIDs.chunked(25)) {
+            val response = sendUpdateFavoritesChunk(libraryKind, chunk)
+            if (response is Result.Error) return response
+            lastResponse = response
         }
-        return lastResponse
+        return lastResponse!!.onSuccess { invalidateCacheFor(libraryKind, modelIDs) }
     }
 
     private suspend fun sendUpdateFavoritesChunk(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<FavoriteResponse> {
@@ -394,13 +411,13 @@ open class UserRepositoryImpl(
             return removeFromMyLibrary(libraryKind, modelIDs)
         }
         val chunks = modelIDs.chunked(25)
-        val iterator = chunks.iterator()
-        val firstChunk = iterator.next()
-        var lastResponse = sendAddToLibraryChunk(libraryKind, libraryStatus, firstChunk)
-        while (iterator.hasNext()) {
-            lastResponse = sendAddToLibraryChunk(libraryKind, libraryStatus, iterator.next())
+        var lastResponse: Result<LibraryUpdateResponse>? = null
+        for (chunk in chunks) {
+            val response = sendAddToLibraryChunk(libraryKind, libraryStatus, chunk)
+            if (response is Result.Error) return response
+            lastResponse = response
         }
-        return lastResponse
+        return lastResponse!!.onSuccess { invalidateCacheFor(libraryKind, modelIDs) }
     }
 
     private suspend fun sendAddToLibraryChunk(libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, modelIDs: List<String>): Result<LibraryUpdateResponse> {
@@ -416,14 +433,13 @@ open class UserRepositoryImpl(
 
     override suspend fun updateMyLibrary(libraryKind: KKLibrary.Kind, modelIDs: List<String>, rewatchCount: Int?, isHidden: Boolean?): Result<LibraryUpdateResponse> {
         require(modelIDs.isNotEmpty()) { "updateMyLibrary requires at least one modelID." }
-        val chunks = modelIDs.chunked(25)
-        val iterator = chunks.iterator()
-        val firstChunk = iterator.next()
-        var lastResponse = sendUpdateLibraryChunk(libraryKind, firstChunk, rewatchCount, isHidden)
-        while (iterator.hasNext()) {
-            lastResponse = sendUpdateLibraryChunk(libraryKind, iterator.next(), rewatchCount, isHidden)
+        var lastResponse: Result<LibraryUpdateResponse>? = null
+        for (chunk in modelIDs.chunked(25)) {
+            val response = sendUpdateLibraryChunk(libraryKind, chunk, rewatchCount, isHidden)
+            if (response is Result.Error) return response
+            lastResponse = response
         }
-        return lastResponse
+        return lastResponse!!.onSuccess { invalidateCacheFor(libraryKind, modelIDs) }
     }
 
     private suspend fun sendUpdateLibraryChunk(libraryKind: KKLibrary.Kind, modelIDs: List<String>, rewatchCount: Int?, isHidden: Boolean?): Result<LibraryUpdateResponse> {
@@ -438,14 +454,13 @@ open class UserRepositoryImpl(
 
     override suspend fun removeFromMyLibrary(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<LibraryUpdateResponse> {
         require(modelIDs.isNotEmpty()) { "removeFromMyLibrary requires at least one modelID." }
-        val chunks = modelIDs.chunked(25)
-        val iterator = chunks.iterator()
-        val firstChunk = iterator.next()
-        var lastResponse = sendRemoveFromLibraryChunk(libraryKind, firstChunk)
-        while (iterator.hasNext()) {
-            lastResponse = sendRemoveFromLibraryChunk(libraryKind, iterator.next())
+        var lastResponse: Result<LibraryUpdateResponse>? = null
+        for (chunk in modelIDs.chunked(25)) {
+            val response = sendRemoveFromLibraryChunk(libraryKind, chunk)
+            if (response is Result.Error) return response
+            lastResponse = response
         }
-        return lastResponse
+        return lastResponse!!.onSuccess { invalidateCacheFor(libraryKind, modelIDs) }
     }
 
     private suspend fun sendRemoveFromLibraryChunk(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<LibraryUpdateResponse> {
@@ -464,6 +479,7 @@ open class UserRepositoryImpl(
             "library" to libraryKind.stringValue
         )
         return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Me.Library.Clear, body)
+            .onSuccess { invalidateCacheAll(libraryKind) }
     }
 
     override suspend fun importToLibrary(libraryKind: KKLibrary.Kind, service: LibraryImport.Service, behavior: LibraryImport.Behavior, xmlBytes: ByteArray): Result<LibraryImport> {
@@ -486,7 +502,7 @@ open class UserRepositoryImpl(
             )
         ) {
             contentType(ContentType.MultiPart.FormData)
-        }
+        }.onSuccess { invalidateCacheAll(libraryKind) }
     }
 
 
@@ -564,14 +580,13 @@ open class UserRepositoryImpl(
 
     override suspend fun updateReminderStatus(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<ReminderLibraryResponse> {
         require(modelIDs.isNotEmpty()) { "updateReminderStatus requires at least one modelID." }
-        val chunks = modelIDs.chunked(25)
-        val iterator = chunks.iterator()
-        val firstChunk = iterator.next()
-        var lastResponse = sendUpdateReminderStatusChunk(libraryKind, firstChunk)
-        while (iterator.hasNext()) {
-            lastResponse = sendUpdateReminderStatusChunk(libraryKind, iterator.next())
+        var lastResponse: Result<ReminderLibraryResponse>? = null
+        for (chunk in modelIDs.chunked(25)) {
+            val response = sendUpdateReminderStatusChunk(libraryKind, chunk)
+            if (response is Result.Error) return response
+            lastResponse = response
         }
-        return lastResponse
+        return lastResponse!!.onSuccess { invalidateCacheFor(libraryKind, modelIDs) }
     }
 
     private suspend fun sendUpdateReminderStatusChunk(libraryKind: KKLibrary.Kind, modelIDs: List<String>): Result<ReminderLibraryResponse> {

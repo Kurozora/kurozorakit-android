@@ -6,6 +6,7 @@ import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.game.Game
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
+import kurozorakit.shared.fromException
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.store.GameKey
 import kurozorakit.store.db.KurozoraDatabase
@@ -17,7 +18,7 @@ import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class GameStore(
@@ -32,24 +33,24 @@ class GameStore(
     }
 
     // --- Direct Get Operations (Suspend) ---
-    suspend fun getGame(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<Game> {
+    suspend fun getGame(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<Game> {
         val key = GameKey.ById(id, relationships)
         return try {
             val data = if (forceRefresh) singleStore.fresh(key) else singleStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
             KurozoraLogger.error("[GameStore]", "getGame Hatası: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get game", e))
+            Result.Error(fromException(e))
         }
     }
 
-    suspend fun getGames(ids: List<String>, forceRefresh: Boolean = false): Result<List<Game>> {
+    suspend fun getGames(ids: List<String>, forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<List<Game>> {
         val key = GameKey.ByIds(ids)
         return try {
             val data = if (forceRefresh) listStore.fresh(key) else listStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get games", e))
+            Result.Error(fromException(e))
         }
     }
 
@@ -61,6 +62,20 @@ class GameStore(
     suspend fun clearCache() {
         singleStore.clear()
         listStore.clear()
+    }
+
+    /**
+     * Clears cached data for a specific game.
+     *
+     * Deletes the game from the database source of truth (deletion is id-based, so this
+     * covers every relationships variant of the key) and evicts the memory entry for the
+     * canonical key shape. In-memory entries cached under other key variants expire via
+     * the configured memory policy.
+     */
+    @OptIn(ExperimentalStoreApi::class)
+    suspend fun clearGame(id: String) {
+        singleStore.clear(GameKey.ById(id))
+        listStore.clear(GameKey.ByIds(listOf(id)))
     }
 
     companion object {

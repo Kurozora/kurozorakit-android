@@ -4,6 +4,7 @@ import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.explore.ExploreCategoryResponse
 import kurozorakit.shared.Result
+import kurozorakit.store.KurozoraStore
 
 /**
  * Data repository responsible for retrieving discovery-based content and curated lists.
@@ -51,15 +52,24 @@ interface ExploreRepository {
  * discovery data and curated content recommendations.
  *
  * @property apiClient The client used to communicate with the curated content and discovery endpoints.
+ * @property store The offline-first store; used for caching when the requested data matches a
+ * cacheable key shape (unfiltered feed / non-paginated category details). Filtered or paginated
+ * requests bypass the store to avoid cache key collisions.
  */
 open class ExploreRepositoryImpl(
-    private val apiClient: KurozoraApiClient
+    private val apiClient: KurozoraApiClient,
+    private val store: KurozoraStore,
 ) : ExploreRepository {
 
     override suspend fun getExplore(genreId: String?, themeId: String?): Result<ExploreCategoryResponse> {
         val parameters = mutableMapOf<String, String>().apply {
             genreId?.takeIf { it.isNotEmpty() }?.let { put("genre_id", it) }
             themeId?.takeIf { it.isNotEmpty() }?.let { put("theme_id", it) }
+        }
+
+        // The store key covers only the unfiltered feed; filtered requests bypass the cache.
+        if (store.enabled && parameters.isEmpty()) {
+            return store.exploreStore.getExploreFeed().map { ExploreCategoryResponse(data = it) }
         }
 
         return apiClient.get<ExploreCategoryResponse>(KKEndpoint.Explore.Index, parameters)
@@ -70,6 +80,12 @@ open class ExploreRepositoryImpl(
         next: String?,
         limit: Int
     ): Result<ExploreCategoryResponse> {
+        // Only the first page (no pagination cursor) maps to the single-category cache entry.
+        if (store.enabled && next == null) {
+            return store.exploreStore.getExploreCategory(exploreCategoryId)
+                .map { ExploreCategoryResponse(data = listOf(it)) }
+        }
+
         val parameters = if (next == null) {
             mapOf("limit" to limit.toString())
         } else {

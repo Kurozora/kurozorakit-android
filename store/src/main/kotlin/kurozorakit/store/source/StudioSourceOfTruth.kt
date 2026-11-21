@@ -26,7 +26,10 @@ class StudioSourceOfTruth(private val database: KurozoraDatabase) {
     fun forAll(): SourceOfTruth<StudioKey.All, List<Studio>, List<Studio>> = SourceOfTruth.of(
         reader = { _ ->
             queries.selectAll().asFlow().mapToList(Dispatchers.IO).map { list ->
-                list.map { StudioMapper.toDomain(it) }
+                // An empty result must be reported as `null` so Store5 knows
+                // there is no cached data and invokes the fetcher. An empty list
+                // would be treated as existing data and the list would stay empty.
+                if (list.isEmpty()) null else list.map { StudioMapper.toDomain(it) }
             }
         },
         writer = { _, list ->

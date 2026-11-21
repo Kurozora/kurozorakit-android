@@ -3,7 +3,6 @@ package kurozorakit.data.repositories.store
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.shared.Result
-import kurozorakit.data.models.user.User
 import kurozorakit.data.models.user.receipt.ReceiptResponse
 
 /**
@@ -25,6 +24,16 @@ interface StoreRepository {
      * @return A [Result] containing the [ReceiptResponse] with the verification status.
      */
     suspend fun verifyReceipt(receipt: String): Result<ReceiptResponse>
+
+    /**
+     * Validates a Google Play purchase by sending the purchase token and product ID
+     * to the server for verification.
+     *
+     * @param purchaseToken The purchase token from Google Play Billing.
+     * @param productId The product ID of the purchased item.
+     * @return A [Result] containing a map with the server response.
+     */
+    suspend fun verifyGooglePlayPurchase(purchaseToken: String, productId: String): Result<Map<String, String>>
 }
 
 /**
@@ -50,5 +59,13 @@ open class StoreRepositoryImpl(
         }
 
         return result
+    }
+
+    override suspend fun verifyGooglePlayPurchase(purchaseToken: String, productId: String): Result<Map<String, String>> {
+        val body = mapOf(
+            "purchase_token" to purchaseToken,
+            "product_id" to productId
+        )
+        return apiClient.post<Map<String, String>, Map<String, String>>(KKEndpoint.Store.GooglePlayVerify, body)
     }
 }

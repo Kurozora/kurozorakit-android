@@ -1,7 +1,7 @@
 package kurozorakit.data.repositories.person
 
+import io.ktor.client.request.*
 import io.ktor.client.request.forms.FormDataContent
-import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
@@ -10,9 +10,11 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.models.BatchApiResponse
 import kurozorakit.data.models.character.CharacterIdentityResponse
 import kurozorakit.data.models.game.GameIdentityResponse
 import kurozorakit.data.models.literature.LiteratureIdentityResponse
+import kurozorakit.data.models.person.Person
 import kurozorakit.data.models.person.PersonIdentityResponse
 import kurozorakit.data.models.person.PersonResponse
 import kurozorakit.data.models.review.ReviewResponse
@@ -40,6 +42,15 @@ interface PersonRepository {
      * @return A [Result] containing the [PersonIdentityResponse].
      */
     suspend fun getPeople(next: String? = null, limit: Int = 20, filter: PersonFilter? = null): Result<PersonIdentityResponse>
+
+    /**
+     * Fetches specific people by a list of identifiers in a single request.
+     *
+     * @param ids A list of unique person identifiers to retrieve.
+     * @param relationships A list of related data to include in the response.
+     * @return A [Result] containing the [PersonIdentityResponse].
+     */
+    suspend fun getPeople(ids: List<String>, relationships: List<String> = emptyList()): Result<PersonResponse>
 
     /**
      * Fetches detailed profile information for a specific person.
@@ -139,7 +150,14 @@ open class PersonRepositoryImpl(
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Index()
-        return apiClient.get<SearchResponse>(endpoint, parameters).map { it.data.people as PersonIdentityResponse }
+        return apiClient.get<SearchResponse>(endpoint, parameters)
+            .map { it.data.people ?: PersonIdentityResponse(data = emptyList()) }
+    }
+
+    override suspend fun getPeople(ids: List<String>, relationships: List<String>): Result<PersonResponse> {
+        return apiClient.get<PersonResponse>(KKEndpoint.Person.Index(*ids.toTypedArray())) {
+            url { relationships.forEach { parameters.append("include[]", it) } }
+        }
     }
 
     override suspend fun getPerson(personId: String, relationships: List<String>): Result<PersonResponse> {

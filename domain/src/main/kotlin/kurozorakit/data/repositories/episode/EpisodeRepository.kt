@@ -1,9 +1,12 @@
 package kurozorakit.data.repositories.episode
 
+import io.ktor.client.request.*
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.models.BatchApiResponse
+import kurozorakit.data.models.episode.Episode
 import kurozorakit.data.models.episode.EpisodeIdentityResponse
 import kurozorakit.data.models.episode.EpisodeResponse
 import kurozorakit.data.models.episode.update.EpisodeUpdateResponse
@@ -18,6 +21,15 @@ import kurozorakit.shared.Result
  * such as ratings and reviews.
  */
 interface EpisodeRepository {
+
+    /**
+     * Fetches specific episodes by a list of identifiers in a single request.
+     *
+     * @param ids A list of unique episode identifiers to retrieve.
+     * @param relationships A list of related data to include in the response.
+     * @return A [Result] containing the [EpisodeIdentityResponse].
+     */
+    suspend fun getEpisodes(ids: List<String>, relationships: List<String> = emptyList()): Result<EpisodeResponse>
 
     /**
      * Fetches detailed information for a specific episode.
@@ -75,6 +87,12 @@ interface EpisodeRepository {
 open class EpisodeRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : EpisodeRepository {
+
+    override suspend fun getEpisodes(ids: List<String>, relationships: List<String>): Result<EpisodeResponse> {
+        return apiClient.get<EpisodeResponse>(KKEndpoint.Episodes.Index(*ids.toTypedArray())) {
+            url { relationships.forEach { parameters.append("include[]", it) } }
+        }
+    }
 
     override suspend fun getEpisode(episodeId: String, relationships: List<String>): Result<EpisodeResponse> {
         return apiClient.get<EpisodeResponse>(KKEndpoint.Episodes.Details(episodeId)) {

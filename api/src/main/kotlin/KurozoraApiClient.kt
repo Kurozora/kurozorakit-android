@@ -2,34 +2,54 @@ package kurozorakit.api
 
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.encodeToJsonElement
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.MetaResponse
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.shared.Result
 import kurozorakit.shared.UserAgent
+import java.io.IOException
+
+/**
+ * Configuration for the retry behavior of [KurozoraApiClient].
+ *
+ * @property maxRetries Maximum number of retry attempts for failed requests.
+ * @property retryOnRateLimit Whether 429 (Too Many Requests) responses should be retried.
+ * @property initialBackoffDelayMs Starting delay before the first retry.
+ * @property maxBackoffDelayMs Upper bound for the exponential backoff delay.
+ * @property backoffFactor Multiplier applied to the delay between retries.
+ */
+data class RetryConfig(
+    val maxRetries: Int = 3,
+    val retryOnRateLimit: Boolean = false,
+    val initialBackoffDelayMs: Long = 1000,
+    val maxBackoffDelayMs: Long = 30000,
+    val backoffFactor: Double = 2.0,
+)
 
 /**
  * The primary client for interacting with the Kurozora API.
  *
  * This class handles the configuration of the HTTP client, including authentication,
- * logging, content negotiation, caching, and error handling. It provides methods
+ * logging, content negotiation, and error handling. It provides methods
  * for standard HTTP verbs (GET, POST, PUT, DELETE) wrapped in a [Result] type.
  *
  * @property baseUrl The base URL of the API.
  * @property apiKey The API key used for identifying the client application.
  * @property tokenProvider An optional provider for handling Bearer tokens (OAuth2).
- * @property cacheManager An optional manager for handling response caching.
  * @property platform The target platform the client is running on.
  * @property userAgent Information about the client application to be sent in the User-Agent header.
+ * @property onSessionExpired Callback invoked when a 401 response indicates an expired session.
+ * @property isOnline An optional connectivity check; requests fail fast with an offline error when it returns false.
+ * @property retryConfig Controls the retry/backoff behavior of the underlying HTTP client.
  */
 class KurozoraApiClient(
     val baseUrl: String,
@@ -37,36 +57,60 @@ class KurozoraApiClient(
     val tokenProvider: TokenProvider? = null,
     val platform: Platform,
     private val userAgent: UserAgent,
+    private val onSessionExpired: (() -> Unit)? = null,
+    private val isOnline: (() -> Boolean)? = null,
+    private val retryConfig: RetryConfig = RetryConfig(),
+    engine: HttpClientEngine? = null,
 ) {
+    /**
+     * Returns an [OfflineError] when the device is currently offline according to the
+     * configured connectivity check, or `null` when online (or no check was provided).
+     */
+    @PublishedApi
+    internal fun offlineErrorOrNull(): KurozoraError.OfflineError? {
+        if (isOnline?.invoke() == false) {
+            return KurozoraError.OfflineError("No internet connection")
+        }
+        return null
+    }
+
     /**
      * The configured [HttpClient] instance used for making network requests.
      *
      * It includes the following plugins:
      * - [ContentNegotiation]: Configured for JSON serialization (ignoring unknown keys).
-     * - [Logging]: Custom logger to output HTTP logs.
+     * - [Logging]: Custom logger that redacts sensitive headers.
      * - [HttpTimeout]: Connection and socket timeouts.
-     * - [HttpRequestRetry]: Exponential backoff retry logic for server errors.
+     * - [HttpRequestRetry]: Configurable retry logic for server (and optionally rate limit) errors.
      * - [HttpResponseValidator]: Custom validation to map HTTP status codes to [KurozoraError].
      */
-    val httpClient = HttpClient {
+    private val clientConfig: HttpClientConfig<*>.() -> Unit = {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
                 explicitNulls = false
-//                isLenient = true
                 prettyPrint = false
             })
         }
 
         install(Logging) {
             logger = object : Logger {
+                private val sensitiveHeaders = setOf(
+                    HttpHeaders.Authorization,
+                    "X-API-Key",
+                    "Cookie",
+                    "Set-Cookie",
+                )
+
                 override fun log(message: String) {
-                    KurozoraLogger.debug("[HTTP]", message)
+                    val sanitized = sensitiveHeaders.fold(message) { acc, header ->
+                        acc.replace(Regex("$header: .+")) { "${header}: [REDACTED]" }
+                    }
+                    KurozoraLogger.debug("[HTTP]", sanitized)
                 }
             }
             level = LogLevel.ALL
         }
-
 
         defaultRequest {
             contentType(ContentType.Application.FormUrlEncoded)
@@ -81,6 +125,7 @@ class KurozoraApiClient(
 
                 when {
                     statusCode == 401 -> {
+                        onSessionExpired?.invoke()
                         throw KurozoraError.AuthenticationError("Authentication failed")
                     }
                     statusCode == 403 -> {
@@ -94,64 +139,26 @@ class KurozoraApiClient(
                         throw KurozoraError.RateLimitError("Rate limit exceeded", retryAfter)
                     }
                     statusCode >= 400 -> {
-                        try {
-                            val metaResponse = response.body<MetaResponse>()
-
-                            val meta = metaResponse.meta
-                            val errors = metaResponse.errors
-
-                            // Helper drawing functions for console output
-                            fun box(title: String, lines: List<String>, width: Int = 50): List<String> {
-                                val borderTop = "┌${"─".repeat(width - 2)}┐"
-                                val borderBottom = "└${"─".repeat(width - 2)}┘"
-                                val titleLine = "│ ${title.padEnd(width - 4)} │"
-                                val contentLines = lines.map { "│ ${it.padEnd(width - 4)} │" }
-                                return listOf(borderTop, titleLine) + contentLines + listOf(borderBottom)
-                            }
-
-                            val metaLines = listOf(
-                                "Version: ${meta.version}",
-                                "Minimum App Version: ${meta.minimumAppVersion}",
-                                "Maintenance Mode: ${meta.isMaintenanceModeEnabled}",
-                                "User Authenticated: ${meta.isUserAuthenticated ?: "Unknown"}",
-                                "Authenticated User ID: ${meta.authenticatedUserID ?: "None"}"
-                            )
-
-                            val errorLines = if (errors.isEmpty()) {
-                                listOf("No errors found.")
-                            } else {
-                                errors.flatMapIndexed { index, error ->
-                                    listOf(
-                                        "• Error ${index + 1}",
-                                        "  ID     : ${error.id}",
-                                        "  Status : ${error.status}",
-                                        "  Title  : ${error.title}",
-                                        "  Detail : ${error.detail}",
-                                        ""
-                                    )
-                                }
-                            }
-
-                            val boxedMeta = box("META INFORMATION", metaLines)
-                            val boxedErrors = box("ERRORS", errorLines)
-
-                            // Print boxes side-by-side (two column layout)
-                            val maxLines = maxOf(boxedMeta.size, boxedErrors.size)
-                            println("═".repeat(105))
-                            for (i in 0 until maxLines) {
-                                val left = if (i < boxedMeta.size) boxedMeta[i] else " ".repeat(50)
-                                val right = if (i < boxedErrors.size) boxedErrors[i] else ""
-                                println(left + "  " + right)
-                            }
-                            println("═".repeat(105))
-
+                        val metaResponse = try {
+                            response.body<MetaResponse>()
                         } catch (e: Exception) {
-                            if (e is KurozoraError) throw e
-                            throw KurozoraError.NetworkError(
-                                code = statusCode,
-                                message = "Network error with status code: $statusCode"
+                            KurozoraLogger.warning("[HTTP]", "Failed to parse error body: ${e.message}")
+                            null
+                        }
+
+                        val error = metaResponse?.errors?.firstOrNull()
+                        if (error != null) {
+                            throw KurozoraError.ApiError(
+                                code = error.id.toString(),
+                                message = error.detail.ifBlank { error.title }
                             )
                         }
+
+                        KurozoraLogger.warning("[HTTP]", "API error: $statusCode")
+                        throw KurozoraError.NetworkError(
+                            code = statusCode,
+                            message = "Network error with status code: $statusCode"
+                        )
                     }
                 }
             }
@@ -166,9 +173,25 @@ class KurozoraApiClient(
 
         // Configure retry policy
         install(HttpRequestRetry) {
-            retryOnServerErrors(maxRetries = 3)
-            exponentialDelay()
+            retryIf(maxRetries = retryConfig.maxRetries) { _, response ->
+                response.status.value in 500..599 ||
+                    (retryConfig.retryOnRateLimit && response.status.value == 429)
+            }
+            retryOnExceptionIf { _, cause ->
+                cause is IOException
+            }
+            exponentialDelay(
+                base = retryConfig.backoffFactor,
+                baseDelayMs = retryConfig.initialBackoffDelayMs,
+                maxDelayMs = retryConfig.maxBackoffDelayMs,
+            )
         }
+    }
+
+    val httpClient: HttpClient = if (engine != null) {
+        HttpClient(engine, clientConfig)
+    } else {
+        HttpClient(clientConfig)
     }
 
     init {
@@ -184,36 +207,21 @@ class KurozoraApiClient(
     }
 
     /**
-     * Makes a GET request to the specified endpoint with optional caching.
-     *
-     * This function checks the [CacheManager] (if configured) before making a network request.
-     * If valid cached data exists and [forceRefresh] is false, the cached data is returned.
-     * Otherwise, a network request is performed, and the result is cached.
+     * Makes a GET request to the specified endpoint.
      *
      * @param T The type of the response body (must be deserializable).
      * @param endpoint The API endpoint to request.
      * @param parameters A map of query parameters to append to the URL.
-     * @param ttlMillis Time-to-live for the cache entry in milliseconds (default: 300,000ms / 5 mins).
-     * @param forceRefresh If true, bypasses the cache and forces a network request.
      * @param block A configuration block for the [HttpRequestBuilder].
      * @return A [Result] containing the deserialized response data or an error.
      */
     suspend inline fun <reified T> get(
         endpoint: KKEndpoint,
         parameters: Map<String, String> = emptyMap(),
-        ttlMillis: Long = 300000, // 300000 -> 5 mins, 3600000 -> 1 hour
-        forceRefresh: Boolean = false,
         noinline block: HttpRequestBuilder.() -> Unit = {}
     ): Result<T> {
+        offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
-            val url = buildString {
-                append("$baseUrl/${endpoint.path}")
-                if (parameters.isNotEmpty()) {
-                    append("?")
-                    append(parameters.entries.joinToString("&") { "${it.key}=${it.value}" })
-                }
-            }
-
             KurozoraLogger.debug("[KurozoraApiClient]", "GET request to ${endpoint.path}")
             val response = httpClient.get("$baseUrl/${endpoint.path}") {
                 parameters.forEach { (key, value) -> parameter(key, value) }
@@ -230,68 +238,6 @@ class KurozoraApiClient(
         }
     }
 
-
-    /**
-     * Generates a unique cache key based on the request URL, parameters, and extra headers.
-     *
-     * @param url The full request URL.
-     * @param parameters The query parameters map.
-     * @param extras Additional request information (headers, body, etc.) extracted from the request block.
-     * @return A hash string representing the unique request signature.
-     */
-    fun generateCacheKey(
-        url: String,
-        parameters: Map<String, String> = emptyMap(),
-        extras: Map<String, String> = emptyMap()
-    ): String {
-        val parsed = try { java.net.URL(url) } catch (e: Exception) { null }
-        val normalizedPath = parsed?.path?.trim('/') ?: url
-        val query = parsed?.query?.split("&")?.sorted()?.joinToString("&") ?: ""
-
-        val paramString = parameters.entries.sortedBy { it.key }
-            .joinToString("&") { "${it.key}=${it.value}" }
-
-        val extraString = extras.entries.sortedBy { it.key }
-            .joinToString("&") { "${it.key}=${it.value}" }
-
-        val rawKey = "$normalizedPath?$query|$paramString|$extraString"
-        return rawKey.hashCode().toString()
-    }
-
-
-    /**
-     * Extracts request information (headers, params, body) from an [HttpRequestBuilder] block.
-     *
-     * This is primarily used to ensure that dynamic headers or parameters set within the
-     * `block` of the [get] method are included in the cache key generation.
-     *
-     * @param block The configuration block to inspect.
-     * @return A map of keys and values representing the request details.
-     */
-    fun extractRequestInfoFromBlock(block: HttpRequestBuilder.() -> Unit): Map<String, String> {
-        return try {
-            val builder = HttpRequestBuilder()
-            builder.block()
-
-            // Extract all parameters (including query/body parameters)
-            val params = builder.url.parameters.entries()
-                .associate { it.key to it.value.joinToString(",") }
-
-            // Include headers
-            val headers = builder.headers.entries()
-                .associate { it.key to it.value.joinToString(",") }
-
-            // Include body (if set, e.g., setBody called) - optional
-            val body = builder.body?.toString()?.takeIf { it.isNotEmpty() }?.let { mapOf("body" to it) } ?: emptyMap()
-
-            // Merge into a single map
-            params + headers + body
-        } catch (e: Exception) {
-            emptyMap()
-        }
-    }
-
-
     /**
      * Makes a GET request and returns the raw response body as bytes.
      * Used for binary downloads (e.g. theme files).
@@ -306,6 +252,7 @@ class KurozoraApiClient(
         parameters: Map<String, String> = emptyMap(),
         block: HttpRequestBuilder.() -> Unit = {}
     ): Result<ByteArray> {
+        offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
             KurozoraLogger.debug("[KurozoraApiClient]", "Download request to ${endpoint.path}")
             val response = httpClient.get("$baseUrl/${endpoint.path}") {
@@ -340,13 +287,16 @@ class KurozoraApiClient(
         parameters: Map<String, String> = emptyMap(),
         noinline block: HttpRequestBuilder.() -> Unit = {}
     ): Result<T> {
+        offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
             KurozoraLogger.debug("[KurozoraApiClient]", "POST request to ${endpoint.path}")
             val response = httpClient.post("$baseUrl/${endpoint.path}") {
                 parameters.forEach { (key, value) ->
                     parameter(key, value)
                 }
-                setBody(body)
+                if (body != null) {
+                    setBody(body)
+                }
                 block()
             }
             Result.Success(response.body())
@@ -376,6 +326,7 @@ class KurozoraApiClient(
         parameters: Map<String, String> = emptyMap(),
         noinline block: HttpRequestBuilder.() -> Unit = {}
     ): Result<T> {
+        offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
             KurozoraLogger.debug("[KurozoraApiClient]", "PUT request to ${endpoint.path}")
             val response = httpClient.put("$baseUrl/${endpoint.path}") {
@@ -407,6 +358,7 @@ class KurozoraApiClient(
         endpoint: KKEndpoint,
         parameters: Map<String, String> = emptyMap(),
     ): Result<T> {
+        offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
             KurozoraLogger.debug("[KurozoraApiClient]", "DELETE request to ${endpoint.path}")
             val response = httpClient.delete("$baseUrl/${endpoint.path}") {

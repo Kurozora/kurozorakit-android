@@ -8,6 +8,10 @@ import kotlinx.serialization.Serializable
  * This object provides vital system-level information, including API versioning,
  * maintenance status, and the current authentication state of the requesting user.
  *
+ * The [minimumAppVersion] and [isMaintenanceModeEnabled] fields are nullable because
+ * error responses returned by the API may omit them; making them optional keeps
+ * error body parsing robust.
+ *
  * @property version The current version of the Kurozora API (e.g., "1.0.0").
  * @property minimumAppVersion The minimum client application version required to remain compatible with this API version.
  * @property isMaintenanceModeEnabled Indicates whether the API is currently undergoing maintenance. If `true`, most operations may be restricted.
@@ -17,8 +21,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Meta(
     val version: String,
-    val minimumAppVersion: String,
-    val isMaintenanceModeEnabled: Boolean,
-    val isUserAuthenticated: Boolean?,
-    val authenticatedUserID: String?
+    val minimumAppVersion: String? = null,
+    val isMaintenanceModeEnabled: Boolean? = null,
+    val isUserAuthenticated: Boolean? = null,
+    val authenticatedUserID: String? = null,
 )

@@ -6,6 +6,7 @@ import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.studio.Studio
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
+import kurozorakit.shared.fromException
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.store.StudioKey
 import kurozorakit.store.db.KurozoraDatabase
@@ -17,7 +18,7 @@ import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class StudioStore(
@@ -32,23 +33,23 @@ class StudioStore(
     }
 
     // --- Direct Get (Suspend) ---
-    suspend fun getStudio(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<Studio> {
+    suspend fun getStudio(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<Studio> {
         val key = StudioKey.ById(id, relationships)
         return try {
             val data = if (forceRefresh) singleStore.fresh(key) else singleStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
             KurozoraLogger.error("[StudioStore]", "getStudio Hatası: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed", e))
+            Result.Error(fromException(e))
         }
     }
 
-    suspend fun getAllStudios(forceRefresh: Boolean = false): Result<List<Studio>> {
+    suspend fun getAllStudios(forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<List<Studio>> {
         return try {
             val data = if (forceRefresh) allStore.fresh(StudioKey.All) else allStore.get(StudioKey.All)
             Result.Success(data)
         } catch (e: Exception) {
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed", e))
+            Result.Error(fromException(e))
         }
     }
 

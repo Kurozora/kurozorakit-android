@@ -32,5 +32,6 @@ object Deps {
 
     object Test {
         const val mockk = "io.mockk:mockk:${Versions.mockk}"
+        const val coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinCoroutines}"
     }
 }

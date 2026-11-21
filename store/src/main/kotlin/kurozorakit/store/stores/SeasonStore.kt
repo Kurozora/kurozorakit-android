@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.map
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.season.Season
 import kurozorakit.shared.KurozoraError
+import kurozorakit.shared.fromException
 import kurozorakit.shared.Result
 import kurozorakit.store.SeasonKey
 import kurozorakit.store.db.KurozoraDatabase
@@ -15,7 +16,7 @@ import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class SeasonStore(
@@ -27,12 +28,12 @@ class SeasonStore(
             .map { mapStoreResponse(it) }
     }
 
-    suspend fun getSeason(id: String, forceRefresh: Boolean = false): Result<Season> {
+    suspend fun getSeason(id: String, forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<Season> {
         return try {
             val data = singleStore.get(SeasonKey.ById(id))
             Result.Success(data)
         } catch (e: Exception) {
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed", e))
+            Result.Error(fromException(e))
         }
     }
 

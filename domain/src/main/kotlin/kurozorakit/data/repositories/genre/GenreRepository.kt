@@ -26,6 +26,14 @@ interface GenreRepository {
     suspend fun getGenres(): Result<GenreResponse>
 
     /**
+     * Fetches specific genres by a list of identifiers in a single request.
+     *
+     * @param ids A list of unique genre identifiers to retrieve.
+     * @return A [Result] containing the [GenreResponse].
+     */
+    suspend fun getGenres(ids: List<String>): Result<GenreResponse>
+
+    /**
      * Retrieves detailed information for a specific genre by its unique identifier.
      *
      * @param genreId The unique ID of the genre to be retrieved.
@@ -46,6 +54,10 @@ open class GenreRepositoryImpl(
 
     override suspend fun getGenres(): Result<GenreResponse> {
         return apiClient.get<GenreResponse>(KKEndpoint.Genres.Index)
+    }
+
+    override suspend fun getGenres(ids: List<String>): Result<GenreResponse> {
+        return apiClient.get(KKEndpoint.Genres.Index, mapOf("ids" to ids.joinToString(",")))
     }
 
     override suspend fun getGenre(genreId: String): Result<GenreResponse> {

@@ -1,7 +1,7 @@
 package kurozorakit.data.repositories.literature
 
+import io.ktor.client.request.*
 import io.ktor.client.request.forms.FormDataContent
-import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
@@ -26,6 +26,7 @@ import kurozorakit.data.models.staff.StaffResponse
 import kurozorakit.data.models.studio.StudioIdentityResponse
 import kurozorakit.data.models.studio.StudioResponse
 import kurozorakit.shared.Result
+import kurozorakit.store.KurozoraStore
 import java.util.*
 
 /**
@@ -49,13 +50,22 @@ interface LiteratureRepository {
     suspend fun getLiteratures(next: String? = null, limit: Int = 20, filter: LiteratureFilter? = null): Result<LiteratureIdentityResponse>
 
     /**
+     * Fetches specific literature entries by a list of identifiers in a single request.
+     *
+     * @param ids A list of unique literature identifiers to retrieve.
+     * @param relationships A list of related data to include in the response.
+     * @return A [Result] containing the [LiteratureIdentityResponse].
+     */
+    suspend fun getLiteratures(ids: List<String>, relationships: List<String> = emptyList()): Result<LiteratureResponse>
+
+    /**
      * Fetches detailed information for a specific literature entry.
      *
      * @param id The unique identifier of the literature.
      * @param relationships A list of related data to include (e.g., "genres", "themes").
      * @return A [Result] containing the [LiteratureResponse].
      */
-    suspend fun getLiterature(id: String, relationships: List<String> = emptyList<String>()): Result<LiteratureResponse>
+    suspend fun getLiterature(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<LiteratureResponse>
 
     /**
      * Retrieves a list of literature items scheduled for future release or publication.
@@ -164,7 +174,8 @@ interface LiteratureRepository {
  * @property apiClient The client used to communicate with the literature and relationship endpoints.
  */
 open class LiteratureRepositoryImpl(
-    private val apiClient: KurozoraApiClient
+    private val apiClient: KurozoraApiClient,
+    private val store: KurozoraStore,
 ) : LiteratureRepository {
 
     override suspend fun getLiteratures(next: String?, limit: Int, filter: LiteratureFilter?): Result<LiteratureIdentityResponse> {
@@ -195,15 +206,24 @@ open class LiteratureRepositoryImpl(
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Index()
-        return apiClient.get<SearchResponse>(endpoint, parameters).map { it.data.literatures as LiteratureIdentityResponse }
+        return apiClient.get<SearchResponse>(endpoint, parameters)
+            .map { it.data.literatures ?: LiteratureIdentityResponse(data = emptyList()) }
     }
 
-    override suspend fun getLiterature(id: String, relationships: List<String>): Result<LiteratureResponse> {
-        return apiClient.get<LiteratureResponse>(KKEndpoint.Literature.Details(id)) {
-            url {
-                relationships.forEach {
-                    parameters.append("include[]", it)
-                }
+    override suspend fun getLiteratures(ids: List<String>, relationships: List<String>): Result<LiteratureResponse> {
+        return apiClient.get(KKEndpoint.Literature.Index(*ids.toTypedArray())) {
+            url { relationships.forEach { parameters.append("include[]", it) } }
+        }
+    }
+
+    override suspend fun getLiterature(id: String, relationships: List<String>, forceRefresh: Boolean): Result<LiteratureResponse> {
+        return if (store.enabled) {
+            store.literatureStore.getLiterature(id, relationships, forceRefresh).map { literature ->
+                LiteratureResponse(data = listOf(literature), next = null)
+            }
+        } else {
+            apiClient.get(KKEndpoint.Literature.Details(id)) {
+                url { relationships.forEach { parameters.append("include[]", it) } }
             }
         }
     }
@@ -286,6 +306,6 @@ open class LiteratureRepositoryImpl(
             setBody(FormDataContent(Parameters.build {
                 body.forEach { (key, value) -> append(key, value) }
             }))
-        }
+        }.onSuccess { store.literatureStore.clearCache() }
     }
 }

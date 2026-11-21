@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.map
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.episode.Episode
 import kurozorakit.shared.KurozoraError
+import kurozorakit.shared.fromException
 import kurozorakit.shared.Result
 import kurozorakit.store.EpisodeKey
 import kurozorakit.store.db.KurozoraDatabase
@@ -18,7 +19,7 @@ import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class EpisodeStore(
@@ -30,13 +31,13 @@ class EpisodeStore(
         return singleStore.stream(StoreReadRequest.cached(EpisodeKey.ById(id, relationships), refresh)).map { mapStoreResponse(it) }
     }
 
-    suspend fun getEpisode(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<Episode> {
+    suspend fun getEpisode(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<Episode> {
         val key = EpisodeKey.ById(id, relationships)
         return try {
             val data = if (forceRefresh) singleStore.fresh(key) else singleStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Error", e))
+            Result.Error(fromException(e))
         }
     }
 

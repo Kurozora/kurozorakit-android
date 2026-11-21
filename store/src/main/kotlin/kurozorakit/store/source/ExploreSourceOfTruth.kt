@@ -17,7 +17,10 @@ class ExploreSourceOfTruth(private val database: KurozoraDatabase) {
     fun forAll(): SourceOfTruth<ExploreKey.All, List<ExploreCategory>, List<ExploreCategory>> = SourceOfTruth.of(
         reader = { _ ->
             queries.selectAll().asFlow().mapToList(Dispatchers.IO).map { list ->
-                list.map { ExploreMapper.toDomain(it) }
+                // An empty result must be reported as `null` so Store5 knows there
+                // is no cached data and invokes the fetcher. An empty list would be
+                // treated as existing data and the explore feed would stay empty.
+                if (list.isEmpty()) null else list.map { ExploreMapper.toDomain(it) }
             }
         },
         writer = { _, list ->

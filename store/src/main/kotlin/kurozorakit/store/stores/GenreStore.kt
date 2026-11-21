@@ -7,6 +7,7 @@ import kurozorakit.data.models.genre.Genre
 import kurozorakit.data.models.genre.GenreResponse
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
+import kurozorakit.shared.fromException
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.store.GenreKey
 import kurozorakit.store.db.KurozoraDatabase
@@ -18,7 +19,7 @@ import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class GenreStore(
@@ -47,28 +48,28 @@ class GenreStore(
     /**
      * Tek bir türü direkt olarak getirir.
      */
-    suspend fun getGenre(id: String, forceRefresh: Boolean = false): Result<Genre> {
+    suspend fun getGenre(id: String, forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<Genre> {
         val key = GenreKey.ById(id)
         return try {
             val genre = if (forceRefresh) singleGenreStore.fresh(key) else singleGenreStore.get(key)
             Result.Success(genre)
         } catch (e: Exception) {
             KurozoraLogger.error("[GenreStore]", "getGenre Hatası: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get genre", e))
+            Result.Error(fromException(e))
         }
     }
 
     /**
      * Tüm tür listesini direkt olarak getirir.
      */
-    suspend fun getAllGenres(forceRefresh: Boolean = false): Result<List<Genre>> {
+    suspend fun getAllGenres(forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<List<Genre>> {
         val key = GenreKey.All
         return try {
             val genres = if (forceRefresh) allGenresStore.fresh(key) else allGenresStore.get(key)
             Result.Success(genres)
         } catch (e: Exception) {
             KurozoraLogger.error("[GenreStore]", "getAllGenres Hatası: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get all genres", e))
+            Result.Error(fromException(e))
         }
     }
 

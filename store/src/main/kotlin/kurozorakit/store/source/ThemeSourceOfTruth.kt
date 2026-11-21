@@ -27,7 +27,10 @@ class ThemeSourceOfTruth(private val database: KurozoraDatabase) {
     fun forThemeList(): SourceOfTruth<ThemeKey.All, List<Theme>, List<Theme>> = SourceOfTruth.of(
         reader = { _ ->
             queries.selectAll().asFlow().mapToList(Dispatchers.IO).map { entities ->
-                entities.map { ThemeMapper.toDomain(it) }
+                // An empty result must be reported as `null` so Store5 knows
+                // there is no cached data and invokes the fetcher. An empty list
+                // would be treated as existing data and the list would stay empty.
+                if (entities.isEmpty()) null else entities.map { ThemeMapper.toDomain(it) }
             }
         },
         writer = { _, themes ->

@@ -6,6 +6,7 @@ import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.theme.Theme
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
+import kurozorakit.shared.fromException
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.store.ThemeKey
 import kurozorakit.store.db.KurozoraDatabase
@@ -17,7 +18,7 @@ import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class ThemeStore(
@@ -39,25 +40,25 @@ class ThemeStore(
 
     // --- Direct Get Operations (Suspend) ---
 
-    suspend fun getTheme(id: String, forceRefresh: Boolean = false): Result<Theme> {
+    suspend fun getTheme(id: String, forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<Theme> {
         val key = ThemeKey.ById(id)
         return try {
             val theme = if (forceRefresh) singleThemeStore.fresh(key) else singleThemeStore.get(key)
             Result.Success(theme)
         } catch (e: Exception) {
             KurozoraLogger.error("[ThemeStore]", "getTheme Hatası: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get theme", e))
+            Result.Error(fromException(e))
         }
     }
 
-    suspend fun getAllThemes(forceRefresh: Boolean = false): Result<List<Theme>> {
+    suspend fun getAllThemes(forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<List<Theme>> {
         val key = ThemeKey.All
         return try {
             val themes = if (forceRefresh) allThemesStore.fresh(key) else allThemesStore.get(key)
             Result.Success(themes)
         } catch (e: Exception) {
             KurozoraLogger.error("[ThemeStore]", "getAllThemes Hatası: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get all themes", e))
+            Result.Error(fromException(e))
         }
     }
 

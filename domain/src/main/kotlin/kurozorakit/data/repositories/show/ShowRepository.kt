@@ -8,12 +8,14 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.models.BatchApiResponse
 import kurozorakit.data.models.character.CharacterIdentityResponse
 import kurozorakit.data.models.person.PersonIdentityResponse
 import kurozorakit.data.models.review.ReviewResponse
 import kurozorakit.data.models.search.SearchResponse
 import kurozorakit.data.models.search.filters.ShowFilter
 import kurozorakit.data.models.season.SeasonIdentityResponse
+import kurozorakit.data.models.show.Show
 import kurozorakit.data.models.show.ShowIdentityResponse
 import kurozorakit.data.models.show.ShowResponse
 import kurozorakit.data.models.show.cast.CastIdentityResponse
@@ -25,6 +27,7 @@ import kurozorakit.data.models.staff.StaffIdentityResponse
 import kurozorakit.data.models.staff.StaffResponse
 import kurozorakit.data.models.studio.StudioResponse
 import kurozorakit.shared.Result
+import kurozorakit.store.KurozoraStore
 import java.util.*
 
 /**
@@ -53,7 +56,7 @@ interface ShowRepository {
      * @param relationships A list of related data to include in the response.
      * @return A [Result] containing the [ShowIdentityResponse].
      */
-    suspend fun getShows(ids: List<String>, relationships: List<String> = emptyList()): Result<ShowIdentityResponse>
+    suspend fun getShows(ids: List<String>, relationships: List<String> = emptyList()): Result<ShowResponse>
 
     /**
      * Fetches detailed information for a single specific show.
@@ -62,7 +65,7 @@ interface ShowRepository {
      * @param relationships A list of related data to include (e.g., "genres", "seasons").
      * @return A [Result] containing the [ShowResponse].
      */
-    suspend fun getShow(id: String, relationships: List<String> = emptyList()): Result<ShowResponse>
+    suspend fun getShow(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<ShowResponse>
 
     /**
      * Retrieves a list of shows scheduled to air in the future.
@@ -188,6 +191,7 @@ interface ShowRepository {
  */
 open class ShowRepositoryImpl(
     private val apiClient: KurozoraApiClient,
+    private val store: KurozoraStore,
 ) : ShowRepository {
 
     override suspend fun getShows(next: String?, limit: Int, filter: ShowFilter?): Result<ShowIdentityResponse> {
@@ -216,11 +220,12 @@ open class ShowRepositoryImpl(
             }
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Show.Index()
-        return apiClient.get<SearchResponse>(endpoint, parameters).map { it.data.shows as ShowIdentityResponse }
+        return apiClient.get<SearchResponse>(endpoint, parameters)
+            .map { it.data.shows ?: ShowIdentityResponse(data = emptyList()) }
     }
 
-    override suspend fun getShows(ids: List<String>, relationships: List<String>): Result<ShowIdentityResponse> {
-        return apiClient.get<ShowIdentityResponse>(KKEndpoint.Show.Index(*ids.toTypedArray())) {
+    override suspend fun getShows(ids: List<String>, relationships: List<String>): Result<ShowResponse> {
+        return apiClient.get<ShowResponse>(KKEndpoint.Show.Index(*ids.toTypedArray())) {
             url {
                 relationships.forEach {
                     parameters.append("include[]", it)
@@ -229,12 +234,12 @@ open class ShowRepositoryImpl(
         }
     }
 
-    override suspend fun getShow(id: String, relationships: List<String>): Result<ShowResponse> {
-        return apiClient.get<ShowResponse>(KKEndpoint.Show.Details(id)) {
-            url {
-                relationships.forEach {
-                    parameters.append("include[]", it)
-                }
+    override suspend fun getShow(id: String, relationships: List<String>, forceRefresh: Boolean): Result<ShowResponse> {
+        return if (store.enabled) {
+            store.showStore.getShow(id, relationships, forceRefresh)
+        } else {
+            apiClient.get(KKEndpoint.Show.Details(id)) {
+                url { relationships.forEach { parameters.append("include[]", it) } }
             }
         }
     }
@@ -327,6 +332,6 @@ open class ShowRepositoryImpl(
             setBody(FormDataContent(Parameters.build {
                 body.forEach { (key, value) -> append(key, value) }
             }))
-        }
+        }.onSuccess { store.showStore.clearShow(showId) }
     }
 }

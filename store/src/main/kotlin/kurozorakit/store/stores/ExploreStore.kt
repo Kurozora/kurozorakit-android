@@ -4,8 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.explore.ExploreCategory
-import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
+import kurozorakit.shared.fromException
 import kurozorakit.store.ExploreKey
 import kurozorakit.store.db.KurozoraDatabase
 import kurozorakit.store.fetcher.ExploreFetcher
@@ -15,7 +15,7 @@ import org.mobilenativefoundation.store.store5.Store
 import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class ExploreStore(
@@ -29,13 +29,23 @@ class ExploreStore(
             .map { mapStoreResponse(it) }
     }
 
-    /** Direct Get */
-    suspend fun getExploreFeed(forceRefresh: Boolean = false): Result<List<ExploreCategory>> {
+    /** Direct Get - main feed */
+    suspend fun getExploreFeed(forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<List<ExploreCategory>> {
         return try {
             val data = allStore.get(ExploreKey.All)
             Result.Success(data)
         } catch (e: Exception) {
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get explore", e))
+            Result.Error(fromException(e))
+        }
+    }
+
+    /** Direct Get - single category */
+    suspend fun getExploreCategory(id: String, forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<ExploreCategory> {
+        return try {
+            val data = singleStore.get(ExploreKey.ById(id))
+            Result.Success(data)
+        } catch (e: Exception) {
+            Result.Error(fromException(e))
         }
     }
 

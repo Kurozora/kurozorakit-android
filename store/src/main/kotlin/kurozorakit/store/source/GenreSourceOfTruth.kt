@@ -29,7 +29,10 @@ class GenreSourceOfTruth(
     fun forGenreList(): SourceOfTruth<GenreKey.All, List<Genre>, List<Genre>> = SourceOfTruth.of(
         reader = { _ ->
             queries.selectAll().asFlow().mapToList(Dispatchers.IO).map { entities ->
-                entities.map { GenreMapper.toDomain(it) }
+                // An empty result must be reported as `null` so Store5 knows
+                // there is no cached data and invokes the fetcher. An empty list
+                // would be treated as existing data and the list would stay empty.
+                if (entities.isEmpty()) null else entities.map { GenreMapper.toDomain(it) }
             }
         },
         writer = { _, genres ->

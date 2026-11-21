@@ -36,15 +36,19 @@ import kurozorakit.shared.Result
 interface AuthRepository {
 
     /**
-     * Registers a new user account.
+     * Registers a new user account and automatically signs them in.
+     *
+     * On success, [User.current] is set and the authentication token is saved
+     * via the configured [TokenProvider], allowing the app to proceed as
+     * authenticated without requiring a separate sign-in.
      *
      * @param username The unique display name for the user.
      * @param email The user's email address.
      * @param password The secure password for the account.
      * @param profileImage Optional byte array for the user's initial avatar.
-     * @return A [Result] indicating success or failure of the registration.
+     * @return A [Result] containing the [SignInResponse] with session tokens.
      */
-    suspend fun signUp(username: String, email: String, password: String, profileImage: ByteArray? = null): Result<Unit>
+    suspend fun signUp(username: String, email: String, password: String, profileImage: ByteArray? = null): Result<SignInResponse>
 
     /**
      * Authenticates a user using email and password credentials.
@@ -199,8 +203,8 @@ open class AuthRepositoryImpl(
         email: String,
         password: String,
         profileImage: ByteArray?
-    ): Result<Unit> {
-        return apiClient.post<Unit, Unit>(KKEndpoint.Auth.SignUp) {
+    ): Result<SignInResponse> {
+        return when (val result = apiClient.post<SignInResponse, Unit>(KKEndpoint.Auth.SignUp) {
             setBody(
                 MultiPartFormDataContent(
                     formData {
@@ -221,6 +225,23 @@ open class AuthRepositoryImpl(
                     }
                 )
             )
+        }) {
+            is Result.Error -> result
+            is Result.Success -> {
+                val response = result.data
+                val user = response.data.first()
+                User.current = user
+                apiClient.tokenProvider?.saveToken(
+                    AccountUser(
+                        id = user.id,
+                        username = user.attributes.username,
+                        token = response.authenticationToken,
+                        profileUrl = user.attributes.profile?.url,
+                        userJson = Json.encodeToString(user)
+                    )
+                )
+                result
+            }
         }
     }
 
@@ -418,11 +439,14 @@ open class AuthRepositoryImpl(
     }
 
     override suspend fun deleteUser(password: String): Result<Unit> {
-        val parameters = mapOf("password" to password)
-        val response = apiClient.delete<Unit>(KKEndpoint.Auth.Delete, parameters)
-        response.onSuccess {
-            User.current = null
+        return apiClient.post<Unit, Unit>(
+            KKEndpoint.Auth.Delete,
+            body = null
+        ) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                append("password", password)
+            }))
         }
-        return response
     }
 }

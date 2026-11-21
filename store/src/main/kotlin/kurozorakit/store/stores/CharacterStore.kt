@@ -6,6 +6,7 @@ import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.models.character.Character
 import kurozorakit.shared.KurozoraError
 import kurozorakit.shared.Result
+import kurozorakit.shared.fromException
 import kurozorakit.shared.logging.KurozoraLogger
 import kurozorakit.store.CharacterKey
 import kurozorakit.store.db.KurozoraDatabase
@@ -17,7 +18,7 @@ import org.mobilenativefoundation.store.store5.StoreBuilder
 import org.mobilenativefoundation.store.store5.StoreReadRequest
 import org.mobilenativefoundation.store.store5.impl.extensions.fresh
 import org.mobilenativefoundation.store.store5.impl.extensions.get
-import org.mobilenativefoundation.store.core5.ExperimentalStoreApi
+import org.mobilenativefoundation.store.store5.ExperimentalStoreApi
 import kotlin.time.Duration.Companion.minutes
 
 class CharacterStore(
@@ -32,24 +33,24 @@ class CharacterStore(
     }
 
     // --- Direct Get Operations (Suspend) ---
-    suspend fun getCharacter(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<Character> {
+    suspend fun getCharacter(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<Character> {
         val key = CharacterKey.ById(id, relationships)
         return try {
             val data = if (forceRefresh) singleStore.fresh(key) else singleStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
             KurozoraLogger.error("[CharacterStore]", "getCharacter Hatası: ${e.message}")
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get character", e))
+            Result.Error(fromException(e))
         }
     }
 
-    suspend fun getCharacters(ids: List<String>, forceRefresh: Boolean = false): Result<List<Character>> {
+    suspend fun getCharacters(ids: List<String>, forceRefresh: Boolean = !StoreConfig.storeEnabled): Result<List<Character>> {
         val key = CharacterKey.ByIds(ids)
         return try {
             val data = if (forceRefresh) listStore.fresh(key) else listStore.get(key)
             Result.Success(data)
         } catch (e: Exception) {
-            Result.Error(KurozoraError.UnknownError(e.message ?: "Failed to get characters", e))
+            Result.Error(fromException(e))
         }
     }
 

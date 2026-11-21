@@ -26,7 +26,10 @@ class LiteratureSourceOfTruth(private val database: KurozoraDatabase) {
     fun forList(): SourceOfTruth<LiteratureKey.ByIds, List<Literature>, List<Literature>> = SourceOfTruth.of(
         reader = { key ->
             queries.selectByIds(key.ids).asFlow().mapToList(Dispatchers.IO).map { list ->
-                list.map { LiteratureMapper.toDomain(it) }
+                // An empty result must be reported as `null` so Store5 knows
+                // there is no cached data and invokes the fetcher. An empty list
+                // would be treated as existing data and the list would stay empty.
+                if (list.isEmpty()) null else list.map { LiteratureMapper.toDomain(it) }
             }
         },
         writer = { _, list ->

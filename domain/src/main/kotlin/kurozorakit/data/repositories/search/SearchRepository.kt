@@ -160,8 +160,13 @@ open class SearchRepositoryImpl(
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Search.Index
         return apiClient.get<SearchResponse>(endpoint, params) {
             url {
-                types.forEach {
-                    parameters.append("types[]", it.toString())
+                // The `next` URL returned by the server already carries every query
+                // parameter (including types[]); appending them again produces a
+                // duplicate-value error (40022). They are only set on the first page.
+                if (next == null) {
+                    types.forEach {
+                        parameters.append("types[]", it.toString())
+                    }
                 }
             }
         }

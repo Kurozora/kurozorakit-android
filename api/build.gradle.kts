@@ -14,4 +14,7 @@ dependencies {
     implementation(Deps.Ktor.logging)
     implementation(Deps.Ktor.auth)
     implementation(Deps.Ktor.cio)
+
+    testImplementation(Deps.Ktor.mock)
+    testImplementation(Deps.Test.coroutinesTest)
 }

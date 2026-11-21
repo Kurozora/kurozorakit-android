@@ -4,6 +4,10 @@ import kurozorakit.store.stores.StoreData.*
 import org.mobilenativefoundation.store.store5.StoreReadResponse
 import org.mobilenativefoundation.store.store5.StoreReadResponseOrigin
 
+object StoreConfig {
+    var storeEnabled = true
+}
+
 open class KKStore() {
     // ==========================================================================
     // HELPER FUNCTIONS
@@ -11,7 +15,6 @@ open class KKStore() {
 
     fun <T> mapStoreResponse(response: StoreReadResponse<T>): StoreData<T> {
         return when (response) {
-            is StoreReadResponse.Initial -> StoreData.Loading // TODO yerine güvenli bir varsayılan
             is StoreReadResponse.Loading -> StoreData.Loading
             is StoreReadResponse.NoNewData -> StoreData.NoNewData
 
@@ -20,7 +23,7 @@ open class KKStore() {
                 origin = when (response.origin) {
                     is StoreReadResponseOrigin.Cache -> DataOrigin.MEMORY_CACHE
                     is StoreReadResponseOrigin.SourceOfTruth -> DataOrigin.DATABASE
-                    is StoreReadResponseOrigin.Fetcher -> DataOrigin.NETWORK // Hata buradaydı, düzeltildi.
+                    is StoreReadResponseOrigin.Fetcher -> DataOrigin.NETWORK
                     else -> DataOrigin.UNKNOWN
                 }
             )
@@ -31,10 +34,6 @@ open class KKStore() {
             )
             is StoreReadResponse.Error.Message -> Error(
                 message = response.message,
-                cause = null
-            )
-            is StoreReadResponse.Error.Custom<*> -> Error(
-                message = "Custom store error occurred",
                 cause = null
             )
         }

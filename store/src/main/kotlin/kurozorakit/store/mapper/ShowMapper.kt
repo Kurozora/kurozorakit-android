@@ -79,7 +79,7 @@ object ShowMapper {
                 durationTotal = entity.duration_total,
                 durationTotalCount = entity.duration_total_count.toInt(),
                 airSeason = entity.air_season,
-                airTime = entity.air_time?.toInstant(),
+                airTime = entity.air_time?.let { safeParseInstant(it) },
                 airDay = entity.air_day,
                 isNSFW = entity.is_nsfw == 1L,
                 copyright = entity.copyright,
@@ -120,7 +120,7 @@ object ShowMapper {
             durationTotal = attrs.durationTotal,
             durationTotalCount = attrs.durationTotalCount.toLong(),
             airSeason = attrs.airSeason,
-            airTime = attrs.airTime.toString(),
+            airTime = attrs.airTime?.toString(),
             airDay = attrs.airDay,
             isNsfw = if (attrs.isNSFW) 1L else 0L,
             copyright = attrs.copyright,
@@ -216,6 +216,12 @@ object ShowMapper {
 
     private fun parseRelationships(jsonStr: String): Show.Relationships? = try {
         json.decodeFromString<Show.Relationships>(jsonStr)
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun safeParseInstant(value: String): Instant? = try {
+        value.toInstant()
     } catch (e: Exception) {
         null
     }
