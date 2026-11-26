@@ -17,5 +17,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SeasonResponse(
     val data: List<Season>,
-    val next: String?,
+    val next: String? = null,
 )

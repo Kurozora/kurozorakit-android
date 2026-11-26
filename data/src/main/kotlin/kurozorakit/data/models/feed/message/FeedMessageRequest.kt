@@ -56,11 +56,15 @@ fun FeedMessageRequest.toStringMap(): Map<String, String> {
     )
 
     // Optional flags using "1"/"0" string representation for API compatibility.
-    isReply?.let { map["is_reply"] = if (it) "1" else "0" }
-    isReShare?.let { map["is_reshare"] = if (it) "1" else "0" }
-
-    // Backend-specific key mapping.
-    parentIdentity?.let { map["parent_id"] = it }
+    // Kurozora API v1 requires both `is_reply` and `is_reshare` whenever `parent_id` is present.
+    if (!parentIdentity.isNullOrBlank()) {
+        map["is_reply"] = if (isReply == true) "1" else "0"
+        map["is_reshare"] = if (isReShare == true) "1" else "0"
+        map["parent_id"] = parentIdentity
+    } else {
+        isReply?.let { map["is_reply"] = if (it) "1" else "0" }
+        isReShare?.let { map["is_reshare"] = if (it) "1" else "0" }
+    }
 
     return map
 }

@@ -7,6 +7,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -15,11 +16,13 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.long
 import kurozorakit.data.enums.KKLibrary
 import kurozorakit.data.models.user.update.block.BlockInfo
@@ -217,18 +220,25 @@ object IntEnumSerializer : KSerializer<KKLibrary.Status> {
  */
 object WebsiteURLsAsListSerializer : KSerializer<List<String>> {
     override val descriptor: SerialDescriptor =
-        MapSerializer(String.serializer(), String.serializer()).descriptor
+        ListSerializer(String.serializer()).descriptor
 
     override fun deserialize(decoder: Decoder): List<String> {
-        val map = decoder.decodeSerializableValue(
-            MapSerializer(String.serializer(), String.serializer())
-        )
-        return map.values.toList()
+        val jsonDecoder = decoder as? JsonDecoder
+            ?: return decoder.decodeSerializableValue(ListSerializer(String.serializer()))
+        return when (val element = jsonDecoder.decodeJsonElement()) {
+            is JsonArray -> element.mapNotNull { item ->
+                (item as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
+            }
+            is JsonObject -> element.values.mapNotNull { item ->
+                (item as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
+            }
+            is JsonPrimitive -> element.contentOrNull?.takeIf { it.isNotBlank() }?.let { listOf(it) } ?: emptyList()
+            else -> emptyList()
+        }
     }
 
     override fun serialize(encoder: Encoder, value: List<String>) {
-        val map = value.mapIndexed { index, url -> index.toString() to url }.toMap()
-        encoder.encodeSerializableValue(MapSerializer(String.serializer(), String.serializer()), map)
+        encoder.encodeSerializableValue(ListSerializer(String.serializer()), value)
     }
 }
 

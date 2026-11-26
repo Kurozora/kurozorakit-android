@@ -15,5 +15,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AccessTokenResponse(
     val data: List<AccessToken>,
-    val next: String?
+    val next: String? = null
 )

@@ -18,5 +18,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MetaResponse(
     val meta: Meta,
-    val errors: List<ApiError>,
+    val errors: List<ApiError> = emptyList(),
 )

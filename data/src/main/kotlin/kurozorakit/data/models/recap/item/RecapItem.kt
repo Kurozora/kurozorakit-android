@@ -9,8 +9,10 @@ import kurozorakit.data.models.game.GameIdentityResponse
 import kurozorakit.data.models.genre.GenreIdentityResponse
 import kurozorakit.data.models.literature.LiteratureIdentityResponse
 import kurozorakit.data.models.person.PersonIdentityResponse
+import kurozorakit.data.models.recap.entry.RecapEntryResponse
 import kurozorakit.data.models.show.ShowIdentityResponse
 import kurozorakit.data.models.show.song.ShowSongResponse
+import kurozorakit.data.models.studio.StudioIdentityResponse
 import kurozorakit.data.models.theme.ThemeIdentityResponse
 
 /**
@@ -31,8 +33,8 @@ import kurozorakit.data.models.theme.ThemeIdentityResponse
 @Serializable
 data class RecapItem(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "recapItems",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null
 ) : IdentityResource {
@@ -49,12 +51,13 @@ data class RecapItem(
      */
     @Serializable
     data class Attributes(
-        val year: Int,
-        val type: String,
-        val totalSeriesCount: Int,
-        val totalPartsCount: Int,
-        val totalPartsDuration: Int,
-        val topPercentile: Double
+        val year: Int = 0,
+        val month: Int? = null,
+        val type: String = "",
+        val totalSeriesCount: Int = 0,
+        val totalPartsCount: Int = 0,
+        val totalPartsDuration: Int = 0,
+        val topPercentile: Double = 0.0
     ) {
         /**
          * A helper property that maps the raw [type] string to a type-safe [RecapItemType] enum.
@@ -76,8 +79,10 @@ data class RecapItem(
      * @property showSongs Most listened to or relevant theme songs.
      * @property genres Top genres based on the user's consumption.
      * @property themes Top narrative themes encountered.
+     * @property studios Top animation or production studios encountered.
      * @property characters Most engaged or favorite characters.
      * @property people Notable staff or creators (e.g., most watched director).
+     * @property items Ranked [kurozorakit.data.models.recap.entry.RecapEntry] list with per-item stats.
      */
     @Serializable
     data class Relationships(
@@ -88,7 +93,9 @@ data class RecapItem(
         val showSongs: ShowSongResponse? = null,
         val genres: GenreIdentityResponse? = null,
         val themes: ThemeIdentityResponse? = null,
+        val studios: StudioIdentityResponse? = null,
         val characters: CharacterIdentityResponse? = null,
-        val people: PersonIdentityResponse? = null
+        val people: PersonIdentityResponse? = null,
+        val items: RecapEntryResponse? = null,
     )
 }

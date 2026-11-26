@@ -72,10 +72,16 @@ enum class Color {
  * A custom serializer that maps [SongType] to its integer [SongType.value]
  * during JSON encoding and decoding.
  */
-class SongTypeSerializer : EnumIntSerializer<SongType>(SongType.entries)
+object SongTypeSerializer : IntValueEnumSerializer<SongType>(
+    serialName = "SongType",
+    entries = SongType.entries,
+    valueSelector = { it.value },
+    fallback = SongType.background,
+)
 
 open class EnumIntSerializer<T : Enum<T>>(
     private val entries: EnumEntries<T>,
+    private val fallback: T = entries.first(),
 ) : KSerializer<T> {
     private val entriesByName = entries.associateBy { it.name }
     private val namesByValue = mutableMapOf<Int, String>()
@@ -109,9 +115,9 @@ open class EnumIntSerializer<T : Enum<T>>(
     }
 
     override fun deserialize(decoder: Decoder): T {
-        val value = decoder.decodeInt()
-        val name = namesByValue[value] ?: throw error(value)
-        return entriesByName[name] ?: throw error(value)
+        val value = runCatching { decoder.decodeInt() }.getOrNull() ?: return fallback
+        val name = namesByValue[value] ?: return fallback
+        return entriesByName[name] ?: fallback
     }
 
     private fun error(value: Any) = SerializationException(

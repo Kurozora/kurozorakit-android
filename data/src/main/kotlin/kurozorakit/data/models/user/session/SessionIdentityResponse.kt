@@ -17,5 +17,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SessionIdentityResponse(
     val data: List<SessionIdentity>,
-    val next: String?
+    val next: String? = null
 )

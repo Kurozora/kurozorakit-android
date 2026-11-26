@@ -22,7 +22,7 @@ import kurozorakit.data.models.user.User
  */
 @Serializable
 data class OAuthResponse(
-    val data: List<User>?,
+    val data: List<User>? = null,
     val authenticationToken: String,
-    val action: OAuthAction?
+    val action: OAuthAction? = null
 )

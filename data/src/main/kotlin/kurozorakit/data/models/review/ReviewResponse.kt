@@ -20,6 +20,6 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class ReviewResponse(
-    val data: List<Review>,
-    val next: String?
+    val data: List<Review> = emptyList(),
+    val next: String? = null
 )

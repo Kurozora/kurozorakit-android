@@ -81,7 +81,7 @@ sealed class KurozoraError : Exception() {
 }
 
 /**
- * Extension function to convert KurozoraError to Exception for Store5 compatibility.
+ * Extension function to convert a [KurozoraError] to a standard JVM [Exception].
  */
 public fun KurozoraError.toException(): Exception {
     return when (this) {
@@ -98,11 +98,7 @@ public fun KurozoraError.toException(): Exception {
 }
 
 /**
- * Reverse mapping of [toException]: recovers the original [KurozoraError] type from the
- * transport-level [Throwable] produced by Store5-backed code paths.
- *
- * This keeps error types intact when a [KurozoraError] is converted to a plain exception
- * (for Store5) and later caught again at the repository boundary.
+ * Reverse mapping of [toException]: recovers a typed [KurozoraError] from a JVM [Throwable].
  */
 public fun fromException(throwable: Throwable): KurozoraError {
     val message = throwable.message ?: throwable.javaClass.simpleName

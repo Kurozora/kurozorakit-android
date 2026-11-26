@@ -19,6 +19,6 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class FeedMessageResponse(
-    val data: List<FeedMessage>,
-    val next: String?
+    val data: List<FeedMessage> = emptyList(),
+    val next: String? = null
 )

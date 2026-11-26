@@ -17,5 +17,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class EpisodeResponse(
     val data: List<Episode>,
-    val next: String?,
+    val next: String? = null,
 )

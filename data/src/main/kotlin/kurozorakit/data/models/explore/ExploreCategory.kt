@@ -32,8 +32,8 @@ import kurozorakit.data.models.theme.ThemeIdentityResponse
 @Serializable
 data class ExploreCategory(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "explore",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null,
 ) : IdentityResource {
@@ -55,12 +55,13 @@ data class ExploreCategory(
      */
     @Serializable
     data class Attributes(
-        val slug: String,
-        val title: String,
-        val description: String?,
-        val position: Int,
-        val type: String,
-        val size: String,
+        val slug: String = "",
+        val secondarySlug: String? = null,
+        val title: String = "",
+        val description: String? = null,
+        val position: Int = 0,
+        val type: String = "",
+        val size: String = "",
     )
 
     /**

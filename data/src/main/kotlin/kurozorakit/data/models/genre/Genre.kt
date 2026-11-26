@@ -20,8 +20,8 @@ import kurozorakit.data.models.media.Media
 @Serializable
 data class Genre(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "genres",
+    override val href: String = "",
     val attributes: Attributes
 ) : IdentityResource {
 
@@ -43,14 +43,15 @@ data class Genre(
      */
     @Serializable
     data class Attributes(
-        val slug: String,
-        val name: String,
+        val slug: String = "",
+        val name: String = "",
         val description: String? = null,
-        val backgroundColor1: String,
-        val backgroundColor2: String,
-        val textColor1: String,
-        val textColor2: String,
+        val color: String? = null,
+        val backgroundColor1: String = "",
+        val backgroundColor2: String = "",
+        val textColor1: String = "",
+        val textColor2: String = "",
         val symbol: Media? = null,
-        val isNSFW: Boolean
+        val isNSFW: Boolean = false
     )
 }

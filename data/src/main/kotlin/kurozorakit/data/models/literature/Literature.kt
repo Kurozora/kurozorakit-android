@@ -4,9 +4,10 @@ import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kurozorakit.data.models.IdentityResource
 import kurozorakit.data.models.LocalDateSerializer
-import kurozorakit.data.models.character.CharacterIdentityResponse
+import kurozorakit.data.models.character.CharacterResponse
 import kurozorakit.data.models.country.Country
 import kurozorakit.data.models.language.Language
+import kurozorakit.data.models.language.LanguageSupport
 import kurozorakit.data.models.library.LibraryAttributes
 import kurozorakit.data.models.media.Media
 import kurozorakit.data.models.media.MediaStat
@@ -19,7 +20,7 @@ import kurozorakit.data.models.show.cast.CastIdentityResponse
 import kurozorakit.data.models.show.related.RelatedGameResponse
 import kurozorakit.data.models.show.related.RelatedLiteratureResponse
 import kurozorakit.data.models.show.related.RelatedShowResponse
-import kurozorakit.data.models.staff.StaffIdentityResponse
+import kurozorakit.data.models.staff.StaffResponse
 import kurozorakit.data.models.studio.StudioIdentityResponse
 
 /**
@@ -39,8 +40,8 @@ import kurozorakit.data.models.studio.StudioIdentityResponse
 @Serializable
 data class Literature(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "literatures",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null,
 ) : IdentityResource {
@@ -99,28 +100,29 @@ data class Literature(
         val kitsuID: Int? = null,
         val malID: Int? = null,
 
-        val slug: String,
+        val slug: String = "",
         val poster: Media? = null,
         val banner: Media? = null,
         val logo: Media? = null,
         val originalTitle: String? = null,
-        val title: String,
+        val title: String = "",
         val synonymTitles: List<String>? = null,
         val tagline: String? = null,
         val synopsis: String? = null,
         val genres: List<String>? = null,
         val themes: List<String>? = null,
         val studio: String? = null,
-        val languages: List<Language>?,
+        val languages: List<Language>? = null,
+        val languageSupport: LanguageSupport? = null,
         val countryOfOrigin: Country? = null,
-        val tvRating: TVRating,
-        val type: MediaType,
-        val source: AdaptationSource,
-        val status: AiringStatus,
+        val tvRating: TVRating = TVRating(),
+        val type: MediaType = MediaType(),
+        val source: AdaptationSource = AdaptationSource(),
+        val status: AiringStatus = AiringStatus(),
 
-        val volumeCount: Int,
-        val chapterCount: Int,
-        val pageCount: Int,
+        val volumeCount: Int = 0,
+        val chapterCount: Int = 0,
+        val pageCount: Int = 0,
         val stats: MediaStat? = null,
 
         @Serializable(with = LocalDateSerializer::class)
@@ -130,15 +132,15 @@ data class Literature(
         @Serializable(with = LocalDateSerializer::class)
         val nextPublicationAt: LocalDate? = null,
 
-        val duration: String,
-        val durationCount: Int,
-        val durationTotal: String,
-        val durationTotalCount: Int,
+        val duration: String = "",
+        val durationCount: Int = 0,
+        val durationTotal: String = "",
+        val durationTotalCount: Int = 0,
 
         val publicationSeason: String? = null,
         val publicationTime: String? = null,
         val publicationDay: String? = null,
-        val isNSFW: Boolean,
+        val isNSFW: Boolean = false,
         val copyright: String? = null,
 
         var library: LibraryAttributes? = null,
@@ -159,12 +161,13 @@ data class Literature(
     @Serializable
     data class Relationships(
         val cast: CastIdentityResponse? = null,
-        val characters: CharacterIdentityResponse? = null,
+        val characters: CharacterResponse? = null,
         val people: PersonIdentityResponse? = null,
         val relatedShows: RelatedShowResponse? = null,
         val relatedGames: RelatedGameResponse? = null,
         val relatedLiteratures: RelatedLiteratureResponse? = null,
-        val staff: StaffIdentityResponse? = null,
+        val relatedMangas: RelatedLiteratureResponse? = null,
+        val staff: StaffResponse? = null,
         val studios: StudioIdentityResponse? = null,
     )
 }

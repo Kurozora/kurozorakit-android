@@ -88,35 +88,50 @@ class KurozoraApiClient(
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
+                coerceInputValues = true
+                isLenient = true
                 explicitNulls = false
+                encodeDefaults = true
                 prettyPrint = false
             })
         }
 
-        install(Logging) {
-            logger = object : Logger {
-                private val sensitiveHeaders = setOf(
-                    HttpHeaders.Authorization,
-                    "X-API-Key",
-                    "Cookie",
-                    "Set-Cookie",
-                )
+        val enableHttpBodyLogging =
+            KurozoraLogger.getMinLogLevel().value <= kurozorakit.shared.logging.LogLevel.DEBUG.value
+        if (enableHttpBodyLogging) {
+            install(Logging) {
+                logger = object : Logger {
+                    private val sensitiveHeaderRegexes = listOf(
+                        HttpHeaders.Authorization to Regex("${HttpHeaders.Authorization}: .+"),
+                        "X-API-Key" to Regex("X-API-Key: .+"),
+                        "Cookie" to Regex("Cookie: .+"),
+                        "Set-Cookie" to Regex("Set-Cookie: .+"),
+                    )
 
-                override fun log(message: String) {
-                    val sanitized = sensitiveHeaders.fold(message) { acc, header ->
-                        acc.replace(Regex("$header: .+")) { "${header}: [REDACTED]" }
+                    override fun log(message: String) {
+                        val sanitized = sensitiveHeaderRegexes.fold(message) { acc, (header, regex) ->
+                            acc.replace(regex) { "${header}: [REDACTED]" }
+                        }
+                        KurozoraLogger.debug("[HTTP]", sanitized)
                     }
-                    KurozoraLogger.debug("[HTTP]", sanitized)
                 }
+                level = LogLevel.ALL
             }
-            level = LogLevel.ALL
         }
 
         defaultRequest {
-            contentType(ContentType.Application.FormUrlEncoded)
             header("X-API-Key", apiKey)
             header("Accept", "application/json")
-            header(HttpHeaders.UserAgent, "${userAgent.getAppName()}/${userAgent.getAppVersion()} (${userAgent.getAppID()}; ${userAgent.getPlatformName()} ${userAgent.getPlatformVersion()}) KtorClient/3.2.2")
+            val appName = userAgent.getAppName().ifBlank { "KurozoraKit" }
+            val appVersion = userAgent.getAppVersion().ifBlank { "1.0.0" }
+            val appId = userAgent.getAppID().trim()
+            val platformName = userAgent.getPlatformName().ifBlank { "Android" }
+            val platformVersion = userAgent.getPlatformVersion().ifBlank { "1" }
+            if (appId.isNotBlank()) {
+                header("X-Client-ID", appId)
+            }
+            val metaPart = if (appId.isNotBlank()) "$appId; $platformName $platformVersion" else "$platformName $platformVersion"
+            header(HttpHeaders.UserAgent, "$appName/$appVersion ($metaPart) KtorClient/3.2.2")
         }
 
         HttpResponseValidator {
@@ -139,10 +154,15 @@ class KurozoraApiClient(
                         throw KurozoraError.RateLimitError("Rate limit exceeded", retryAfter)
                     }
                     statusCode >= 400 -> {
-                        val metaResponse = try {
-                            response.body<MetaResponse>()
-                        } catch (e: Exception) {
-                            KurozoraLogger.warning("[HTTP]", "Failed to parse error body: ${e.message}")
+                        val isJson = response.contentType()?.match(ContentType.Application.Json) == true
+                        val metaResponse = if (isJson) {
+                            try {
+                                response.body<MetaResponse>()
+                            } catch (e: Exception) {
+                                KurozoraLogger.warning("[HTTP]", "Failed to parse JSON error body (HTTP $statusCode): ${e.message}")
+                                null
+                            }
+                        } else {
                             null
                         }
 
@@ -164,27 +184,27 @@ class KurozoraApiClient(
             }
         }
 
-        // Configure timeout settings
-        install(HttpTimeout) {
-            requestTimeoutMillis = 30000 // 30 seconds
-            connectTimeoutMillis = 15000 // 15 seconds
-            socketTimeoutMillis = 30000 // 30 seconds
-        }
-
-        // Configure retry policy
+        // Configure retry policy BEFORE HttpTimeout so each attempt gets its own timeout window
         install(HttpRequestRetry) {
             retryIf(maxRetries = retryConfig.maxRetries) { _, response ->
                 response.status.value in 500..599 ||
                     (retryConfig.retryOnRateLimit && response.status.value == 429)
             }
-            retryOnExceptionIf { _, cause ->
-                cause is IOException
+            retryOnExceptionIf(maxRetries = retryConfig.maxRetries) { _, cause ->
+                cause is IOException && cause !is HttpRequestTimeoutException
             }
             exponentialDelay(
                 base = retryConfig.backoffFactor,
                 baseDelayMs = retryConfig.initialBackoffDelayMs,
                 maxDelayMs = retryConfig.maxBackoffDelayMs,
             )
+        }
+
+        // Configure timeout settings
+        install(HttpTimeout) {
+            requestTimeoutMillis = 30000 // 30 seconds
+            connectTimeoutMillis = 15000 // 15 seconds
+            socketTimeoutMillis = 30000 // 30 seconds
         }
     }
 
@@ -197,11 +217,68 @@ class KurozoraApiClient(
     init {
         httpClient.sendPipeline.intercept(HttpSendPipeline.Before) {
             val token = tokenProvider?.getToken()
-            if (token != null) {
+            if (!token.isNullOrBlank()) {
                 context.headers.apply {
                     remove(HttpHeaders.Authorization)
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
+            }
+        }
+    }
+
+    /**
+     * Resolves an [endpoint] against [baseUrl], safely handling absolute URLs,
+     * root-relative pagination cursors returned by Kurozora (e.g. `/v1/anime?cursor=...`),
+     * and standard relative endpoint paths.
+     */
+    @PublishedApi
+    internal fun resolveUrl(endpoint: KKEndpoint): String {
+        val rawPath = endpoint.path.trim()
+        if (endpoint is KKEndpoint.Url) {
+            if (rawPath.startsWith("http://", ignoreCase = true) ||
+                rawPath.startsWith("https://", ignoreCase = true)
+            ) {
+                return rawPath
+            }
+            val cleanBase = baseUrl.trimEnd('/')
+            val basePath = runCatching { Url(cleanBase).encodedPath.trimEnd('/') }.getOrDefault("")
+            val normalizedRaw = "/" + rawPath.trimStart('/')
+            if (basePath.isNotEmpty() && (
+                    normalizedRaw == basePath ||
+                        normalizedRaw.startsWith("$basePath/") ||
+                        normalizedRaw.startsWith("$basePath?")
+                )
+            ) {
+                val remainder = normalizedRaw.removePrefix(basePath)
+                return when {
+                    remainder.isEmpty() -> cleanBase
+                    remainder.startsWith("?") -> "$cleanBase$remainder"
+                    else -> "$cleanBase/${remainder.trimStart('/')}"
+                }
+            }
+            return "$cleanBase/${rawPath.trimStart('/')}"
+        }
+        return "${baseUrl.trimEnd('/')}/${rawPath.trimStart('/')}"
+    }
+
+    /**
+     * Appends [parameters] to this request unless [endpoint] is a raw [KKEndpoint.Url]
+     * whose query string already carries the parameter key.
+     */
+    @PublishedApi
+    internal fun HttpRequestBuilder.appendMissingParameters(
+        endpoint: KKEndpoint,
+        parameters: Map<String, String>,
+    ) {
+        if (parameters.isEmpty()) return
+        val existingKeys = if (endpoint is KKEndpoint.Url) {
+            url.parameters.names()
+        } else {
+            emptySet()
+        }
+        parameters.forEach { (key, value) ->
+            if (key !in existingKeys) {
+                parameter(key, value)
             }
         }
     }
@@ -222,9 +299,10 @@ class KurozoraApiClient(
     ): Result<T> {
         offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
-            KurozoraLogger.debug("[KurozoraApiClient]", "GET request to ${endpoint.path}")
-            val response = httpClient.get("$baseUrl/${endpoint.path}") {
-                parameters.forEach { (key, value) -> parameter(key, value) }
+            val targetUrl = resolveUrl(endpoint)
+            KurozoraLogger.debug("[KurozoraApiClient]", "GET request to $targetUrl")
+            val response = httpClient.get(targetUrl) {
+                appendMissingParameters(endpoint, parameters)
                 block()
             }
             val body: T = response.body()
@@ -254,9 +332,10 @@ class KurozoraApiClient(
     ): Result<ByteArray> {
         offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
-            KurozoraLogger.debug("[KurozoraApiClient]", "Download request to ${endpoint.path}")
-            val response = httpClient.get("$baseUrl/${endpoint.path}") {
-                parameters.forEach { (key, value) -> parameter(key, value) }
+            val targetUrl = resolveUrl(endpoint)
+            KurozoraLogger.debug("[KurozoraApiClient]", "Download request to $targetUrl")
+            val response = httpClient.get(targetUrl) {
+                appendMissingParameters(endpoint, parameters)
                 block()
             }
             val body: ByteArray = response.body()
@@ -289,11 +368,10 @@ class KurozoraApiClient(
     ): Result<T> {
         offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
-            KurozoraLogger.debug("[KurozoraApiClient]", "POST request to ${endpoint.path}")
-            val response = httpClient.post("$baseUrl/${endpoint.path}") {
-                parameters.forEach { (key, value) ->
-                    parameter(key, value)
-                }
+            val targetUrl = resolveUrl(endpoint)
+            KurozoraLogger.debug("[KurozoraApiClient]", "POST request to $targetUrl")
+            val response = httpClient.post(targetUrl) {
+                appendMissingParameters(endpoint, parameters)
                 if (body != null) {
                     setBody(body)
                 }
@@ -328,11 +406,10 @@ class KurozoraApiClient(
     ): Result<T> {
         offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
-            KurozoraLogger.debug("[KurozoraApiClient]", "PUT request to ${endpoint.path}")
-            val response = httpClient.put("$baseUrl/${endpoint.path}") {
-                parameters.forEach { (key, value) ->
-                    parameter(key, value)
-                }
+            val targetUrl = resolveUrl(endpoint)
+            KurozoraLogger.debug("[KurozoraApiClient]", "PUT request to $targetUrl")
+            val response = httpClient.put(targetUrl) {
+                appendMissingParameters(endpoint, parameters)
                 setBody(body)
                 block()
             }
@@ -352,19 +429,21 @@ class KurozoraApiClient(
      * @param T The expected response type.
      * @param endpoint The API endpoint to request.
      * @param parameters Query parameters to append to the URL.
+     * @param block Additional configuration for the [HttpRequestBuilder] (e.g. form or JSON body).
      * @return A [Result] containing the response data or an error.
      */
     suspend inline fun <reified T> delete(
         endpoint: KKEndpoint,
         parameters: Map<String, String> = emptyMap(),
+        noinline block: HttpRequestBuilder.() -> Unit = {},
     ): Result<T> {
         offlineErrorOrNull()?.let { return Result.Error(it) }
         return try {
-            KurozoraLogger.debug("[KurozoraApiClient]", "DELETE request to ${endpoint.path}")
-            val response = httpClient.delete("$baseUrl/${endpoint.path}") {
-                parameters.forEach { (key, value) ->
-                    parameter(key, value)
-                }
+            val targetUrl = resolveUrl(endpoint)
+            KurozoraLogger.debug("[KurozoraApiClient]", "DELETE request to $targetUrl")
+            val response = httpClient.delete(targetUrl) {
+                appendMissingParameters(endpoint, parameters)
+                block()
             }
             Result.Success(response.body())
         } catch (e: KurozoraError) {

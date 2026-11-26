@@ -19,8 +19,8 @@ import kurozorakit.data.models.media.Media
 @Serializable
 data class Achievement(
     val id: String,
-    val type: String,
-    var attributes: Attributes
+    val type: String = "achievements",
+    var attributes: Attributes = Attributes()
 ) {
     /**
      * Visual and textual metadata for an [Achievement].
@@ -32,8 +32,8 @@ data class Achievement(
      */
     @Serializable
     data class Attributes(
-        val name: String,
-        val description: String,
+        val name: String = "",
+        val description: String = "",
         val symbol: Media? = null,
         @Serializable(with = FlexibleInstantSerializer::class)
         @SerialName("achievedAt")

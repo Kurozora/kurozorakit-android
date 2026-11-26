@@ -32,7 +32,12 @@ tasks.named("compileKotlin") {
     dependsOn(generateVersion)
 }
 
-tasks.matching { it.name.contains("sourcesJar") || it.name.contains("javadoc") }.configureEach {
+// Dokka and the sources jar read the generated source directory, so they must
+// depend on the task that creates it. Task names are matched case-insensitively
+// because Dokka generates names like `dokkaHtml` and `dokkaJavadocJar`.
+tasks.matching {
+    it.name.startsWith("dokka", ignoreCase = true) || it.name.contains("sourcesJar", ignoreCase = true)
+}.configureEach {
     dependsOn(generateVersion)
 }
 
@@ -40,9 +45,12 @@ dependencies {
     api(project(":domain"))
     api(project(":api"))
     api(project(":shared"))
-    api(project(":store"))
     implementation(Deps.Kotlin.stdlib)
     implementation(Deps.Kotlin.coroutinesCore)
     implementation(Deps.Kotlin.serialization)
     implementation(Deps.Kotlin.dateTime)
+    implementation(Deps.Ktor.core)
+    implementation(Deps.Ktor.mock)
+
+    testImplementation(Deps.Test.coroutinesTest)
 }

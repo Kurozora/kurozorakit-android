@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class MediaType(
-    val name: String,
-    val description: String,
+    val name: String = "",
+    val description: String = "",
 ) {
     /**
      * Compares this media type with another object for equality.

@@ -5,172 +5,115 @@ import io.ktor.client.request.forms.FormDataContent
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
-import kurozorakit.data.models.BatchApiResponse
+import kurozorakit.data.enums.ReviewRecommendation
 import kurozorakit.data.models.character.CharacterIdentityResponse
-import kurozorakit.data.models.game.Game
+import kurozorakit.data.models.editorial.EditorialResponse
 import kurozorakit.data.models.game.GameIdentityResponse
 import kurozorakit.data.models.game.GameResponse
-import kurozorakit.data.models.person.PersonIdentityResponse
+import kurozorakit.data.models.language.MediaLanguageResponse
+import kurozorakit.data.models.museum.MuseumItemResponse
+import kurozorakit.data.models.museum.MuseumYearResponse
 import kurozorakit.data.models.review.ReviewResponse
 import kurozorakit.data.models.search.SearchResponse
 import kurozorakit.data.models.search.filters.GameFilter
 import kurozorakit.data.models.show.cast.CastIdentityResponse
-import kurozorakit.data.models.show.cast.CastResponse
 import kurozorakit.data.models.show.related.RelatedGameResponse
 import kurozorakit.data.models.show.related.RelatedLiteratureResponse
 import kurozorakit.data.models.show.related.RelatedShowResponse
-import kurozorakit.data.models.staff.StaffIdentity
-import kurozorakit.data.models.staff.StaffIdentityResponse
+import kurozorakit.data.models.show.song.ShowSongResponse
 import kurozorakit.data.models.staff.StaffResponse
-import kurozorakit.data.models.studio.StudioIdentityResponse
 import kurozorakit.data.models.studio.StudioResponse
+import kurozorakit.data.models.video.VideoResponse
 import kurozorakit.shared.Result
-import kurozorakit.store.KurozoraStore
 import java.util.*
 
 /**
  * Data repository responsible for managing and retrieving video game information.
- *
- * This repository serves as the central hub for video game metadata, including
- * release schedules, character rosters, production staff, and cross-media
- * relationships (e.g., anime or manga adaptations of a game).
  */
 interface GameRepository {
 
-    /**
-     * Retrieves a paginated list of games, optionally filtered by specific criteria.
-     *
-     * @param next Pagination cursor for the next set of results.
-     * @param limit The maximum number of games to return.
-     * @param filter Optional [GameFilter] to narrow down results (e.g., by genre, platform, or year).
-     * @return A [Result] containing the [GameIdentityResponse].
-     */
+    /** Retrieves a paginated list of games, optionally filtered by specific criteria. */
     suspend fun getGames(next: String? = null, limit: Int = 20, filter: GameFilter? = null): Result<GameIdentityResponse>
 
-    /**
-     * Fetches specific games by a list of identifiers in a single request.
-     *
-     * @param ids A list of unique game identifiers to retrieve.
-     * @param relationships A list of related data to include in the response.
-     * @return A [Result] containing the [GameIdentityResponse].
-     */
+    /** Fetches specific games by a list of identifiers in a single request. */
     suspend fun getGames(ids: List<String>, relationships: List<String> = emptyList()): Result<GameResponse>
 
-    /**
-     * Fetches detailed information for a specific game.
-     *
-     * @param id The unique identifier of the game.
-     * @param relationships A list of related data to include in the response (e.g., "genres", "platforms").
-     * @return A [Result] containing the [GameResponse].
-     */
+    /** Fetches detailed information for a specific game. */
     suspend fun getGame(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<GameResponse>
 
-    /**
-     * Retrieves a list of games scheduled for future release.
-     *
-     * @param next Pagination cursor.
-     * @param limit Maximum number of records.
-     * @return A [Result] containing the [GameIdentityResponse].
-     */
+    /** Retrieves a list of games scheduled for future release. */
     suspend fun getUpcomingGames(next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
 
-    /**
-     * Retrieves the voice cast associated with a specific game.
-     *
-     * @param gameId The unique ID of the game.
-     * @return A [Result] containing the [CastResponse].
-     */
-    suspend fun getGameCast(gameId: String, next: String? = null, limit: Int = 20): Result<CastResponse>
+    /** Retrieves games adapted from or into other media (`GET /games/adapted`). */
+    suspend fun getAdaptedGames(next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
 
-    /**
-     * Fetches the development staff and key personnel for a game.
-     *
-     * @param gameId The unique ID of the game.
-     * @return A [Result] containing the [StaffIdentityResponse].
-     */
-    suspend fun getGameStaff(gameId: String, next: String? = null, limit: Int = 20): Result<StaffIdentityResponse>
+    /** Retrieves a paginated list of game trailers (`GET /games/trailers`). */
+    suspend fun getGameTrailers(next: String? = null, limit: Int = 25): Result<VideoResponse>
 
-    /**
-     * Retrieves the characters featured in a specific game.
-     *
-     * @param gameId The unique ID of the game.
-     * @return A [Result] containing the [CharacterIdentityResponse].
-     */
+    /** Retrieves the games museum yearly overview (`GET /games/museum`). */
+    suspend fun getGameMuseum(next: String? = null, limit: Int = 25): Result<MuseumYearResponse>
+
+    /** Retrieves games museum entries for a specific release year (`GET /games/museum/{year}`). */
+    suspend fun getGameMuseumYear(year: Int, next: String? = null, limit: Int = 25): Result<MuseumItemResponse>
+
+    /** Retrieves the voice cast identity list associated with a specific game. */
+    suspend fun getGameCast(gameId: String, next: String? = null, limit: Int = 20): Result<CastIdentityResponse>
+
+    /** Fetches the development staff and key personnel for a game. */
+    suspend fun getGameStaff(gameId: String, next: String? = null, limit: Int = 20): Result<StaffResponse>
+
+    /** Retrieves the characters featured in a specific game. */
     suspend fun getGameCharacters(gameId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
 
-    /**
-     * Retrieves user-written reviews for a specific game.
-     *
-     * @param gameId The unique ID of the game.
-     * @return A [Result] containing the [ReviewResponse].
-     */
+    /** Retrieves soundtrack songs for a specific game (`GET /games/{id}/songs`). */
+    suspend fun getGameSongs(gameId: String, next: String? = null, limit: Int = 20): Result<ShowSongResponse>
+
+    /** Retrieves supported languages for a specific game (`GET /games/{id}/languages`). */
+    suspend fun getGameLanguages(gameId: String, next: String? = null, limit: Int = 20): Result<MediaLanguageResponse>
+
+    /** Retrieves editorial articles/notes for a specific game (`GET /games/{id}/editorial`). */
+    suspend fun getGameEditorial(gameId: String): Result<EditorialResponse>
+
+    /** Retrieves user-written reviews for a specific game. */
     suspend fun getGameReviews(gameId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
 
-    /**
-     * Fetches the game studios (developers/publishers) involved with the game.
-     *
-     * @param gameId The unique ID of the game.
-     * @return A [Result] containing the [StudioResponse].
-     */
+    /** Fetches the game studios (developers/publishers) involved with the game. */
     suspend fun getGameStudios(gameId: String, next: String? = null, limit: Int = 20): Result<StudioResponse>
 
-    /**
-     * Retrieves other games developed or published by the same studios.
-     *
-     * @param gameId The reference game ID used to identify the studio.
-     * @return A [Result] containing the [GameIdentityResponse].
-     */
+    /** Retrieves other games developed or published by the same studios. */
     suspend fun getMoreByStudio(gameId: String, next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
 
-    /**
-     * Fetches shows (Anime/TV) that are related to or adapted from this game.
-     *
-     * @param gameId The unique ID of the game.
-     * @return A [Result] containing the [RelatedShowResponse].
-     */
+    /** Fetches shows (Anime/TV) that are related to or adapted from this game. */
     suspend fun getRelatedShows(gameId: String, next: String? = null, limit: Int = 20): Result<RelatedShowResponse>
 
-    /**
-     * Fetches literature (Manga/Novels) related to or adapted from this game.
-     *
-     * @param gameId The unique ID of the game.
-     * @return A [Result] containing the [RelatedLiteratureResponse].
-     */
+    /** Fetches literature (Manga/Novels) related to or adapted from this game. */
     suspend fun getRelatedLiteratures(gameId: String, next: String? = null, limit: Int = 20): Result<RelatedLiteratureResponse>
 
-    /**
-     * Retrieves other games that are part of the same franchise or series.
-     *
-     * @param gameId The unique ID of the game.
-     * @return A [Result] containing the [RelatedGameResponse].
-     */
+    /** Retrieves other games that are part of the same franchise or series. */
     suspend fun getRelatedGames(gameId: String, next: String? = null, limit: Int = 20): Result<RelatedGameResponse>
 
-    /**
-     * Submits or updates a user's rating and optional review for a game.
-     *
-     * @param gameId The unique ID of the game.
-     * @param rating The numerical score given by the user.
-     * @param review An optional text-based review.
-     * @return A [Result] indicating the outcome of the operation.
-     */
-    suspend fun rateGame(gameId: String, rating: Double, review: String? = null): Result<Unit>
+    /** Submits or updates a user's rating and optional review for a game. */
+    suspend fun rateGame(
+        gameId: String,
+        rating: Double,
+        review: String? = null,
+        recommendation: ReviewRecommendation? = null,
+        isSpoiler: Boolean? = null,
+    ): Result<Unit>
 }
 
 /**
- * Implementation of [GameRepository] that utilizes [KurozoraApiClient] to
+ * Implementation of [GameRepository] that utilizes [KurozoraApiClient] directly to
  * manage video game content and social data.
  *
  * @property apiClient The client used to communicate with the game and relationship endpoints.
  */
 open class GameRepositoryImpl(
     private val apiClient: KurozoraApiClient,
-    private val store: KurozoraStore,
 ) : GameRepository {
 
     override suspend fun getGames(next: String?, limit: Int, filter: GameFilter?): Result<GameIdentityResponse> {
@@ -194,7 +137,9 @@ open class GameRepositoryImpl(
                     }
 
                     val filterJson = jsonObject.toString()
-                    parameters["filter"] = Base64.getEncoder().encodeToString(filterJson.toByteArray())
+                    parameters["filter"] = Base64.getUrlEncoder()
+                        .withoutPadding()
+                        .encodeToString(filterJson.toByteArray(Charsets.UTF_8))
                 } catch (e: Exception) {
                     println("❌ Encode error: Could not make base64 string from filter data $filters \n$e")
                 }
@@ -212,88 +157,128 @@ open class GameRepositoryImpl(
     }
 
     override suspend fun getGame(id: String, relationships: List<String>, forceRefresh: Boolean): Result<GameResponse> {
-        return if (store.enabled) {
-            store.gameStore.getGame(id, relationships, forceRefresh).map { game ->
-                GameResponse(data = listOf(game), next = null)
-            }
-        } else {
-            apiClient.get(KKEndpoint.Game.Details(id)) {
-                url { relationships.forEach { parameters.append("include[]", it) } }
-            }
+        return apiClient.get(KKEndpoint.Game.Details(id)) {
+            url { relationships.forEach { parameters.append("include[]", it) } }
         }
     }
 
     override suspend fun getUpcomingGames(next: String?, limit: Int): Result<GameIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Upcoming
         return apiClient.get<GameIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getGameCast(gameId: String, next: String?, limit: Int): Result<CastResponse> {
-        val parameters = mapOf("limit" to limit.toString())
-        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Cast(gameId)
-        return apiClient.get<CastResponse>(endpoint, parameters)
+    override suspend fun getAdaptedGames(next: String?, limit: Int): Result<GameIdentityResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Adapted
+        return apiClient.get<GameIdentityResponse>(endpoint, parameters)
     }
-    override suspend fun getGameStaff(gameId: String, next: String?, limit: Int): Result<StaffIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+
+    override suspend fun getGameTrailers(next: String?, limit: Int): Result<VideoResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Trailers
+        return apiClient.get<VideoResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getGameMuseum(next: String?, limit: Int): Result<MuseumYearResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Museum
+        return apiClient.get<MuseumYearResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getGameMuseumYear(year: Int, next: String?, limit: Int): Result<MuseumItemResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.MuseumYear(year)
+        return apiClient.get<MuseumItemResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getGameCast(gameId: String, next: String?, limit: Int): Result<CastIdentityResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Cast(gameId)
+        return apiClient.get<CastIdentityResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getGameStaff(gameId: String, next: String?, limit: Int): Result<StaffResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Staff(gameId)
-        return apiClient.get<StaffIdentityResponse>(endpoint, parameters)
+        return apiClient.get<StaffResponse>(endpoint, parameters)
     }
 
     override suspend fun getGameCharacters(gameId: String, next: String?, limit: Int): Result<CharacterIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Characters(gameId)
         return apiClient.get<CharacterIdentityResponse>(endpoint, parameters)
     }
 
+    override suspend fun getGameSongs(gameId: String, next: String?, limit: Int): Result<ShowSongResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Songs(gameId)
+        return apiClient.get<ShowSongResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getGameLanguages(gameId: String, next: String?, limit: Int): Result<MediaLanguageResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Languages(gameId)
+        return apiClient.get<MediaLanguageResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getGameEditorial(gameId: String): Result<EditorialResponse> {
+        return apiClient.get<EditorialResponse>(KKEndpoint.Game.Editorial(gameId))
+    }
+
     override suspend fun getGameReviews(gameId: String, next: String?, limit: Int): Result<ReviewResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Reviews(gameId)
         return apiClient.get<ReviewResponse>(endpoint, parameters)
     }
 
     override suspend fun getGameStudios(gameId: String, next: String?, limit: Int): Result<StudioResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.Studios(gameId)
         return apiClient.get<StudioResponse>(endpoint, parameters)
     }
 
     override suspend fun getMoreByStudio(gameId: String, next: String?, limit: Int): Result<GameIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.MoreByStudio(gameId)
         return apiClient.get<GameIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getRelatedShows(gameId: String, next: String?, limit: Int): Result<RelatedShowResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.RelatedShows(gameId)
         return apiClient.get<RelatedShowResponse>(endpoint, parameters)
     }
 
     override suspend fun getRelatedLiteratures(gameId: String, next: String?, limit: Int): Result<RelatedLiteratureResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.RelatedLiteratures(gameId)
         return apiClient.get<RelatedLiteratureResponse>(endpoint, parameters)
     }
 
     override suspend fun getRelatedGames(gameId: String, next: String?, limit: Int): Result<RelatedGameResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Game.RelatedGames(gameId)
         return apiClient.get<RelatedGameResponse>(endpoint, parameters)
     }
 
-    override suspend fun rateGame(gameId: String, rating: Double, review: String?): Result<Unit> {
-        val body = mutableMapOf(
-            "rating" to rating.toString()
-        )
-        if (!review.isNullOrBlank()) {
-            body["description"] = review
-        }
-        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Game.Rate(gameId)) {
+    override suspend fun rateGame(
+        gameId: String,
+        rating: Double,
+        review: String?,
+        recommendation: ReviewRecommendation?,
+        isSpoiler: Boolean?,
+    ): Result<Unit> {
+        return apiClient.post<Unit, Unit>(KKEndpoint.Game.Rate(gameId)) {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
-                body.forEach { (key, value) -> append(key, value) }
+                append("rating", rating.toString())
+                if (!review.isNullOrBlank()) {
+                    append("description", review)
+                }
+                recommendation?.let { append("recommendation", it.rawValue.toString()) }
+                isSpoiler?.let { append("isSpoiler", if (it) "1" else "0") }
             }))
-        }.onSuccess { store.gameStore.clearCache() }
+        }
     }
 }

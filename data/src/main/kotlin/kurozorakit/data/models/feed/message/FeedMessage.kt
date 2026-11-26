@@ -25,10 +25,10 @@ import kurozorakit.data.models.feed.message.update.FeedMessageUpdate
 @Serializable
 data class FeedMessage(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "feed-messages",
+    override val href: String = "",
     val attributes: Attributes,
-    val relationships: Relationships
+    val relationships: Relationships = Relationships()
 ) : IdentityResource {
 
     companion object {
@@ -71,20 +71,21 @@ data class FeedMessage(
      */
     @Serializable
     data class Attributes(
-        var content: String,
-        var contentHTML: String,
-        var contentMarkdown: String,
-        var metrics: Metrics,
+        val body: String? = null,
+        var content: String = "",
+        var contentHTML: String = "",
+        var contentMarkdown: String = "",
+        var metrics: Metrics = Metrics(),
         var isHearted: Boolean? = null,
-        var isNSFW: Boolean,
-        var isPinned: Boolean,
-        val isReply: Boolean,
-        val isReShare: Boolean,
-        var isReShared: Boolean,
+        var isNSFW: Boolean = false,
+        var isPinned: Boolean = false,
+        val isReply: Boolean = false,
+        val isReShare: Boolean = false,
+        var isReShared: Boolean = false,
         var myReShareID: String? = null,
-        var isSpoiler: Boolean,
+        var isSpoiler: Boolean = false,
         @SerialName("createdAt")
-        val createdAtTimestamp: Long
+        val createdAtTimestamp: Long = 0L
     ) {
         /**
          * A non-serializable, type-safe [Instant] representation of [createdAtTimestamp].
@@ -134,9 +135,9 @@ data class FeedMessage(
          */
         @Serializable
         data class Metrics(
-            var heartCount: Int,
-            var replyCount: Int,
-            var reShareCount: Int
+            var heartCount: Int = 0,
+            var replyCount: Int = 0,
+            var reShareCount: Int = 0
         )
     }
 
@@ -149,7 +150,7 @@ data class FeedMessage(
      */
     @Serializable
     data class Relationships(
-        val users: UserResponse,
+        val users: UserResponse = UserResponse(),
         val parent: FeedMessageResponse? = null,
         val messages: FeedMessageResponse? = null
     )

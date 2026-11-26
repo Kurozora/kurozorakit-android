@@ -11,8 +11,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class Platform(
-    val type: String,
-    val attributes: Attributes
+    val type: String = "platforms",
+    val attributes: Attributes = Attributes()
 ) {
     /**
      * Contains detailed system and hardware identifiers for a [Platform].
@@ -27,10 +27,10 @@ data class Platform(
      */
     @Serializable
     data class Attributes(
-        val description: String?,
-        val systemName: String?,
-        val systemVersion: String?,
-        val deviceVendor: String?,
-        val deviceModel: String?
+        val description: String? = null,
+        val systemName: String? = null,
+        val systemVersion: String? = null,
+        val deviceVendor: String? = null,
+        val deviceModel: String? = null
     )
 }

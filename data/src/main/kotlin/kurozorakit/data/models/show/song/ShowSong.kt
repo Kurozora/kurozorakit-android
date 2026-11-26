@@ -2,6 +2,7 @@ package kurozorakit.data.models.show.song
 
 import kotlinx.serialization.Serializable
 import kurozorakit.data.enums.SongType
+import kurozorakit.data.models.game.Game
 import kurozorakit.data.models.show.Show
 import kurozorakit.data.models.song.Song
 
@@ -25,6 +26,7 @@ data class ShowSong(
     val type: String,
     val href: String,
     val show: Show? = null,
+    val game: Game? = null,
     val song: Song,
     var attributes: Attributes,
 ) {

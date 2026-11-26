@@ -22,10 +22,10 @@ import kurozorakit.data.models.show.cast.attributes.CastRole
 @Serializable
 data class Cast (
     override val id: String,
-    override val type: String,
-    override val href: String,
-    val attributes: Attributes,
-    val relationships: Relationships
+    override val type: String = "casts",
+    override val href: String = "",
+    val attributes: Attributes = Attributes(),
+    val relationships: Relationships = Relationships()
 ) : IdentityResource {
 
     /**
@@ -36,8 +36,8 @@ data class Cast (
      */
     @Serializable
     data class Attributes(
-        val role: CastRole,
-        val language: String
+        val role: CastRole = CastRole(),
+        val language: String? = null,
     )
 
     /**
@@ -48,7 +48,7 @@ data class Cast (
      */
     @Serializable
     data class Relationships(
-        val people: PersonResponse,
-        val characters: CharacterResponse,
+        val people: PersonResponse = PersonResponse(emptyList()),
+        val characters: CharacterResponse = CharacterResponse(emptyList()),
     )
 }

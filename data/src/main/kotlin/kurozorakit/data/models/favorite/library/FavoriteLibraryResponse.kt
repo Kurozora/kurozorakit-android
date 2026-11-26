@@ -21,5 +21,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class FavoriteLibraryResponse(
     val data: FavoriteLibrary,
-    val next: String?
+    val next: String? = null
 )

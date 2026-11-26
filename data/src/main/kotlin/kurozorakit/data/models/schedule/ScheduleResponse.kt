@@ -17,5 +17,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ScheduleResponse(
     val data: List<Schedule>,
-    val next: String?
+    val next: String? = null
 )

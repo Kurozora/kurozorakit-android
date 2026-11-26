@@ -1,11 +1,12 @@
 package kurozorakit.data.models.user.notification
 
-import kotlinx.serialization.Serializable
-import kurozorakit.data.models.IdentityResource
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kurozorakit.data.enums.ReadStatus
 import kurozorakit.data.enums.UserNotificationType
+import kurozorakit.data.models.IdentityResource
 import kurozorakit.data.models.LocalDateSerializer
 
 /**
@@ -23,8 +24,8 @@ import kurozorakit.data.models.LocalDateSerializer
 @Serializable
 data class UserNotification(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "user-notifications",
+    override val href: String = "",
     val attributes: Attributes
 ) : IdentityResource {
 
@@ -40,13 +41,13 @@ data class UserNotification(
      */
     @Serializable
     data class Attributes(
-        val type: UserNotificationType,
-        private val isRead: Boolean,
+        val type: UserNotificationType = UserNotificationType.other,
+        private val isRead: Boolean = false,
         private var _readStatus: ReadStatus? = null,
-        val payload: Payload,
-        val description: String,
+        val payload: Payload = Payload(),
+        val description: String = "",
         @Serializable(with = LocalDateSerializer::class)
-        val createdAt: LocalDate?
+        val createdAt: LocalDate? = null
     ) {
         /**
          * Resolves the current read status as an enum.
@@ -65,17 +66,54 @@ data class UserNotification(
      * A flexible data container for notification details.
      *
      * Fields are optional as their presence depends on the [Attributes.type].
-     * - **Security:** [ip], [sessionID]
-     * - **Social:** [userID], [username], [profileImageURL]
-     * - **Interaction:** [feedMessageID]
+     * - **Security (`NewSession`):** [ipAddress], [ip], [sessionID]
+     * - **Social (`NewFollower`, `NewFeedMessageReply`, `NewFeedMessageReShare`):** [userID], [username], [profileImageURL], [feedMessageID]
+     * - **Mentions (`NewUserMention`):** [title], [message], [link], [type]
+     * - **Digest (`NewDigest`):** [path]
+     * - **Episodes (`NewEpisode`, `NewEpisodes`):** [episodeID], [number], [animeSlug], [animeTitle], [posterImageURL], [episodes], [count]
+     * - **Moderation (`UserTimedOut`, `UserTimeoutExpired`):** [timeoutID], [reasonKey], [reasonLabel], [isPermanent], [expiresAt]
+     * - **Imports (`LibraryImportFinished`, `LibraryImportUnsupported`, `LocalLibraryImportFinished`):** [successfulCount], [failureCount], [library], [behavior], [service]
+     * - **Subscription (`SubscriptionStatus`):** [message]
      */
     @Serializable
     data class Payload(
         val ip: String? = null,
+        val ipAddress: String? = null,
         val sessionID: String? = null,
         val userID: String? = null,
         val username: String? = null,
         val profileImageURL: String? = null,
-        val feedMessageID: String? = null
-    )
+        val feedMessageID: String? = null,
+        val path: String? = null,
+        val episodeID: String? = null,
+        val number: Int? = null,
+        val animeSlug: String? = null,
+        val animeTitle: String? = null,
+        val posterImageURL: String? = null,
+        val episodes: List<EpisodeReference>? = null,
+        val count: Int? = null,
+        val timeoutID: String? = null,
+        val reasonKey: Int? = null,
+        val reasonLabel: String? = null,
+        val isPermanent: Boolean? = null,
+        val expiresAt: Long? = null,
+        val title: String? = null,
+        val message: String? = null,
+        val link: String? = null,
+        val type: String? = null,
+        @SerialName("successful_count")
+        val successfulCount: Int? = null,
+        @SerialName("failure_count")
+        val failureCount: Int? = null,
+        val library: String? = null,
+        val behavior: String? = null,
+        val service: String? = null,
+    ) {
+        /** Reference to an aired episode inside a batched `NewEpisodes` notification. */
+        @Serializable
+        data class EpisodeReference(
+            val episodeID: String,
+            val number: Int,
+        )
+    }
 }

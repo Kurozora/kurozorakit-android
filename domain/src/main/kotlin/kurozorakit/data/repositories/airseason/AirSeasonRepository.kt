@@ -4,10 +4,6 @@ import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.data.enums.SeasonOfYear
 import kurozorakit.data.models.airseason.AirSeasonResponse
-import kurozorakit.data.models.game.GameIdentityResponse
-import kurozorakit.data.models.literature.LiteratureIdentityResponse
-import kurozorakit.data.models.search.SearchResponse
-import kurozorakit.data.models.show.ShowIdentityResponse
 import kurozorakit.shared.Result
 
 /**
@@ -20,7 +16,8 @@ import kurozorakit.shared.Result
 interface AirSeasonRepository {
     /**
      * Fetches the anime (Show) lineup for a specific year and season.
-     * * @param year The four-digit year (e.g., "2024").
+     *
+     * @param year The four-digit year (e.g., "2024").
      * @param season The [SeasonOfYear] (Winter, Spring, Summer, Fall).
      * @return A [Result] containing the [AirSeasonResponse].
      */
@@ -28,7 +25,8 @@ interface AirSeasonRepository {
 
     /**
      * Fetches the manga and literature lineup for a specific year and season.
-     * * @param year The four-digit year.
+     *
+     * @param year The four-digit year.
      * @param season The [SeasonOfYear].
      * @return A [Result] containing the [AirSeasonResponse].
      */
@@ -36,7 +34,8 @@ interface AirSeasonRepository {
 
     /**
      * Fetches video game releases for a specific year and season.
-     * * @param year The four-digit year.
+     *
+     * @param year The four-digit year.
      * @param season The [SeasonOfYear].
      * @return A [Result] containing the [AirSeasonResponse].
      */
@@ -53,14 +52,26 @@ class AirSeasonRepositoryImpl(
 ) : AirSeasonRepository {
 
     override suspend fun getAnimeSeason(year: String, season: SeasonOfYear): Result<AirSeasonResponse> {
-        return apiClient.get<AirSeasonResponse>(KKEndpoint.Seasons.Anime(year, season.displayName))
+        val parameters = mapOf(
+            "year" to year,
+            "season" to season.rawValue.toString(),
+        )
+        return apiClient.get<AirSeasonResponse>(KKEndpoint.Seasons.BrowseAnime, parameters)
     }
 
     override suspend fun getMangaSeason(year: String, season: SeasonOfYear): Result<AirSeasonResponse> {
-        return apiClient.get<AirSeasonResponse>(KKEndpoint.Seasons.Manga(year, season.displayName))
+        val parameters = mapOf(
+            "year" to year,
+            "season" to season.rawValue.toString(),
+        )
+        return apiClient.get<AirSeasonResponse>(KKEndpoint.Seasons.BrowseManga, parameters)
     }
 
     override suspend fun getGameSeason(year: String, season: SeasonOfYear): Result<AirSeasonResponse> {
-        return apiClient.get<AirSeasonResponse>(KKEndpoint.Seasons.Game(year, season.displayName))
+        val parameters = mapOf(
+            "year" to year,
+            "season" to season.rawValue.toString(),
+        )
+        return apiClient.get<AirSeasonResponse>(KKEndpoint.Seasons.BrowseGame, parameters)
     }
 }

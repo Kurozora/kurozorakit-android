@@ -23,8 +23,8 @@ import kurozorakit.data.models.media.Media
 @Serializable
 data class Season(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "seasons",
+    override val href: String = "",
     val attributes: Attributes
 ) : IdentityResource {
 
@@ -42,13 +42,17 @@ data class Season(
     @Serializable
     data class Attributes(
         val poster: Media? = null,
-        val number: Int,
-        val title: String,
+        val number: Int = 0,
+        val title: String = "",
         val synopsis: String? = null,
-        val episodeCount: Int,
-        val ratingAverage: Double,
+        val episodeCount: Int = 0,
+        val ratingAverage: Double = 0.0,
         @SerialName("startedAt")
         val startedAtTimestamp: Long? = null,
+        @SerialName("firstAired")
+        val firstAiredTimestamp: Long? = null,
+        @SerialName("endedAt")
+        val endedAtTimestamp: Long? = null,
         @SerialName("isWatched")
         private val isWatched: Boolean? = null,
         @SerialName("watchStatus")
@@ -59,6 +63,14 @@ data class Season(
          */
         @Transient
         val startedAt: Instant? = startedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
+
+        /** Convenience [Instant] derived from [firstAiredTimestamp]. */
+        @Transient
+        val firstAired: Instant? = firstAiredTimestamp?.let { Instant.fromEpochSeconds(it) }
+
+        /** Convenience [Instant] derived from [endedAtTimestamp]. */
+        @Transient
+        val endedAt: Instant? = endedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
 
         /**
          * Provides the current [WatchStatus] of the season for the authenticated user.

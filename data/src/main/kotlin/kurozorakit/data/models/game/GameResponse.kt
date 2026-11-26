@@ -20,5 +20,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GameResponse(
     val data: List<Game>,
-    val next: String?,
+    val next: String? = null,
 )

@@ -5,17 +5,17 @@ import io.ktor.client.request.forms.FormDataContent
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
-import kurozorakit.data.models.BatchApiResponse
+import kurozorakit.data.enums.ReviewRecommendation
 import kurozorakit.data.models.character.CharacterIdentityResponse
 import kurozorakit.data.models.game.GameIdentityResponse
 import kurozorakit.data.models.literature.LiteratureIdentityResponse
-import kurozorakit.data.models.person.Person
+import kurozorakit.data.models.media.MediaResponse
 import kurozorakit.data.models.person.PersonIdentityResponse
+import kurozorakit.data.models.person.PersonRelationshipResponse
 import kurozorakit.data.models.person.PersonResponse
 import kurozorakit.data.models.review.ReviewResponse
 import kurozorakit.data.models.search.SearchResponse
@@ -26,90 +26,50 @@ import java.util.*
 
 /**
  * Data repository responsible for managing and retrieving information about real-world individuals.
- *
- * This repository handles data for industry professionals such as voice actors, authors,
- * directors, and staff members. It provides access to their professional biographies,
- * the characters they have portrayed, and the media projects they have contributed to.
  */
 interface PersonRepository {
 
-    /**
-     * Retrieves a paginated list of people, optionally filtered by specific criteria.
-     *
-     * @param next Pagination cursor for the next set of results.
-     * @param limit The maximum number of individuals to return.
-     * @param filter Optional [PersonFilter] to narrow results (e.g., by role or nationality).
-     * @return A [Result] containing the [PersonIdentityResponse].
-     */
+    /** Retrieves a paginated list of people, optionally filtered by specific criteria. */
     suspend fun getPeople(next: String? = null, limit: Int = 20, filter: PersonFilter? = null): Result<PersonIdentityResponse>
 
-    /**
-     * Fetches specific people by a list of identifiers in a single request.
-     *
-     * @param ids A list of unique person identifiers to retrieve.
-     * @param relationships A list of related data to include in the response.
-     * @return A [Result] containing the [PersonIdentityResponse].
-     */
+    /** Fetches specific people by a list of identifiers in a single request. */
     suspend fun getPeople(ids: List<String>, relationships: List<String> = emptyList()): Result<PersonResponse>
 
-    /**
-     * Fetches detailed profile information for a specific person.
-     *
-     * @param personId The unique identifier of the person.
-     * @param relationships A list of related data to include (e.g., "voices", "staff_positions").
-     * @return A [Result] containing the [PersonResponse].
-     */
+    /** Fetches detailed profile information for a specific person. */
     suspend fun getPerson(personId: String, relationships: List<String> = emptyList()): Result<PersonResponse>
 
-    /**
-     * Retrieves the list of shows (Anime/TV) this person has worked on.
-     *
-     * @param personId The unique identifier of the person.
-     * @return A [Result] containing the [ShowIdentityResponse].
-     */
+    /** Retrieves gallery images for a person (`GET /people/{id}/gallery`). */
+    suspend fun getPersonGallery(personId: String, next: String? = null, limit: Int = 20): Result<MediaResponse>
+
+    /** Retrieves personal/professional relationships for a person (`GET /people/{id}/relationships`). */
+    suspend fun getPersonRelationships(personId: String, next: String? = null, limit: Int = 20): Result<PersonRelationshipResponse>
+
+    /** Retrieves the list of shows (Anime/TV) this person has worked on. */
     suspend fun getPersonShows(personId: String, next: String? = null, limit: Int = 20): Result<ShowIdentityResponse>
 
-    /**
-     * Retrieves the video games this person has contributed to.
-     *
-     * @param personId The unique identifier of the person.
-     * @return A [Result] containing the [GameIdentityResponse].
-     */
+    /** Retrieves the video games this person has contributed to. */
     suspend fun getPersonGames(personId: String, next: String? = null, limit: Int = 20): Result<GameIdentityResponse>
 
-    /**
-     * Retrieves the literature entries (Manga/Novels) this person has created or worked on.
-     *
-     * @param personId The unique identifier of the person.
-     * @return A [Result] containing the [LiteratureIdentityResponse].
-     */
+    /** Retrieves the literature entries (Manga/Novels) this person has created or worked on. */
     suspend fun getPersonLiteratures(personId: String, next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
 
-    /**
-     * Fetches the characters associated with this person (e.g., roles voiced by an actor).
-     *
-     * @param personId The unique identifier of the person.
-     * @return A [Result] containing the [CharacterIdentityResponse].
-     */
+    /** Fetches the characters associated with this person (e.g., roles voiced by an actor). */
     suspend fun getPersonCharacters(personId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
 
-    /**
-     * Retrieves user-written reviews or testimonials for a specific person.
-     *
-     * @param personId The unique identifier of the person.
-     * @return A [Result] containing the [ReviewResponse].
-     */
+    /** Retrieves user-written reviews or testimonials for a specific person. */
     suspend fun getPersonReviews(personId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
 
-    /**
-     * Submits or updates a user's rating and optional review for a specific person.
-     *
-     * @param personId The unique identifier of the person.
-     * @param rating The numerical score given by the user.
-     * @param review An optional text-based review.
-     * @return A [Result] indicating the outcome of the operation.
-     */
-    suspend fun ratePerson(personId: String, rating: Double, review: String? = null): Result<Unit>
+    /** Submits or updates a user's rating and optional review for a specific person. */
+    suspend fun ratePerson(
+        personId: String,
+        rating: Double,
+        review: String? = null,
+        recommendation: ReviewRecommendation? = null,
+        isSpoiler: Boolean? = null,
+    ): Result<Unit>
+
+    /** Removes the authenticated user's rating and review for a person (`DELETE /people/{id}/rate`). */
+    suspend fun deletePersonRating(personId: String): Result<Unit>
 }
 
 /**
@@ -143,7 +103,9 @@ open class PersonRepositoryImpl(
                     }
 
                     val filterJson = jsonObject.toString()
-                    parameters["filter"] = Base64.getEncoder().encodeToString(filterJson.toByteArray())
+                    parameters["filter"] = Base64.getUrlEncoder()
+                        .withoutPadding()
+                        .encodeToString(filterJson.toByteArray(Charsets.UTF_8))
                 } catch (e: Exception) {
                     println("❌ Encode error: Could not make base64 string from filter data $filters \n$e")
                 }
@@ -170,48 +132,69 @@ open class PersonRepositoryImpl(
         }
     }
 
+    override suspend fun getPersonGallery(personId: String, next: String?, limit: Int): Result<MediaResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Gallery(personId)
+        return apiClient.get<MediaResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getPersonRelationships(personId: String, next: String?, limit: Int): Result<PersonRelationshipResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Relationships(personId)
+        return apiClient.get<PersonRelationshipResponse>(endpoint, parameters)
+    }
+
     override suspend fun getPersonShows(personId: String, next: String?, limit: Int): Result<ShowIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Show(personId)
         return apiClient.get<ShowIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getPersonGames(personId: String, next: String?, limit: Int): Result<GameIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Game(personId)
         return apiClient.get<GameIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getPersonLiteratures(personId: String, next: String?, limit: Int): Result<LiteratureIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Literature(personId)
         return apiClient.get<LiteratureIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getPersonCharacters(personId: String, next: String?, limit: Int): Result<CharacterIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Characters(personId)
         return apiClient.get<CharacterIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getPersonReviews(personId: String, next: String?, limit: Int): Result<ReviewResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Person.Reviews(personId)
         return apiClient.get<ReviewResponse>(endpoint, parameters)
     }
 
-    override suspend fun ratePerson(personId: String, rating: Double, review: String?): Result<Unit> {
-        val body = mutableMapOf(
-            "rating" to rating.toString()
-        )
-        if (!review.isNullOrBlank()) {
-            body["description"] = review
-        }
-        return apiClient.post<Unit, Map<String, Any?>>(KKEndpoint.Person.Rate(personId), body) {
+    override suspend fun ratePerson(
+        personId: String,
+        rating: Double,
+        review: String?,
+        recommendation: ReviewRecommendation?,
+        isSpoiler: Boolean?,
+    ): Result<Unit> {
+        return apiClient.post<Unit, Unit>(KKEndpoint.Person.Rate(personId)) {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
-                body.forEach { (key, value) -> append(key, value) }
+                append("rating", rating.toString())
+                if (!review.isNullOrBlank()) {
+                    append("description", review)
+                }
+                recommendation?.let { append("recommendation", it.rawValue.toString()) }
+                isSpoiler?.let { append("isSpoiler", if (it) "1" else "0") }
             }))
         }
+    }
+
+    override suspend fun deletePersonRating(personId: String): Result<Unit> {
+        return apiClient.delete<Unit>(KKEndpoint.Person.DeleteRate(personId))
     }
 }

@@ -3,8 +3,13 @@ package kurozorakit.api
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
+import io.ktor.client.request.forms.FormDataContent
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
+import io.ktor.http.contentType
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
@@ -334,5 +339,87 @@ private class KurozoraApiClientTest {
         assertIs<Result.Success<Map<String, String>>>(result)
         assertEquals("ok", result.data["status"])
         assertTrue(capturedRequest?.body is io.ktor.client.utils.EmptyContent)
+    }
+
+    @Test
+    fun `resolveUrl handles root-relative v1 pagination URLs without duplicating base path`() = runTest {
+        var capturedUrl: String? = null
+        val engine = MockEngine { request ->
+            capturedUrl = request.url.toString()
+            respond(successBody(), HttpStatusCode.OK, jsonHeaders)
+        }
+        val client = createClient(engine)
+
+        val result = client.get<TestResponse>(
+            endpoint = KKEndpoint.Url("/v1/anime?cursor=abc&limit=25"),
+            parameters = mapOf("limit" to "20"),
+        )
+
+        assertIs<Result.Success<TestResponse>>(result)
+        assertEquals("https://api.kurozora.app/v1/anime?cursor=abc&limit=25", capturedUrl)
+    }
+
+    @Test
+    fun `resolveUrl preserves absolute URLs as-is`() = runTest {
+        var capturedUrl: String? = null
+        val engine = MockEngine { request ->
+            capturedUrl = request.url.toString()
+            respond(successBody(), HttpStatusCode.OK, jsonHeaders)
+        }
+        val client = createClient(engine)
+
+        val result = client.get<TestResponse>(
+            endpoint = KKEndpoint.Url("https://api.kurozora.app/v1/manga?page=3"),
+        )
+
+        assertIs<Result.Success<TestResponse>>(result)
+        assertEquals("https://api.kurozora.app/v1/manga?page=3", capturedUrl)
+    }
+
+    @Test
+    fun `DELETE supports request builder block with form body`() = runTest {
+        var capturedMethod: String? = null
+        var capturedBody: String? = null
+        val engine = MockEngine { request ->
+            capturedMethod = request.method.value
+            capturedBody = (request.body as? io.ktor.client.request.forms.FormDataContent)?.formData?.entries()
+                ?.joinToString("&") { (k, v) -> "$k=${v.joinToString(",")}" }
+            respond("", HttpStatusCode.OK, jsonHeaders)
+        }
+        val client = createClient(engine)
+
+        val result = client.delete<Unit>(KKEndpoint.Auth.Delete) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(
+                FormDataContent(
+                    Parameters.build {
+                        append("password", "secret123")
+                    }
+                )
+            )
+        }
+
+        assertIs<Result.Success<Unit>>(result)
+        assertEquals("DELETE", capturedMethod)
+        assertEquals("password=secret123", capturedBody)
+    }
+
+    @Test
+    fun `resolveUrl normalizes unprefixed v1 and relative pagination cursors without double v1`() = runTest {
+        val capturedUrls = mutableListOf<String>()
+        val engine = MockEngine { request ->
+            capturedUrls += request.url.toString()
+            respond(successBody(), HttpStatusCode.OK, jsonHeaders)
+        }
+        val client = createClient(engine)
+
+        assertIs<Result.Success<TestResponse>>(client.get<TestResponse>(KKEndpoint.Url("v1/explore/1?cursor=xyz")))
+        assertIs<Result.Success<TestResponse>>(client.get<TestResponse>(KKEndpoint.Url("/v1/explore/1?cursor=xyz")))
+        assertIs<Result.Success<TestResponse>>(client.get<TestResponse>(KKEndpoint.Url("explore/1?cursor=xyz")))
+        assertIs<Result.Success<TestResponse>>(client.get<TestResponse>(KKEndpoint.Url("https://api.kurozora.app/v1/explore/1?cursor=xyz")))
+
+        capturedUrls.forEach { url ->
+            assertEquals("https://api.kurozora.app/v1/explore/1?cursor=xyz", url)
+        }
     }
 }

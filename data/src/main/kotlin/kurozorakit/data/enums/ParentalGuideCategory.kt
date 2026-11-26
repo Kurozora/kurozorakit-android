@@ -1,5 +1,8 @@
 package kurozorakit.data.enums
 
+import kotlinx.serialization.Serializable
+
+@Serializable(with = ParentalGuideCategorySerializer::class)
 enum class ParentalGuideCategory(val rawValue: Int) {
     sexAndNudity(1),
     violenceAndGore(2),
@@ -28,5 +31,14 @@ enum class ParentalGuideCategory(val rawValue: Int) {
     companion object {
         val allCases: Array<ParentalGuideCategory>
             get() = entries.toTypedArray()
+
+        fun fromInt(value: Int): ParentalGuideCategory? = entries.find { it.rawValue == value }
     }
 }
+
+object ParentalGuideCategorySerializer : IntValueEnumSerializer<ParentalGuideCategory>(
+    serialName = "ParentalGuideCategory",
+    entries = ParentalGuideCategory.entries,
+    valueSelector = { it.rawValue },
+    fallback = ParentalGuideCategory.sexAndNudity,
+)

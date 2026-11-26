@@ -20,5 +20,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class LiteratureResponse(
     val data: List<Literature>,
-    val next: String?,
+    val next: String? = null,
 )

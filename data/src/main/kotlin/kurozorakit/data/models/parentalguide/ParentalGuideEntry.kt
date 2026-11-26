@@ -1,7 +1,9 @@
 package kurozorakit.data.models.parentalguide
 
+import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kurozorakit.data.enums.ParentalGuideCategory
 import kurozorakit.data.enums.ParentalGuideDepiction
 import kurozorakit.data.enums.ParentalGuideFrequency
@@ -12,25 +14,34 @@ import kurozorakit.data.models.IdentityResource
 @Serializable
 data class ParentalGuideEntry(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "parental-guide-entries",
+    override val href: String = "",
     val attributes: Attributes
 ) : IdentityResource {
 
     @Serializable
     data class Attributes(
-        val category: ParentalGuideCategory,
-        val rating: ParentalGuideRating,
+        val category: ParentalGuideCategory = ParentalGuideCategory.sexAndNudity,
+        val rating: ParentalGuideRating = ParentalGuideRating.none,
         val frequency: ParentalGuideFrequency? = null,
         val depiction: ParentalGuideDepiction? = null,
         val reason: String? = null,
-        @SerialName("is_spoiler")
         val isSpoiler: Boolean = false,
         var helpfulCount: Int = 0,
         var unhelpfulCount: Int = 0,
         var isHelpful: Boolean? = null,
-        val userID: String
+        val userID: String = "",
+        @SerialName("createdAt")
+        val createdAtTimestamp: Long? = null,
+        @SerialName("updatedAt")
+        val updatedAtTimestamp: Long? = null,
     ) {
+        @Transient
+        val createdAt: Instant? = createdAtTimestamp?.let { Instant.fromEpochSeconds(it) }
+
+        @Transient
+        val updatedAt: Instant? = updatedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
+
         val helpfulness: ParentalGuideHelpfulness
             get() = ParentalGuideHelpfulness.fromBoolean(isHelpful)
 

@@ -2,37 +2,64 @@ package kurozorakit.data.repositories.misc
 
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.models.language.LanguageResponse
+import kurozorakit.data.models.misc.SettingsResponse
+import kurozorakit.data.models.player.PlayerResponse
+import kurozorakit.data.models.provider.ProviderResponse
 import kurozorakit.shared.MetaResponse
 import kurozorakit.shared.Result
 
 /**
- * Data repository responsible for retrieving miscellaneous application-wide data.
+ * Data repository responsible for retrieving miscellaneous application-wide data and catalogs.
  *
- * This repository handles general metadata and configuration settings that do not
- * belong to a specific media category. It is primarily used for maintaining
- * application state, checking versions, and fetching server-side configurations.
+ * This repository handles general metadata, remote configuration settings, supported media
+ * players, streaming providers, and language catalogs.
  */
 interface MiscRepository {
 
     /**
-     * Retrieves high-level application information and metadata.
-     *
-     * This typically includes versioning data, server status, or other
-     * environmental flags used by the client to ensure compatibility.
+     * Retrieves high-level application information and metadata (`GET /info`).
      *
      * @return A [Result] containing [MetaResponse] with global application metadata.
      */
     suspend fun getAppInfo(): Result<MetaResponse>
 
     /**
-     * Fetches a collection of remote settings and configurations.
+     * Fetches remote application settings (`GET /settings`), such as Apple Music developer tokens
+     * and YouTube API keys.
      *
-     * These settings allow for dynamic adjustment of app behavior (e.g., feature toggles,
-     * API thresholds, or UI constants) without requiring a new build.
-     *
-     * @return A [Result] containing a [Map] of setting keys to their respective values.
+     * @return A [Result] containing the typed [SettingsResponse].
      */
-    suspend fun getSettings(): Result<Map<String, Any>>
+    suspend fun getSettings(): Result<SettingsResponse>
+
+    /**
+     * Retrieves the list of supported scrobble/media players (`GET /players`).
+     *
+     * @return A [Result] containing the [PlayerResponse].
+     */
+    suspend fun getPlayers(): Result<PlayerResponse>
+
+    /**
+     * Retrieves the list of supported streaming/reading providers (`GET /providers`).
+     *
+     * @return A [Result] containing the [ProviderResponse].
+     */
+    suspend fun getProviders(): Result<ProviderResponse>
+
+    /**
+     * Retrieves the catalog of supported languages (`GET /languages`).
+     *
+     * @return A [Result] containing the [LanguageResponse].
+     */
+    suspend fun getLanguages(): Result<LanguageResponse>
+
+    /**
+     * Retrieves details for a specific language (`GET /languages/{id}`).
+     *
+     * @param languageId The unique identifier or code of the language.
+     * @return A [Result] containing the [LanguageResponse].
+     */
+    suspend fun getLanguage(languageId: String): Result<LanguageResponse>
 }
 
 /**
@@ -49,7 +76,23 @@ open class MiscRepositoryImpl(
         return apiClient.get<MetaResponse>(KKEndpoint.Misc.Info)
     }
 
-    override suspend fun getSettings(): Result<Map<String, Any>> {
-        return apiClient.get<Map<String, Any>>(KKEndpoint.Misc.Settings)
+    override suspend fun getSettings(): Result<SettingsResponse> {
+        return apiClient.get<SettingsResponse>(KKEndpoint.Misc.Settings)
+    }
+
+    override suspend fun getPlayers(): Result<PlayerResponse> {
+        return apiClient.get<PlayerResponse>(KKEndpoint.Players.Index)
+    }
+
+    override suspend fun getProviders(): Result<ProviderResponse> {
+        return apiClient.get<ProviderResponse>(KKEndpoint.Providers.Index)
+    }
+
+    override suspend fun getLanguages(): Result<LanguageResponse> {
+        return apiClient.get<LanguageResponse>(KKEndpoint.Languages.Index)
+    }
+
+    override suspend fun getLanguage(languageId: String): Result<LanguageResponse> {
+        return apiClient.get<LanguageResponse>(KKEndpoint.Languages.Details(languageId))
     }
 }

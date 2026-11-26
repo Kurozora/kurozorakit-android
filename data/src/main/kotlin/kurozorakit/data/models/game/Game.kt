@@ -4,9 +4,10 @@ import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kurozorakit.data.models.IdentityResource
 import kurozorakit.data.models.LocalDateSerializer
-import kurozorakit.data.models.character.CharacterIdentityResponse
+import kurozorakit.data.models.character.CharacterResponse
 import kurozorakit.data.models.country.Country
 import kurozorakit.data.models.language.Language
+import kurozorakit.data.models.language.LanguageSupport
 import kurozorakit.data.models.library.LibraryAttributes
 import kurozorakit.data.models.media.Media
 import kurozorakit.data.models.media.MediaStat
@@ -19,8 +20,9 @@ import kurozorakit.data.models.show.cast.CastIdentityResponse
 import kurozorakit.data.models.show.related.RelatedGameResponse
 import kurozorakit.data.models.show.related.RelatedLiteratureResponse
 import kurozorakit.data.models.show.related.RelatedShowResponse
+import kurozorakit.data.models.show.song.ShowSongResponse
 import kurozorakit.data.models.song.SongIdentityResponse
-import kurozorakit.data.models.staff.StaffIdentityResponse
+import kurozorakit.data.models.staff.StaffResponse
 import kurozorakit.data.models.studio.StudioIdentityResponse
 
 /**
@@ -41,8 +43,8 @@ import kurozorakit.data.models.studio.StudioIdentityResponse
 @Serializable
 data class Game(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "games",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null,
 ) : IdentityResource {
@@ -89,12 +91,13 @@ data class Game(
     data class Attributes(
         val igdbID: Int? = null,
         val igdbSlug: String? = null,
-        val slug: String,
+        val slug: String = "",
+        val videoUrl: String? = null,
         val poster: Media? = null,
         val banner: Media? = null,
         val logo: Media? = null,
         val originalTitle: String? = null,
-        val title: String,
+        val title: String = "",
         val synonymTitles: List<String>? = null,
         val tagline: String? = null,
         val synopsis: String? = null,
@@ -102,29 +105,32 @@ data class Game(
         val themes: List<String>? = null,
         val studio: String? = null,
         val languages: List<Language>? = null,
+        val languageSupport: LanguageSupport? = null,
         val countryOfOrigin: Country? = null,
-        val tvRating: TVRating,
-        val type: MediaType,
-        val source: AdaptationSource,
-        val status: AiringStatus,
+        val tvRating: TVRating = TVRating(),
+        val type: MediaType = MediaType(),
+        val source: AdaptationSource = AdaptationSource(),
+        val status: AiringStatus = AiringStatus(),
 
-        val editionCount: Int,
+        val editionCount: Int = 0,
         val stats: MediaStat? = null,
 
+        @Serializable(with = LocalDateSerializer::class)
+        val publishedAt: LocalDate? = null,
         @Serializable(with = LocalDateSerializer::class)
         val startedAt: LocalDate? = null,
         @Serializable(with = LocalDateSerializer::class)
         val endedAt: LocalDate? = null,
 
-        val duration: String,
-        val durationCount: Int,
-        val durationTotal: String,
-        val durationTotalCount: Int,
+        val duration: String = "",
+        val durationCount: Int = 0,
+        val durationTotal: String = "",
+        val durationTotalCount: Int = 0,
 
         val publicationSeason: String? = null,
         val publicationTime: String? = null,
         val publicationDay: String? = null,
-        val isNSFW: Boolean,
+        val isNSFW: Boolean = false,
         val copyright: String? = null,
 
         var library: LibraryAttributes? = null,
@@ -146,13 +152,14 @@ data class Game(
     @Serializable
     data class Relationships(
         val cast: CastIdentityResponse? = null,
-        val characters: CharacterIdentityResponse? = null,
+        val characters: CharacterResponse? = null,
         val people: PersonIdentityResponse? = null,
         val relatedShows: RelatedShowResponse? = null,
         val relatedGames: RelatedGameResponse? = null,
         val relatedLiteratures: RelatedLiteratureResponse? = null,
+        val showSongs: ShowSongResponse? = null,
         val songs: SongIdentityResponse? = null,
-        val staff: StaffIdentityResponse? = null,
+        val staff: StaffResponse? = null,
         val studios: StudioIdentityResponse? = null,
     )
 }

@@ -1,38 +1,49 @@
 package kurozorakit.data.repositories.store
 
+import io.ktor.client.request.forms.FormDataContent
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.Parameters
+import io.ktor.http.contentType
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
-import kurozorakit.shared.Result
+import kurozorakit.data.models.store.StoreTransactionResponse
 import kurozorakit.data.models.user.receipt.ReceiptResponse
+import kurozorakit.shared.Result
 
 /**
- * Data repository responsible for managing in-app purchases and transaction validation.
- *
- * This repository handles the communication with the backend to ensure that
- * digital purchases (e.g., premium subscriptions, digital goods) are legitimate
- * and properly processed through the platform's verification system.
+ * Data repository responsible for managing in-app purchases, order restoration, and transaction history.
  */
 interface StoreRepository {
 
     /**
-     * Validates a transaction receipt from a store provider (e.g., Apple App Store, Google Play).
+     * Validates a transaction receipt from a store provider (`POST /store/verify`).
      *
-     * This method sends the receipt data to the server to verify the authenticity
-     * of the purchase and unlock the associated digital content or status for the user.
-     *
-     * @param receipt The raw receipt data or token provided by the store's billing system.
+     * @param receipt The base64-encoded receipt data provided by the billing system.
+     * @param password Optional hexadecimal shared secret password.
      * @return A [Result] containing the [ReceiptResponse] with the verification status.
      */
-    suspend fun verifyReceipt(receipt: String): Result<ReceiptResponse>
+    suspend fun verifyReceipt(receipt: String, password: String? = null): Result<ReceiptResponse>
 
     /**
-     * Validates a Google Play purchase by sending the purchase token and product ID
-     * to the server for verification.
+     * Restores a previous store order by order ID (`POST /store/restore-order`).
      *
-     * @param purchaseToken The purchase token from Google Play Billing.
-     * @param productId The product ID of the purchased item.
-     * @return A [Result] containing a map with the server response.
+     * @param orderId The store order identifier.
+     * @return A [Result] containing the [ReceiptResponse].
      */
+    suspend fun restoreOrder(orderId: String): Result<ReceiptResponse>
+
+    /**
+     * Retrieves the authenticated user's store transaction history (`GET /store/transactions`).
+     *
+     * @return A [Result] containing the [StoreTransactionResponse].
+     */
+    suspend fun getTransactions(): Result<StoreTransactionResponse>
+
+    /**
+     * Deprecated: `store/purchases/google-play/verify` does not exist in the Kurozora API.
+     */
+    @Deprecated("Endpoint store/purchases/google-play/verify is not defined in Kurozora API.")
     suspend fun verifyGooglePlayPurchase(purchaseToken: String, productId: String): Result<Map<String, String>>
 }
 
@@ -46,26 +57,38 @@ open class StoreRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : StoreRepository {
 
-    override suspend fun verifyReceipt(receipt: String): Result<ReceiptResponse> {
-        val body = mapOf("receipt" to receipt)
-        val result = apiClient.post<ReceiptResponse, Map<String, String>>(KKEndpoint.Store.Verify, body)
-
-        result.onSuccess { response ->
-            response.data.firstOrNull()?.let { receipt ->
-                //User.current?.attributes?.updateSubscription(from = receipt)
-            }
-        }.onError { error ->
-            println("Received validate receipt error: ${error.message}")
+    override suspend fun verifyReceipt(receipt: String, password: String?): Result<ReceiptResponse> {
+        return apiClient.post<ReceiptResponse, Unit>(KKEndpoint.Store.Verify) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                append("receipt", receipt)
+                password?.let { append("password", it) }
+            }))
         }
-
-        return result
     }
 
+    override suspend fun restoreOrder(orderId: String): Result<ReceiptResponse> {
+        return apiClient.post<ReceiptResponse, Unit>(KKEndpoint.Store.RestoreOrder) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                append("orderID", orderId)
+            }))
+        }
+    }
+
+    override suspend fun getTransactions(): Result<StoreTransactionResponse> {
+        return apiClient.get<StoreTransactionResponse>(KKEndpoint.Store.Transactions)
+    }
+
+    @Deprecated("Endpoint store/purchases/google-play/verify is not defined in Kurozora API.")
+    @Suppress("DEPRECATION")
     override suspend fun verifyGooglePlayPurchase(purchaseToken: String, productId: String): Result<Map<String, String>> {
         val body = mapOf(
             "purchase_token" to purchaseToken,
             "product_id" to productId
         )
-        return apiClient.post<Map<String, String>, Map<String, String>>(KKEndpoint.Store.GooglePlayVerify, body)
+        return apiClient.post<Map<String, String>, Map<String, String>>(KKEndpoint.Store.GooglePlayVerify, body) {
+            contentType(ContentType.Application.Json)
+        }
     }
 }

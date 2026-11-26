@@ -11,8 +11,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class Location(
-    val type: String,
-    val attributes: Attributes
+    val type: String = "locations",
+    val attributes: Attributes = Attributes()
 ) {
     /**
      * Contains the specific geographic details for a [Location].
@@ -26,10 +26,10 @@ data class Location(
      */
     @Serializable
     data class Attributes(
-        val city: String?,
-        val region: String?,
-        val country: String?,
-        val latitude: Double?,
-        val longitude: Double?
+        val city: String? = null,
+        val region: String? = null,
+        val country: String? = null,
+        val latitude: Double? = null,
+        val longitude: Double? = null
     )
 }

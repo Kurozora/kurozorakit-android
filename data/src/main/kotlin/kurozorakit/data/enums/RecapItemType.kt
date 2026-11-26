@@ -17,13 +17,27 @@ enum class RecapItemType {
     /** Summary data for reading habits, including manga and novels. */
     LITERATURES,
 
-    /** * The most frequent categories associated with the media consumed
+    /**
+     * The most frequent categories associated with the media consumed
      * (e.g., Action, Romance, Sci-Fi).
      */
     GENRES,
 
-    /** * The most frequent narrative elements or motifs found in the media
+    /**
+     * The most frequent narrative elements or motifs found in the media
      * consumed (e.g., High School, Time Travel, Gore).
      */
-    THEMES
+    THEMES,
+
+    /** Top animation or production studios encountered. */
+    STUDIOS,
+
+    /** Most engaged or top characters encountered. */
+    CHARACTERS,
+
+    /** Most heard voice actors (people). */
+    VOICES,
+
+    /** Most encountered staff/creators. */
+    CREATORS
 }

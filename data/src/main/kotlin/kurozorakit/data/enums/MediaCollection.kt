@@ -7,6 +7,9 @@ package kurozorakit.data.enums
  * allowing the client to request specific assets for different parts of the interface.
  */
 enum class MediaCollection {
+    /** Default fallback media collection. */
+    default,
+
     /** High-quality promotional art, usually without text. */
     artwork,
 
@@ -33,6 +36,7 @@ enum class MediaCollection {
      */
     val stringValue: String
         get() = when (this) {
+            default -> "default"
             artwork -> "artwork"
             banner -> "banner"
             logo -> "logo"

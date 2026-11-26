@@ -166,6 +166,11 @@ interface AuthRepository {
     suspend fun getUserLibrary(userId: String, libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, sortType: KKLibrary.SortType? = KKLibrary.SortType.NONE, sortOption: KKLibrary.Option? = null, next: String? = null, limit: Int = 20): Result<LibraryResponse>
 
     /**
+     * Batch-fetches full profile details for a list of users (`GET /users?ids=...`).
+     */
+    suspend fun getUsers(ids: List<String>): Result<UserResponse>
+
+    /**
      * Fetches the full profile details of a specific user.
      */
     suspend fun getUserProfile(userId: String): Result<UserResponse>
@@ -332,11 +337,13 @@ open class AuthRepositoryImpl(
     }
 
     override suspend fun signInWithApple(identityToken: String, authorizationCode: String): Result<OAuthResponse> {
-        val body = mapOf(
-            "identity_token" to identityToken,
-            "authorization_code" to authorizationCode
-        )
-        return apiClient.post<OAuthResponse, Map<String, String>>(KKEndpoint.Auth.SiwaSignIn, body)
+        return apiClient.post<OAuthResponse, Unit>(KKEndpoint.Auth.SiwaSignIn) {
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody(FormDataContent(Parameters.build {
+                append("identity_token", identityToken)
+                append("authorization_code", authorizationCode)
+            }))
+        }
     }
 
     override suspend fun resetPassword(email: String): Result<Unit> {
@@ -352,7 +359,7 @@ open class AuthRepositoryImpl(
         next: String?,
         limit: Int
     ): Result<UserIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = if (next != null) {
             KKEndpoint.Url(next)
         } else {
@@ -365,63 +372,76 @@ open class AuthRepositoryImpl(
     }
 
     override suspend fun updateFollowStatus(userId: String): Result<FollowUpdateResponse> {
-        return apiClient.post<FollowUpdateResponse, Map<String, Boolean>>(KKEndpoint.Auth.Follow(userId)) {
+        return apiClient.post<FollowUpdateResponse, Unit>(KKEndpoint.Auth.Follow(userId)) {
             contentType(ContentType.Application.Json)
         }
     }
 
     override suspend fun updateBlockStatus(userId: String): Result<BlockUpdateResponse> {
-        return apiClient.post<BlockUpdateResponse, Map<String, Boolean>>(KKEndpoint.Auth.Block(userId)) {
+        return apiClient.post<BlockUpdateResponse, Unit>(KKEndpoint.Auth.Block(userId)) {
             contentType(ContentType.Application.Json)
         }
     }
 
     override suspend fun getBlockedUsers(userId: String, next: String?, limit: Int): Result<UserIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
-        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Blocking(userId)
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        // Kurozora API only exposes the authenticated user's blocked list at GET /me/blocked.
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Me.Blocked
         return apiClient.get<UserIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserFavorites(userId: String, libraryKind: KKLibrary.Kind, next: String?, limit: Int): Result<FavoriteLibraryResponse> {
-        val parameters = mapOf(
-            "library" to libraryKind.value.toString(),
-            "limit" to limit.toString()
-        )
+        val parameters = if (next == null) {
+            mapOf(
+                "kind" to libraryKind.value.toString(),
+                "limit" to limit.toString()
+            )
+        } else {
+            emptyMap()
+        }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Favorites(userId)
         return apiClient.get<FavoriteLibraryResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserLibrary(userId: String, libraryKind: KKLibrary.Kind, libraryStatus: KKLibrary.Status, sortType: KKLibrary.SortType?, sortOption: KKLibrary.Option?, next: String?, limit: Int
     ): Result<LibraryResponse> {
-        val parameters = mutableMapOf(
-            "library" to libraryKind.value.toString(),
-            "status" to libraryStatus.sectionValue,
-            "limit" to limit.toString()
-        ).apply {
-            if (sortType != KKLibrary.SortType.NONE) {
-                put("sort", "${sortType?.parameterValue}${sortOption?.parameterValue}")
+        val parameters = if (next == null) {
+            mutableMapOf(
+                "kind" to libraryKind.value.toString(),
+                "status" to libraryStatus.sectionValue,
+                "limit" to limit.toString()
+            ).apply {
+                if (sortType != null && sortType != KKLibrary.SortType.NONE && sortOption != null) {
+                    put("sort", "${sortType.parameterValue}${sortOption.parameterValue}")
+                }
             }
+        } else {
+            emptyMap()
         }
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Library(userId)
         return apiClient.get<LibraryResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserFeedMessages(userId: String, next: String?, limit: Int): Result<FeedMessageResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.FeedMessages(userId)
         return apiClient.get<FeedMessageResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserFollowers(userId: String, next: String?, limit: Int): Result<UserIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Followers(userId)
         return apiClient.get<UserIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getUserFollowing(userId: String, next: String?, limit: Int): Result<UserIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Following(userId)
         return apiClient.get<UserIdentityResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getUsers(ids: List<String>): Result<UserResponse> {
+        return apiClient.get<UserResponse>(KKEndpoint.Auth.Index(*ids.toTypedArray()))
     }
 
     override suspend fun getUserProfile(userId: String): Result<UserResponse> {
@@ -429,7 +449,7 @@ open class AuthRepositoryImpl(
     }
 
     override suspend fun getUserReviews(userId: String, next: String?, limit: Int): Result<ReviewResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Auth.Reviews(userId)
         return apiClient.get<ReviewResponse>(endpoint, parameters)
     }
@@ -439,10 +459,7 @@ open class AuthRepositoryImpl(
     }
 
     override suspend fun deleteUser(password: String): Result<Unit> {
-        return apiClient.post<Unit, Unit>(
-            KKEndpoint.Auth.Delete,
-            body = null
-        ) {
+        return apiClient.delete<Unit>(KKEndpoint.Auth.Delete) {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
                 append("password", password)

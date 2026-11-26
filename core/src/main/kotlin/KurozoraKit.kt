@@ -1,14 +1,21 @@
 package kurozorakit.core
 
+import io.ktor.client.engine.HttpClientEngine
 import kurozorakit.api.KurozoraApiClient
 import kurozorakit.api.Platform
 import kurozorakit.api.RetryConfig
 import kurozorakit.api.TokenProvider
+import kurozorakit.core.mock.KurozoraMockConfig
+import kurozorakit.core.mock.KurozoraMockEngine
+import kurozorakit.core.mock.KurozoraMockState
+import kurozorakit.core.mock.MockPlatform
 import kurozorakit.shared.UserAgent
 import kurozorakit.data.DefaultTokenProvider
 import kurozorakit.data.models.user.User
 import kurozorakit.data.repositories.airseason.AirSeasonRepository
 import kurozorakit.data.repositories.airseason.AirSeasonRepositoryImpl
+import kurozorakit.data.repositories.charts.ChartsRepository
+import kurozorakit.data.repositories.charts.ChartsRepositoryImpl
 import kurozorakit.shared.logging.CompositeLogger
 import kurozorakit.shared.logging.ConsoleLogger
 import kurozorakit.shared.logging.KurozoraLogger
@@ -68,8 +75,6 @@ import kurozorakit.data.repositories.themestore.ThemeStoreRepository
 import kurozorakit.data.repositories.themestore.ThemeStoreRepositoryImpl
 import kurozorakit.data.repositories.user.UserRepository
 import kurozorakit.data.repositories.user.UserRepositoryImpl
-import kurozorakit.store.DatabaseDriverFactory
-import kurozorakit.store.KurozoraStore
 
 /**
  * The main entry point for the KurozoraKit library.
@@ -80,7 +85,6 @@ import kurozorakit.store.KurozoraStore
  */
 class KurozoraKit private constructor(
     private val apiClient: KurozoraApiClient,
-    private val store: KurozoraStore,
     private val showRepository: ShowRepository,
     private val literatureRepository: LiteratureRepository,
     private val gameRepository: GameRepository,
@@ -107,6 +111,12 @@ class KurozoraKit private constructor(
     private val themeStoreRepository: ThemeStoreRepository,
     private val airSeasonRepository: AirSeasonRepository,
     private val parentalGuideRepository: ParentalGuideRepository,
+    private val chartsRepository: ChartsRepository,
+    /**
+     * Stateful in-memory backend backing [Builder.mockMode], or `null` when running against a real API.
+     * Useful in UI tests, Compose Previews, and offline demos for inspecting or resetting simulated data.
+     */
+    val mockState: KurozoraMockState? = null,
 ) {
 
     /** Provides access to Anime (Show) related data and operations. */
@@ -187,7 +197,8 @@ class KurozoraKit private constructor(
     /** Provides access to parental guide ratings and content advisories. */
     fun parentalGuide(): ParentalGuideRepository = parentalGuideRepository
 
-    fun store(): KurozoraStore = store
+    /** Provides access to ranked Kurozora Charts across all catalog types. */
+    fun charts(): ChartsRepository = chartsRepository
 
     companion object {
         /**
@@ -197,6 +208,18 @@ class KurozoraKit private constructor(
          * matches the published artifact version.
          */
         val version: String = KUROZORA_KIT_VERSION
+
+        /**
+         * Shorthand factory for creating a fully offline, stateful mock [KurozoraKit] instance
+         * suitable for Compose Previews, UI tests, demos, and QA sandboxes.
+         *
+         * @param configure Optional configuration block for latency, auth rules, status overrides, or custom routes.
+         */
+        fun mock(configure: KurozoraMockConfig.() -> Unit = {}): KurozoraKit =
+            Builder()
+                .consoleLogging(false)
+                .mockMode(enabled = true, configure = configure)
+                .build()
     }
 
     /**
@@ -215,8 +238,7 @@ class KurozoraKit private constructor(
         private var maxBackoffDelayMs: Long = 30000
         private var backoffFactor: Double = 2.0
         private var userAgent: UserAgent = UserAgent()
-        private lateinit var platform: Platform
-        private lateinit var databaseDriverFactory: DatabaseDriverFactory
+        private var platform: Platform? = null
         private var consoleLoggingEnabled: Boolean = true
         private var fileLoggingConfig: FileLoggingConfig? = null
         private var memoryBufferCapacity: Int? = null
@@ -224,6 +246,8 @@ class KurozoraKit private constructor(
         private var loggingScope: CoroutineScope? = null
         private var onSessionExpired: (() -> Unit)? = null
         private var isOnline: (() -> Boolean)? = null
+        private var httpClientEngine: HttpClientEngine? = null
+        private var mockConfig: KurozoraMockConfig? = null
 
         data class FileLoggingConfig(
             val path: String,
@@ -290,11 +314,6 @@ class KurozoraKit private constructor(
         fun userAgent(userAgent: UserAgent) = apply { this.userAgent = userAgent }
 
         /**
-         * Sets the [DatabaseDriverFactory] implementation providing device-specific info.
-         */
-        fun databaseDriverFactory(factory: DatabaseDriverFactory) = apply { this.databaseDriverFactory = factory }
-
-        /**
          * Enables or disables console logging output. Enabled by default.
          */
         fun consoleLogging(enable: Boolean) = apply { this.consoleLoggingEnabled = enable }
@@ -332,11 +351,35 @@ class KurozoraKit private constructor(
         fun onSessionExpired(callback: () -> Unit) = apply { this.onSessionExpired = callback }
 
         /**
+         * Injects a custom Ktor [HttpClientEngine] (for advanced networking or custom test engines).
+         */
+        fun httpClientEngine(engine: HttpClientEngine) = apply { this.httpClientEngine = engine }
+
+        /**
+         * Enables or disables built-in offline **Mock Mode**, simulating the entire Kurozora API
+         * with a rich, stateful in-memory backend ([KurozoraMockState]) and zero real network calls.
+         *
+         * When enabled, [platform] defaults to [MockPlatform] if not explicitly provided.
+         *
+         * @param enabled Whether mock mode is active (default `true`).
+         * @param configure Optional DSL block to customize latency, error injection, 2FA, auth gates,
+         *                  status overrides, or custom route handlers.
+         */
+        fun mockMode(
+            enabled: Boolean = true,
+            configure: KurozoraMockConfig.() -> Unit = {},
+        ) = apply {
+            this.mockConfig = if (enabled) KurozoraMockConfig().apply(configure) else null
+        }
+
+        /**
          * Finalizes the configuration and returns a fully initialized [KurozoraKit] instance.
          *
          * This method sets up the logging system, initializes the HTTP client,
          * and wires up all internal repositories.
-         * * @throws UninitializedPropertyAccessException if [platform] is not set.
+         *
+         * @throws UninitializedPropertyAccessException if [platform] is not set
+         *         when [mockMode] is disabled.
          */
         fun build(): KurozoraKit {
             // Initialize logging infrastructure
@@ -371,42 +414,46 @@ class KurozoraKit private constructor(
             }
             KurozoraLogger.setLogger(logger)
 
+            val activeMockConfig = mockConfig
+            val resolvedMockState = activeMockConfig?.let { it.state ?: KurozoraMockState() }
+            val resolvedEngine = activeMockConfig?.let { KurozoraMockEngine.create(it, resolvedMockState!!) }
+                ?: httpClientEngine
+            val resolvedPlatform = this.platform
+                ?: if (activeMockConfig != null) MockPlatform
+                else throw UninitializedPropertyAccessException("platform must be set on KurozoraKit.Builder")
+
             // Initialize the shared API client
             val apiClient = KurozoraApiClient(
                 baseUrl = apiEndpoint,
-                apiKey = apiKey,
+                apiKey = if (apiKey.isEmpty() && activeMockConfig != null) "mock-api-key" else apiKey,
                 tokenProvider = tokenProvider,
-                platform = platform,
+                platform = resolvedPlatform,
                 userAgent = userAgent,
                 onSessionExpired = onSessionExpired,
                 isOnline = isOnline,
                 retryConfig = RetryConfig(
-                    maxRetries = maxRetries,
+                    maxRetries = if (activeMockConfig != null && maxRetries == 3) 0 else maxRetries,
                     initialBackoffDelayMs = initialBackoffDelayMs,
                     maxBackoffDelayMs = maxBackoffDelayMs,
                     backoffFactor = backoffFactor,
                 ),
+                engine = resolvedEngine,
             )
 
-            val store = KurozoraStore.builder()
-                .apiClient(apiClient)
-                .databaseDriverFactory(databaseDriverFactory)
-                .build()
-
-            // Instantiate repository implementations
-            val showRepository = ShowRepositoryImpl(apiClient, store)
-            val literatureRepository = LiteratureRepositoryImpl(apiClient, store)
-            val gameRepository = GameRepositoryImpl(apiClient, store)
-            val characterRepository = CharacterRepositoryImpl(apiClient, store)
+            // Instantiate repository implementations directly over apiClient
+            val showRepository = ShowRepositoryImpl(apiClient)
+            val literatureRepository = LiteratureRepositoryImpl(apiClient)
+            val gameRepository = GameRepositoryImpl(apiClient)
+            val characterRepository = CharacterRepositoryImpl(apiClient)
             val personRepository = PersonRepositoryImpl(apiClient)
             val studioRepository = StudioRepositoryImpl(apiClient)
             val genreRepository = GenreRepositoryImpl(apiClient)
             val authRepository = AuthRepositoryImpl(apiClient)
-            val userRepository = UserRepositoryImpl(apiClient, store)
+            val userRepository = UserRepositoryImpl(apiClient)
             val searchRepository = SearchRepositoryImpl(apiClient)
             val castRepository = CastRepositoryImpl(apiClient)
             val episodeRepository = EpisodeRepositoryImpl(apiClient)
-            val exploreRepository = ExploreRepositoryImpl(apiClient, store)
+            val exploreRepository = ExploreRepositoryImpl(apiClient)
             val feedRepository = FeedRepositoryImpl(apiClient)
             val imageRepository = ImageRepositoryImpl(apiClient)
             val legalRepository = LegalRepositoryImpl(apiClient)
@@ -420,10 +467,10 @@ class KurozoraKit private constructor(
             val themeStoreRepository = ThemeStoreRepositoryImpl(apiClient)
             val airSeasonRepository = AirSeasonRepositoryImpl(apiClient)
             val parentalGuideRepository = ParentalGuideRepositoryImpl(apiClient)
+            val chartsRepository = ChartsRepositoryImpl(apiClient)
 
             return KurozoraKit(
                 apiClient = apiClient,
-                store = store,
                 showRepository = showRepository,
                 literatureRepository = literatureRepository,
                 gameRepository = gameRepository,
@@ -450,6 +497,8 @@ class KurozoraKit private constructor(
                 themeStoreRepository = themeStoreRepository,
                 airSeasonRepository = airSeasonRepository,
                 parentalGuideRepository = parentalGuideRepository,
+                chartsRepository = chartsRepository,
+                mockState = resolvedMockState,
             )
         }
     }

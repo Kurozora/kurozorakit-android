@@ -4,12 +4,15 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kurozorakit.data.enums.EpisodeFillerKind
 import kurozorakit.data.enums.WatchStatus
 import kurozorakit.data.models.IdentityResource
 import kurozorakit.data.models.media.Media
 import kurozorakit.data.models.media.MediaStat
 import kurozorakit.data.models.season.SeasonIdentityResponse
 import kurozorakit.data.models.show.ShowIdentityResponse
+import kurozorakit.data.models.show.attributes.TVRating
+import kurozorakit.data.models.video.Video
 
 /**
  * The granular unit of consumption in the Kurozora ecosystem.
@@ -27,8 +30,8 @@ import kurozorakit.data.models.show.ShowIdentityResponse
 @Serializable
 data class Episode(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "episodes",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null
 ) : IdentityResource {
@@ -62,21 +65,32 @@ data class Episode(
     data class Attributes(
         val poster: Media? = null,
         val banner: Media? = null,
-        val number: Int,
-        val numberTotal: Int,
-        val seasonNumber: Int,
-        val title: String,
+        val number: Int = 0,
+        val numberTotal: Int = 0,
+        val seasonNumber: Int = 0,
+        val title: String = "",
         val synopsis: String? = null,
         val previousEpisodeTitle: String? = null,
         val nextEpisodeTitle: String? = null,
-        val showTitle: String,
-        val duration: String,
+        val showTitle: String = "",
+        val tvRating: TVRating? = null,
+        val duration: String = "",
         val stats: MediaStat? = null,
+        val videos: List<Video>? = null,
         @SerialName("startedAt")
         val startedAtTimestamp: Long? = null,
-        val viewCount: Int,
-        val isFiller: Boolean,
-        val isVerified: Boolean,
+        @SerialName("firstAired")
+        val firstAiredTimestamp: Long? = null,
+        @SerialName("endedAt")
+        val endedAtTimestamp: Long? = null,
+        val viewCount: Int = 0,
+        val isFiller: Boolean = false,
+        val fillerKind: EpisodeFillerKind? = null,
+        val isNsfw: Boolean = false,
+        val isPremiere: Boolean = false,
+        val isFinale: Boolean = false,
+        val isSpecial: Boolean = false,
+        val isVerified: Boolean = false,
         var givenRating: Double? = null,
         var givenReview: String? = null,
 
@@ -91,6 +105,14 @@ data class Episode(
          */
         @Transient
         val startedAt: Instant? = startedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
+
+        /** Convenience [Instant] derived from [firstAiredTimestamp]. */
+        @Transient
+        val firstAired: Instant? = firstAiredTimestamp?.let { Instant.fromEpochSeconds(it) }
+
+        /** Convenience [Instant] derived from [endedAtTimestamp]. */
+        @Transient
+        val endedAt: Instant? = endedAtTimestamp?.let { Instant.fromEpochSeconds(it) }
 
         /**
          * The resolved watch status for the authenticated user.

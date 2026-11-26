@@ -20,6 +20,14 @@ import kurozorakit.shared.Result
 interface SeasonRepository {
 
     /**
+     * Batch-fetches full season details for a list of season identifiers (`GET /seasons?ids=...`).
+     *
+     * @param ids The unique identifiers of the seasons to fetch.
+     * @return A [Result] containing the [SeasonResponse] with full season metadata.
+     */
+    suspend fun getSeasons(ids: List<String>): Result<SeasonResponse>
+
+    /**
      * Fetches detailed information for a specific season.
      *
      * @param seasonId The unique identifier of the season.
@@ -59,21 +67,29 @@ interface SeasonRepository {
 class SeasonRepositoryImpl(
     private val apiClient: KurozoraApiClient
 ) : SeasonRepository {
+    override suspend fun getSeasons(ids: List<String>): Result<SeasonResponse> {
+        return apiClient.get<SeasonResponse>(KKEndpoint.Show.Seasons.Index(*ids.toTypedArray()))
+    }
+
     override suspend fun getDetails(seasonId: String): Result<SeasonResponse> {
         return apiClient.get<SeasonResponse>(KKEndpoint.Show.Seasons.Details(seasonId))
     }
 
     override suspend fun getEpisodes(seasonId: String, next: String?, limit: Int, hideFillers: Boolean): Result<EpisodeIdentityResponse> {
-        val parameters = mapOf(
-            "limit" to limit.toString(),
-            "hide_fillers" to if (hideFillers) "1" else "0"
-        )
+        val parameters = if (next == null) {
+            mapOf(
+                "limit" to limit.toString(),
+                "hide_fillers" to if (hideFillers) "1" else "0"
+            )
+        } else {
+            emptyMap()
+        }
         val endpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Show.Seasons.Episodes(seasonId)
         return apiClient.get<EpisodeIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun updateWatchStatus(seasonId: String): Result<SeasonUpdateResponse> {
-        return apiClient.post<SeasonUpdateResponse, Map<String, String>>(KKEndpoint.Show.Seasons.Watched(seasonId)) {
+        return apiClient.post<SeasonUpdateResponse, Unit>(KKEndpoint.Show.Seasons.Watched(seasonId)) {
             contentType(ContentType.Application.Json)
         }
     }

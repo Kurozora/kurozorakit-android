@@ -5,6 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kurozorakit.data.models.IdentityResource
+import kurozorakit.data.models.WebsiteURLsAsListSerializer
 import kurozorakit.data.models.character.CharacterIdentityResponse
 import kurozorakit.data.models.game.GameIdentityResponse
 import kurozorakit.data.models.literature.LiteratureIdentityResponse
@@ -28,8 +29,8 @@ import kurozorakit.data.models.show.ShowIdentityResponse
 @Serializable
 data class Person(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "people",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null
 ) : IdentityResource {
@@ -55,9 +56,9 @@ data class Person(
      */
     @Serializable
     data class Attributes(
-        val slug: String,
+        val slug: String = "",
         val profile: Media? = null,
-        val fullName: String,
+        val fullName: String = "",
         val fullGivenName: String? = null,
         val alternativeNames: List<String>? = null,
         val age: String? = null,
@@ -67,6 +68,7 @@ data class Person(
         val deceasedDateTimestamp: Long? = null,
         val about: String? = null,
         val shortDescription: String? = null,
+        @Serializable(with = WebsiteURLsAsListSerializer::class)
         val websiteURLs: List<String>? = null,
         val astrologicalSign: String? = null,
         val stats: MediaStat? = null,

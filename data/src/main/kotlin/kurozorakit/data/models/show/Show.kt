@@ -9,6 +9,7 @@ import kurozorakit.data.models.FlexibleInstantSerializer
 import kurozorakit.data.models.character.CharacterResponse
 import kurozorakit.data.models.country.Country
 import kurozorakit.data.models.language.Language
+import kurozorakit.data.models.language.LanguageSupport
 import kurozorakit.data.models.library.LibraryAttributes
 import kurozorakit.data.models.media.Media
 import kurozorakit.data.models.media.MediaStat
@@ -43,8 +44,8 @@ import kurozorakit.data.models.studio.StudioIdentityResponse
 @Serializable
 data class Show(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "shows",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null,
 ) : IdentityResource {
@@ -113,43 +114,48 @@ data class Show(
         val traktID: Int? = null,
         val tvdbID: Int? = null,
 
-        val slug: String,
+        val slug: String = "",
         val videoUrl: String? = null,
         val poster: Media? = null,
         val banner: Media? = null,
         val logo: Media? = null,
         val originalTitle: String? = null,
-        val title: String,
+        val title: String = "",
         val synonymTitles: List<String>? = null,
         val tagline: String? = null,
         val synopsis: String? = null,
         val genres: List<String>? = null,
         val themes: List<String>? = null,
         val studio: String? = null,
-        val languages: List<Language>,
+        val languages: List<Language> = emptyList(),
+        val languageSupport: LanguageSupport? = null,
         val countryOfOrigin: Country? = null,
-        val tvRating: TVRating,
-        val type: MediaType,
-        val source: AdaptationSource,
-        val status: AiringStatus,
-        val episodeCount: Int,
-        val seasonCount: Int,
+        val tvRating: TVRating = TVRating(),
+        val type: MediaType = MediaType(),
+        val source: AdaptationSource = AdaptationSource(),
+        val status: AiringStatus = AiringStatus(),
+        val episodeCount: Int = 0,
+        val seasonCount: Int = 0,
         val stats: MediaStat? = null,
         @Serializable(with = FlexibleInstantSerializer::class)
         val startedAt: Instant? = null,
         @Serializable(with = FlexibleInstantSerializer::class)
+        val firstAired: Instant? = null,
+        @Serializable(with = FlexibleInstantSerializer::class)
         val endedAt: Instant? = null,
         @Serializable(with = FlexibleInstantSerializer::class)
+        val lastAired: Instant? = null,
+        @Serializable(with = FlexibleInstantSerializer::class)
         val nextBroadcastAt: Instant? = null,
-        val duration: String,
-        val durationCount: Int,
-        val durationTotal: String,
-        val durationTotalCount: Int,
+        val duration: String = "",
+        val durationCount: Int = 0,
+        val durationTotal: String = "",
+        val durationTotalCount: Int = 0,
         val airSeason: String? = null,
         @Serializable(with = FlexibleInstantSerializer::class)
         val airTime: Instant? = null,
         val airDay: String? = null,
-        val isNSFW: Boolean,
+        val isNSFW: Boolean = false,
         val copyright: String? = null,
         var library: LibraryAttributes? = null,
     )

@@ -12,6 +12,7 @@ import kurozorakit.data.models.IdentityResource
 import kurozorakit.data.models.LocalDateSerializer
 import kurozorakit.data.models.media.Media
 import kurozorakit.data.models.user.receipt.Receipt
+import kurozorakit.data.models.user.timeout.TimeoutResponse
 import kurozorakit.data.models.user.tokens.AccessTokenResponse
 import kurozorakit.data.models.user.update.UserUpdate
 import kurozorakit.data.models.user.update.block.BlockUpdate
@@ -33,9 +34,9 @@ import kurozorakit.data.models.user.update.follow.FollowUpdate
 @Serializable
 data class User(
     override val id: String,
-    val uuid: String,
-    override val type: String,
-    override val href: String,
+    val uuid: String = "",
+    override val type: String = "users",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null
 ) : IdentityResource {
@@ -81,30 +82,30 @@ data class User(
      */
     @Serializable
     data class Attributes(
-        var slug: String,
-        var username: String,
+        var slug: String = "",
+        var username: String = "",
         val email: String? = null,
         val siwaIsEnabled: Boolean? = null,
         var biography: String? = null,
         var biographyHTML: String? = null,
         var biographyMarkdown: String? = null,
-        val activityStatus: String,
+        val activityStatus: String? = null,
         var profile: Media? = null,
         var banner: Media? = null,
-        var isDeveloper: Boolean,
-        var isStaff: Boolean,
-        var isEarlySupporter: Boolean,
-        var isPro: Boolean,
-        var isSubscribed: Boolean,
-        var isVerified: Boolean,
+        var isDeveloper: Boolean = false,
+        var isStaff: Boolean = false,
+        var isEarlySupporter: Boolean = false,
+        var isPro: Boolean = false,
+        var isSubscribed: Boolean = false,
+        var isVerified: Boolean = false,
         @Serializable(with = LocalDateSerializer::class)
-        val joinedAt: LocalDate?,
+        val joinedAt: LocalDate? = null,
         @Serializable(with = LocalDateSerializer::class)
         val subscribedAt: LocalDate? = null,
-        var followerCount: Int,
-        var followingCount: Int,
-        val reputationCount: Int,
-        val ratingsCount: Int,
+        var followerCount: Int = 0,
+        var followingCount: Int = 0,
+        val reputationCount: Int = 0,
+        val ratingsCount: Int = 0,
         val achievementsCount: Int? = null,
         var preferredLanguage: String? = null,
         var preferredTVRating: Int? = null,
@@ -131,6 +132,7 @@ data class User(
 
     @Serializable
     data class Relationships(
-        val accessTokens: AccessTokenResponse? = null
+        val accessTokens: AccessTokenResponse? = null,
+        val timeout: TimeoutResponse? = null,
     )
 }

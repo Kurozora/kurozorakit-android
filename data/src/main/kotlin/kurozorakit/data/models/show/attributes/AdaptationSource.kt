@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class AdaptationSource(
-    val name: String,
-    val description: String,
+    val name: String = "",
+    val description: String = "",
 ) {
     /**
      * Compares this adaptation source with another object for equality.

@@ -16,9 +16,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class AiringStatus(
-    val name: String,
-    val description: String,
-    val color: String,
+    val name: String = "",
+    val description: String = "",
+    val color: String = "",
 ) {
     /**
      * Determines equality based on the status [name].

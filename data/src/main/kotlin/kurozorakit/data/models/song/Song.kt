@@ -24,8 +24,8 @@ import kurozorakit.data.models.show.ShowIdentityResponse
 @Serializable
 data class Song(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "songs",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null,
 ) : IdentityResource {
@@ -59,10 +59,10 @@ data class Song(
         val youtubeID: String? = null,
         val artwork: Media? = null,
         val originalTitle: String? = null,
-        val title: String,
+        val title: String = "",
         val originalLyrics: String? = null,
         val lyrics: String? = null,
-        val artist: String,
+        val artist: String = "",
         val stats: MediaStat? = null,
         val copyright: String? = null,
         var library: LibraryAttributes? = null,

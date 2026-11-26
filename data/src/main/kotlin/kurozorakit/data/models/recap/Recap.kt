@@ -20,8 +20,8 @@ import kurozorakit.data.models.media.Media
 @Serializable
 data class Recap(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "recaps",
+    override val href: String = "",
     val attributes: Attributes
 ) : IdentityResource {
 
@@ -39,11 +39,11 @@ data class Recap(
      */
     @Serializable
     data class Attributes(
-        val year: Int,
-        val month: Int,
+        val year: Int = 0,
+        val month: Int = 0,
         val description: String? = null,
-        val backgroundColor1: String,
-        val backgroundColor2: String,
+        val backgroundColor1: String = "",
+        val backgroundColor2: String = "",
         val artwork: Media? = null
     )
 }

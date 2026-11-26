@@ -20,5 +20,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ReviewIdentityResponse(
     val data: List<ReviewIdentity>,
-    val next: String?
+    val next: String? = null
 )

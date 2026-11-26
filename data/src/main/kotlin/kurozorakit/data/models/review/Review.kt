@@ -2,6 +2,7 @@ package kurozorakit.data.models.review
 
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import kurozorakit.data.enums.ReviewRecommendation
 import kurozorakit.data.models.IdentityResource
 import kurozorakit.data.models.LocalDateSerializer
 import kurozorakit.data.models.character.CharacterIdentityResponse
@@ -31,8 +32,8 @@ import kurozorakit.data.models.user.UserResponse
 @Serializable
 data class Review(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "reviews",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null
 ) : IdentityResource {
@@ -47,10 +48,20 @@ data class Review(
      */
     @Serializable
     data class Attributes(
-        val score: Double,
+        val score: Double = 0.0,
         val description: String? = null,
+        val isSpoiler: Boolean = false,
+        val recommendation: ReviewRecommendation? = null,
+        val progress: Int? = null,
+        val progressTotal: Int? = null,
+        val isLowEffort: Boolean = false,
+        val isElevated: Boolean = false,
+        var helpfulCount: Int = 0,
+        var unhelpfulCount: Int = 0,
+        var isHelpful: Boolean? = null,
+        val revisionCount: Int? = null,
         @Serializable(with = LocalDateSerializer::class)
-        val createdAt: LocalDate?
+        val createdAt: LocalDate? = null,
     )
 
     /**

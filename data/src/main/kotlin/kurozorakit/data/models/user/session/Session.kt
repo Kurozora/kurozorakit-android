@@ -20,10 +20,10 @@ import kurozorakit.data.models.user.session.platform.PlatformResponse
 @Serializable
 data class Session(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "sessions",
+    override val href: String = "",
     val attributes: Attributes,
-    val relationships: Relationships,
+    val relationships: Relationships = Relationships(),
 ) : IdentityResource {
 
     /**
@@ -34,9 +34,10 @@ data class Session(
      */
     @Serializable
     data class Attributes(
-        val ipAddress: String,
+        val ipAddress: String = "",
         @Serializable(LocalDateSerializer::class)
-        val lastValidatedAt: LocalDate?
+        val lastValidatedAt: LocalDate? = null,
+        val appSource: String? = null,
     )
 
     /**
@@ -46,7 +47,7 @@ data class Session(
      */
     @Serializable
     data class Relationships(
-        val platform: PlatformResponse,
-        val location: LocationResponse
+        val platform: PlatformResponse = PlatformResponse(emptyList()),
+        val location: LocationResponse = LocationResponse(emptyList())
     )
 }

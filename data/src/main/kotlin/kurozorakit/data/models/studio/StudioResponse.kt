@@ -18,5 +18,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class StudioResponse(
     val data: List<Studio>,
-    val next: String?,
+    val next: String? = null,
 )

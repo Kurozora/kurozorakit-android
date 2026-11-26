@@ -66,7 +66,7 @@ open class ParentalGuideRepositoryImpl(
     }
 
     override suspend fun voteEntry(entryId: String, vote: Boolean?): Result<ParentalGuideVoteUpdateResponse> {
-        return apiClient.post<ParentalGuideVoteUpdateResponse, Map<String, String>>(KKEndpoint.ParentalGuideEntry.Vote(entryId)) {
+        return apiClient.post<ParentalGuideVoteUpdateResponse, Unit>(KKEndpoint.ParentalGuideEntry.Vote(entryId)) {
             contentType(ContentType.Application.FormUrlEncoded)
             if (vote != null) {
                 setBody(FormDataContent(Parameters.build {
@@ -77,7 +77,7 @@ open class ParentalGuideRepositoryImpl(
     }
 
     override suspend fun reportEntry(entryId: String, reason: ParentalGuideReportReason, details: String?): Result<Unit> {
-        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.ParentalGuideEntry.Report(entryId)) {
+        return apiClient.post<Unit, Unit>(KKEndpoint.ParentalGuideEntry.Report(entryId)) {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
                 append("reason_key", reason.value)
@@ -89,7 +89,7 @@ open class ParentalGuideRepositoryImpl(
     }
 
     private suspend fun submitEntry(endpoint: KKEndpoint, request: ParentalGuideEntryRequest): Result<ParentalGuideEntryResponse> {
-        return apiClient.post<ParentalGuideEntryResponse, ParentalGuideEntryRequest>(endpoint, request) {
+        return apiClient.post<ParentalGuideEntryResponse, Unit>(endpoint) {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
                 append("category", request.category.toString())

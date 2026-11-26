@@ -15,6 +15,6 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class UserResponse(
-    val data: List<User>,
-    val next: String?
+    val data: List<User> = emptyList(),
+    val next: String? = null
 )

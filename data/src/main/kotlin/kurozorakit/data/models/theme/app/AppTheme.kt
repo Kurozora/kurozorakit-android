@@ -18,8 +18,8 @@ import kurozorakit.data.models.media.Media
 @Serializable
 data class AppTheme(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "app-themes",
+    override val href: String = "",
     val attributes: Attributes
 ) : IdentityResource {
 
@@ -34,10 +34,10 @@ data class AppTheme(
      */
     @Serializable
     data class Attributes(
-        val screenshots: List<Media>,
-        val name: String,
-        val version: String,
-        val downloadCount: Int,
-        val downloadLink: String
+        val screenshots: List<Media> = emptyList(),
+        val name: String = "",
+        val version: String = "",
+        val downloadCount: Int = 0,
+        val downloadLink: String = ""
     )
 }

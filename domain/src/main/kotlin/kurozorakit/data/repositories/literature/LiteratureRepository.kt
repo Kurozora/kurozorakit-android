@@ -5,14 +5,19 @@ import io.ktor.client.request.forms.FormDataContent
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kurozorakit.api.KKEndpoint
 import kurozorakit.api.KurozoraApiClient
+import kurozorakit.data.enums.ReviewRecommendation
 import kurozorakit.data.models.character.CharacterIdentityResponse
+import kurozorakit.data.models.editorial.EditorialResponse
+import kurozorakit.data.models.language.MediaLanguageResponse
 import kurozorakit.data.models.literature.LiteratureIdentityResponse
 import kurozorakit.data.models.literature.LiteratureResponse
+import kurozorakit.data.models.media.MediaResponse
+import kurozorakit.data.models.museum.MuseumItemResponse
+import kurozorakit.data.models.museum.MuseumYearResponse
 import kurozorakit.data.models.person.PersonIdentityResponse
 import kurozorakit.data.models.review.ReviewResponse
 import kurozorakit.data.models.search.SearchResponse
@@ -21,161 +26,100 @@ import kurozorakit.data.models.show.cast.CastIdentityResponse
 import kurozorakit.data.models.show.related.RelatedGameResponse
 import kurozorakit.data.models.show.related.RelatedLiteratureResponse
 import kurozorakit.data.models.show.related.RelatedShowResponse
-import kurozorakit.data.models.staff.StaffIdentityResponse
 import kurozorakit.data.models.staff.StaffResponse
-import kurozorakit.data.models.studio.StudioIdentityResponse
 import kurozorakit.data.models.studio.StudioResponse
 import kurozorakit.shared.Result
-import kurozorakit.store.KurozoraStore
 import java.util.*
 
 /**
  * Data repository responsible for managing and retrieving literature-based media.
  *
  * This repository handles requests for various forms of literature, including
- * Manga, Light Novels, and Webtoons. It provides access to metadata,
- * contributor information (authors/illustrators), and cross-media
- * connections like anime or game adaptations.
+ * Manga, Light Novels, and Webtoons.
  */
 interface LiteratureRepository {
 
-    /**
-     * Retrieves a paginated list of literature entries, optionally filtered by specific criteria.
-     *
-     * @param next Pagination cursor for the next set of results.
-     * @param limit The maximum number of literature items to return.
-     * @param filter Optional [LiteratureFilter] to narrow results (e.g., by format, genre, or status).
-     * @return A [Result] containing the [LiteratureIdentityResponse].
-     */
+    /** Retrieves a paginated list of literature entries, optionally filtered by specific criteria. */
     suspend fun getLiteratures(next: String? = null, limit: Int = 20, filter: LiteratureFilter? = null): Result<LiteratureIdentityResponse>
 
-    /**
-     * Fetches specific literature entries by a list of identifiers in a single request.
-     *
-     * @param ids A list of unique literature identifiers to retrieve.
-     * @param relationships A list of related data to include in the response.
-     * @return A [Result] containing the [LiteratureIdentityResponse].
-     */
+    /** Fetches specific literature entries by a list of identifiers in a single request. */
     suspend fun getLiteratures(ids: List<String>, relationships: List<String> = emptyList()): Result<LiteratureResponse>
 
-    /**
-     * Fetches detailed information for a specific literature entry.
-     *
-     * @param id The unique identifier of the literature.
-     * @param relationships A list of related data to include (e.g., "genres", "themes").
-     * @return A [Result] containing the [LiteratureResponse].
-     */
+    /** Fetches detailed information for a specific literature entry. */
     suspend fun getLiterature(id: String, relationships: List<String> = emptyList(), forceRefresh: Boolean = false): Result<LiteratureResponse>
 
-    /**
-     * Retrieves a list of literature items scheduled for future release or publication.
-     *
-     * @param next Pagination cursor.
-     * @param limit Maximum number of records.
-     * @return A [Result] containing the [LiteratureIdentityResponse].
-     */
+    /** Retrieves a list of literature items scheduled for future release or publication. */
     suspend fun getUpcomingLiteratures(next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
 
-    /**
-     * Retrieves the cast (e.g., voice actors for audio dramas) associated with a literature piece.
-     *
-     * @param literatureId The unique ID of the literature.
-     * @return A [Result] containing the [CastIdentityResponse].
-     */
+    /** Retrieves literature items that have been adapted into other media (`GET /manga/adapted`). */
+    suspend fun getAdaptedLiteratures(next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
+
+    /** Retrieves the literature museum yearly overview (`GET /manga/museum`). */
+    suspend fun getLiteratureMuseum(next: String? = null, limit: Int = 25): Result<MuseumYearResponse>
+
+    /** Retrieves literature museum entries for a specific release year (`GET /manga/museum/{year}`). */
+    suspend fun getLiteratureMuseumYear(year: Int, next: String? = null, limit: Int = 25): Result<MuseumItemResponse>
+
+    /** Retrieves gallery images for a literature entry (`GET /manga/{id}/gallery`). */
+    suspend fun getLiteratureGallery(literatureId: String, next: String? = null, limit: Int = 20): Result<MediaResponse>
+
+    /** Retrieves supported languages for a literature entry (`GET /manga/{id}/languages`). */
+    suspend fun getLiteratureLanguages(literatureId: String, next: String? = null, limit: Int = 20): Result<MediaLanguageResponse>
+
+    /** Retrieves editorial articles/notes for a literature entry (`GET /manga/{id}/editorial`). */
+    suspend fun getLiteratureEditorial(literatureId: String): Result<EditorialResponse>
+
+    /** Retrieves the cast associated with a literature piece. */
     suspend fun getLiteratureCast(literatureId: String, next: String? = null, limit: Int = 20): Result<CastIdentityResponse>
 
-    /**
-     * Fetches the production staff (e.g., editors, publishers) for the literature.
-     *
-     * @param literatureId The unique ID of the literature.
-     * @return A [Result] containing the [StaffIdentityResponse].
-     */
-    suspend fun getLiteratureStaff(literatureId: String, next: String? = null, limit: Int = 20): Result<StaffIdentityResponse>
+    /** Fetches the production staff for the literature. */
+    suspend fun getLiteratureStaff(literatureId: String, next: String? = null, limit: Int = 20): Result<StaffResponse>
 
-    /**
-     * Retrieves the characters featured within the specific literature.
-     *
-     * @param literatureId The unique ID of the literature.
-     * @return A [Result] containing the [CharacterIdentityResponse].
-     */
+    /** Retrieves the characters featured within the specific literature. */
     suspend fun getLiteratureCharacters(literatureId: String, next: String? = null, limit: Int = 20): Result<CharacterIdentityResponse>
 
-    /**
-     * Retrieves real-life people associated with the literature (e.g., Authors, Illustrators).
-     *
-     * @param literatureId The unique ID of the literature.
-     * @return A [Result] containing the [PersonIdentityResponse].
-     */
+    /** Retrieves real-life people associated with the literature. */
     suspend fun getLiteraturePeople(literatureId: String, next: String? = null, limit: Int = 20): Result<PersonIdentityResponse>
 
-    /**
-     * Retrieves user-written reviews for a specific literature entry.
-     *
-     * @param literatureId The unique ID of the literature.
-     * @return A [Result] containing the [ReviewResponse].
-     */
+    /** Retrieves user-written reviews for a specific literature entry. */
     suspend fun getLiteratureReviews(literatureId: String, next: String? = null, limit: Int = 20): Result<ReviewResponse>
 
-    /**
-     * Fetches the studios or publishing houses responsible for this literature.
-     *
-     * @param literatureId The unique ID of the literature.
-     * @return A [Result] containing the [StudioResponse].
-     */
+    /** Fetches the studios or publishing houses responsible for this literature. */
     suspend fun getLiteratureStudios(literatureId: String, next: String? = null, limit: Int = 20): Result<StudioResponse>
 
-    /**
-     * Retrieves other literature entries published by the same studio or publisher.
-     *
-     * @param literatureId The reference ID used to identify the studio.
-     * @return A [Result] containing the [LiteratureIdentityResponse].
-     */
+    /** Retrieves other literature entries published by the same studio or publisher. */
     suspend fun getMoreByStudio(literatureId: String, next: String? = null, limit: Int = 20): Result<LiteratureIdentityResponse>
 
-    /**
-     * Fetches shows (Anime/TV) that are related to or adapted from this literature.
-     *
-     * @param literatureId The unique ID of the literature.
-     * @return A [Result] containing the [RelatedShowResponse].
-     */
+    /** Fetches shows (Anime/TV) that are related to or adapted from this literature. */
     suspend fun getRelatedShows(literatureId: String, next: String? = null, limit: Int = 20): Result<RelatedShowResponse>
 
-    /**
-     * Fetches other literature entries that are part of the same franchise or series.
-     *
-     * @param literatureId The unique ID of the literature.
-     * @return A [Result] containing the [RelatedLiteratureResponse].
-     */
+    /** Fetches other literature entries that are part of the same franchise or series. */
     suspend fun getRelatedLiteratures(literatureId: String, next: String? = null, limit: Int = 20): Result<RelatedLiteratureResponse>
 
-    /**
-     * Retrieves video games related to or adapted from this literature.
-     *
-     * @param literatureId The unique ID of the literature.
-     * @return A [Result] containing the [RelatedGameResponse].
-     */
+    /** Retrieves video games related to or adapted from this literature. */
     suspend fun getRelatedGames(literatureId: String, next: String? = null, limit: Int = 20): Result<RelatedGameResponse>
 
-    /**
-     * Submits or updates a user's rating and optional review for a literature entry.
-     *
-     * @param literatureId The unique ID of the literature.
-     * @param rating The numerical score given by the user.
-     * @param review An optional text-based review.
-     * @return A [Result] indicating the outcome of the operation.
-     */
-    suspend fun rateLiterature(literatureId: String, rating: Double, review: String? = null): Result<Unit>
+    /** Submits or updates a user's rating and optional review for a literature entry. */
+    suspend fun rateLiterature(
+        literatureId: String,
+        rating: Double,
+        review: String? = null,
+        recommendation: ReviewRecommendation? = null,
+        isSpoiler: Boolean? = null,
+    ): Result<Unit>
+
+    /** Removes the authenticated user's rating and review for a literature entry (`DELETE /manga/{id}/rate`). */
+    suspend fun deleteLiteratureRating(literatureId: String): Result<Unit>
 }
 
 /**
- * Implementation of [LiteratureRepository] that utilizes [KurozoraApiClient] to
+ * Implementation of [LiteratureRepository] that utilizes [KurozoraApiClient] directly to
  * manage literature content and community data.
  *
  * @property apiClient The client used to communicate with the literature and relationship endpoints.
  */
 open class LiteratureRepositoryImpl(
     private val apiClient: KurozoraApiClient,
-    private val store: KurozoraStore,
 ) : LiteratureRepository {
 
     override suspend fun getLiteratures(next: String?, limit: Int, filter: LiteratureFilter?): Result<LiteratureIdentityResponse> {
@@ -199,7 +143,9 @@ open class LiteratureRepositoryImpl(
                     }
 
                     val filterJson = jsonObject.toString()
-                    parameters["filter"] = Base64.getEncoder().encodeToString(filterJson.toByteArray())
+                    parameters["filter"] = Base64.getUrlEncoder()
+                        .withoutPadding()
+                        .encodeToString(filterJson.toByteArray(Charsets.UTF_8))
                 } catch (e: Exception) {
                     println("❌ Encode error: Could not make base64 string from filter data $filters \n$e")
                 }
@@ -217,95 +163,132 @@ open class LiteratureRepositoryImpl(
     }
 
     override suspend fun getLiterature(id: String, relationships: List<String>, forceRefresh: Boolean): Result<LiteratureResponse> {
-        return if (store.enabled) {
-            store.literatureStore.getLiterature(id, relationships, forceRefresh).map { literature ->
-                LiteratureResponse(data = listOf(literature), next = null)
-            }
-        } else {
-            apiClient.get(KKEndpoint.Literature.Details(id)) {
-                url { relationships.forEach { parameters.append("include[]", it) } }
-            }
+        return apiClient.get(KKEndpoint.Literature.Details(id)) {
+            url { relationships.forEach { parameters.append("include[]", it) } }
         }
     }
 
     override suspend fun getUpcomingLiteratures(next: String?, limit: Int): Result<LiteratureIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Upcoming
         return apiClient.get<LiteratureIdentityResponse>(endpoint, parameters)
     }
 
+    override suspend fun getAdaptedLiteratures(next: String?, limit: Int): Result<LiteratureIdentityResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Adapted
+        return apiClient.get<LiteratureIdentityResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getLiteratureMuseum(next: String?, limit: Int): Result<MuseumYearResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Museum
+        return apiClient.get<MuseumYearResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getLiteratureMuseumYear(year: Int, next: String?, limit: Int): Result<MuseumItemResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.MuseumYear(year)
+        return apiClient.get<MuseumItemResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getLiteratureGallery(literatureId: String, next: String?, limit: Int): Result<MediaResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Gallery(literatureId)
+        return apiClient.get<MediaResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getLiteratureLanguages(literatureId: String, next: String?, limit: Int): Result<MediaLanguageResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
+        val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Languages(literatureId)
+        return apiClient.get<MediaLanguageResponse>(endpoint, parameters)
+    }
+
+    override suspend fun getLiteratureEditorial(literatureId: String): Result<EditorialResponse> {
+        return apiClient.get<EditorialResponse>(KKEndpoint.Literature.Editorial(literatureId))
+    }
+
     override suspend fun getLiteratureCast(literatureId: String, next: String?, limit: Int): Result<CastIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Cast(literatureId)
         return apiClient.get<CastIdentityResponse>(endpoint, parameters)
     }
 
-    override suspend fun getLiteratureStaff(literatureId: String, next: String?, limit: Int): Result<StaffIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+    override suspend fun getLiteratureStaff(literatureId: String, next: String?, limit: Int): Result<StaffResponse> {
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Staff(literatureId)
-        return apiClient.get<StaffIdentityResponse>(endpoint, parameters)
+        return apiClient.get<StaffResponse>(endpoint, parameters)
     }
 
     override suspend fun getLiteratureCharacters(literatureId: String, next: String?, limit: Int): Result<CharacterIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Characters(literatureId)
         return apiClient.get<CharacterIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getLiteraturePeople(literatureId: String, next: String?, limit: Int): Result<PersonIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.People(literatureId)
         return apiClient.get<PersonIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getLiteratureReviews(literatureId: String, next: String?, limit: Int): Result<ReviewResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Reviews(literatureId)
         return apiClient.get<ReviewResponse>(endpoint, parameters)
     }
 
     override suspend fun getLiteratureStudios(literatureId: String, next: String?, limit: Int): Result<StudioResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.Studios(literatureId)
         return apiClient.get<StudioResponse>(endpoint, parameters)
     }
 
     override suspend fun getMoreByStudio(literatureId: String, next: String?, limit: Int): Result<LiteratureIdentityResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.MoreByStudio(literatureId)
         return apiClient.get<LiteratureIdentityResponse>(endpoint, parameters)
     }
 
     override suspend fun getRelatedShows(literatureId: String, next: String?, limit: Int): Result<RelatedShowResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.RelatedShows(literatureId)
         return apiClient.get<RelatedShowResponse>(endpoint, parameters)
     }
 
     override suspend fun getRelatedLiteratures(literatureId: String, next: String?, limit: Int): Result<RelatedLiteratureResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.RelatedLiteratures(literatureId)
         return apiClient.get<RelatedLiteratureResponse>(endpoint, parameters)
     }
 
     override suspend fun getRelatedGames(literatureId: String, next: String?, limit: Int): Result<RelatedGameResponse> {
-        val parameters = mapOf("limit" to limit.toString())
+        val parameters = if (next == null) mapOf("limit" to limit.toString()) else emptyMap()
         val endpoint: KKEndpoint = next?.let { KKEndpoint.Url(it) } ?: KKEndpoint.Literature.RelatedGames(literatureId)
         return apiClient.get<RelatedGameResponse>(endpoint, parameters)
     }
 
-    override suspend fun rateLiterature(literatureId: String, rating: Double, review: String?): Result<Unit> {
-        val body = mutableMapOf(
-            "rating" to rating.toString()
-        )
-        if (!review.isNullOrBlank()) {
-            body["description"] = review
-        }
-        return apiClient.post<Unit, Map<String, String>>(KKEndpoint.Literature.Rate(literatureId)) {
+    override suspend fun rateLiterature(
+        literatureId: String,
+        rating: Double,
+        review: String?,
+        recommendation: ReviewRecommendation?,
+        isSpoiler: Boolean?,
+    ): Result<Unit> {
+        return apiClient.post<Unit, Unit>(KKEndpoint.Literature.Rate(literatureId)) {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
-                body.forEach { (key, value) -> append(key, value) }
+                append("rating", rating.toString())
+                if (!review.isNullOrBlank()) {
+                    append("description", review)
+                }
+                recommendation?.let { append("recommendation", it.rawValue.toString()) }
+                isSpoiler?.let { append("isSpoiler", if (it) "1" else "0") }
             }))
-        }.onSuccess { store.literatureStore.clearCache() }
+        }
+    }
+
+    override suspend fun deleteLiteratureRating(literatureId: String): Result<Unit> {
+        return apiClient.delete<Unit>(KKEndpoint.Literature.DeleteRate(literatureId))
     }
 }

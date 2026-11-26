@@ -1,5 +1,6 @@
 package kurozorakit.data.models.character
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kurozorakit.data.models.IdentityResource
 import kurozorakit.data.models.game.GameIdentityResponse
@@ -26,8 +27,8 @@ import kurozorakit.data.models.show.ShowIdentityResponse
 @Serializable
 data class Character(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "characters",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null
 ) : IdentityResource {
@@ -62,17 +63,21 @@ data class Character(
      */
     @Serializable
     data class Attributes(
-        val slug: String,
+        val slug: String = "",
         val profile: Media? = null,
-        val name: String,
+        val name: String = "",
+        val nicknames: List<String>? = null,
         val about: String? = null,
         val shortDescription: String? = null,
         val debut: String? = null,
         val status: String? = null,
         val bloodType: String? = null,
         val favoriteFood: String? = null,
+        @SerialName("bust")
         val bustSize: Double? = null,
+        @SerialName("waist")
         val waistSize: Double? = null,
+        @SerialName("hip")
         val hipSize: Double? = null,
         val height: String? = null,
         val weight: String? = null,

@@ -21,10 +21,10 @@ import kurozorakit.data.models.person.PersonResponse
 @Serializable
 data class Staff(
     override val id: String,
-    override val type: String,
-    override val href: String,
-    val attributes: Attributes,
-    val relationships: Relationships
+    override val type: String = "staff",
+    override val href: String = "",
+    val attributes: Attributes = Attributes(),
+    val relationships: Relationships = Relationships()
 ) : IdentityResource {
 
     /**
@@ -34,7 +34,7 @@ data class Staff(
      */
     @Serializable
     data class Attributes(
-        val role: StaffRole
+        val role: StaffRole = StaffRole()
     )
 
     /**
@@ -45,7 +45,7 @@ data class Staff(
      */
     @Serializable
     data class Relationships(
-        val person: PersonResponse
+        val person: PersonResponse = PersonResponse(emptyList())
     )
 }
 
@@ -57,6 +57,6 @@ data class Staff(
  */
 @Serializable
 data class StaffRole(
-    val name: String,
-    val description: String
+    val name: String = "",
+    val description: String = ""
 )

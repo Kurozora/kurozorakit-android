@@ -15,8 +15,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class CastRole(
-    val name: String,
-    val description: String,
+    val name: String = "",
+    val description: String = "",
 ) {
     /**
      * Checks equality based on the [name] of the role.

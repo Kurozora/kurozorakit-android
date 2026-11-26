@@ -39,7 +39,8 @@ data class AccessToken(
     data class Attributes(
         val ipAddress: String,
         @SerialName("lastValidatedAt")
-        val lastValidatedAtTimestamp: Long? = null
+        val lastValidatedAtTimestamp: Long? = null,
+        val appSource: String? = null,
     ) {
         /**
          * A non-serializable, convenience property that converts [lastValidatedAtTimestamp]

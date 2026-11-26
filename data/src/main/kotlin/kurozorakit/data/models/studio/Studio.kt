@@ -32,8 +32,8 @@ import kurozorakit.data.models.show.attributes.TVRating
 @Serializable
 data class Studio(
     override val id: String,
-    override val type: String,
-    override val href: String,
+    override val type: String = "studios",
+    override val href: String = "",
     val attributes: Attributes,
     val relationships: Relationships? = null
 ) : IdentityResource {
@@ -66,28 +66,31 @@ data class Studio(
      */
     @Serializable
     data class Attributes(
-        val slug: String,
+        val slug: String = "",
         val profile: Media? = null,
         val banner: Media? = null,
         val logo: Media? = null,
-        val name: String,
+        val name: String = "",
         val japaneseName: String? = null,
         val alternativeNames: List<String>? = null,
         val predecessors: List<String> = emptyList(),
         val successor: String? = null,
         val about: String? = null,
         val address: String? = null,
-        val tvRating: TVRating,
+        val tvRating: TVRating = TVRating(),
         val stats: MediaStat? = null,
+        @Serializable(with = WebsiteURLsAsListSerializer::class)
         val socialURLs: List<String>? = null,
         @Serializable(with = WebsiteURLsAsListSerializer::class)
         val websiteURLs: List<String>? = null,
         val isProducer: Boolean? = null,
         val isStudio: Boolean? = null,
         val isLicensor: Boolean? = null,
-        val isNSFW: Boolean,
+        val isNSFW: Boolean = false,
+        @SerialName("foundedAt")
         @Serializable(LocalDateSerializer::class)
-        val foundedAtTimestamp: LocalDate?,
+        val foundedAtTimestamp: LocalDate? = null,
+        @SerialName("defunctAt")
         @Serializable(LocalDateSerializer::class)
         val defunctAtTimestamp: LocalDate? = null,
         var library: LibraryAttributes? = null

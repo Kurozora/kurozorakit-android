@@ -16,5 +16,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class StaffResponse(
     val data: List<Staff>,
-    val next: String?,
+    val next: String? = null,
 )

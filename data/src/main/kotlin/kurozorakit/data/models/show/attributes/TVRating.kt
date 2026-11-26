@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class TVRating(
-    val name: String,
-    val description: String,
+    val name: String = "",
+    val description: String = "",
 ) {
     /**
      * Checks equality based on the rating [name].
