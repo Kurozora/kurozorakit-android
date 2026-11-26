@@ -9,12 +9,13 @@ plugins {
 }
 
 group = "app.kurozora"
-version = "1.3.0-SNAPSHOT"
+version = "2.0.0"
 
 dependencies {
     api(project(":api"))
     api(project(":core"))
     api(project(":data"))
+    api(project(":domain"))
     api(project(":shared"))
 }
 
@@ -71,14 +72,14 @@ subprojects {
         )
 
         pom {
-            name.set("KurozoraKit ${project.name.capitalize()}")
+            name.set("KurozoraKit ${project.name.replaceFirstChar { it.uppercaseChar() }}")
             description.set("KurozoraKit ${project.name} module lets users manage their anime, manga, games and music library.")
             inceptionYear.set("2025")
             url.set("https://github.com/Kurozora/kurozorakit-android")
             licenses {
                 license {
                     name.set("MIT")
-                    url.set("https://github.com/Kurozora/kurozorakit-android/blob/main/LICENSE")
+                    url.set("https://github.com/Kurozora/kurozorakit-android/blob/master/LICENSE")
                 }
             }
             developers {
@@ -109,14 +110,14 @@ mavenPublishing {
     ))
 
     pom {
-        name.set("KurozoraKit ${project.name.capitalize()}")
-        description.set("KurozoraKit ${project.name} module lets users manage their anime, manga, games and music library.")
+        name.set("KurozoraKit")
+        description.set("KurozoraKit SDK lets users manage their anime, manga, games and music library.")
         inceptionYear.set("2025")
         url.set("https://github.com/Kurozora/kurozorakit-android")
         licenses {
             license {
                 name.set("MIT")
-                url.set("https://github.com/Kurozora/kurozorakit-android/blob/main/LICENSE")
+                url.set("https://github.com/Kurozora/kurozorakit-android/blob/master/LICENSE")
             }
         }
         developers {

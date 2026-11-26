@@ -22,7 +22,7 @@ KurozoraKit is designed to be:
 
 # Requirements
 
-KurozoraKit has been tested to work on Android 15.0+. It also works best with Kotlin 5.0+
+KurozoraKit supports **Android API 21+ / JVM 17+** and is built with **Kotlin 2.2+**.
 
 To use KurozoraKit in your project, you need to install it first.
 
@@ -30,13 +30,20 @@ To use KurozoraKit in your project, you need to install it first.
 
 ### Gradle
 
-KurozoraKit is also available through [Gradle Build Tool](https://gradle.org/). To install it, simply add the package to your `build.gradle.kts` file:
+KurozoraKit is available through Maven Central using the [Gradle Build Tool](https://gradle.org/). To install it, add the dependency to your `build.gradle.kts` file:
 
 ```kotlin
 dependencies {
-    implementation("app.kurozora:kurozorakit:1.0.0")
+    implementation("app.kurozora:kurozorakit:2.0.0")
 }
 ```
+
+## Highlights in 2.0.0
+
+* **27 Domain Repositories:** Full Kurozora API v1 coverage including Shows, Literature, Games, Seasons, Episodes, Songs & Synced Lyrics, Characters, People, Studios, Feed, Reviews, Library, Schedule, Air Seasons, Achievements, Recaps, Theme Store, **Charts** (`kit.charts()`), and **Parental Guide** (`kit.parentalGuide()`).
+* **Two-Factor Authentication (2FA):** Typed `SignInResult` sealed class with `submitTwoFactorChallenge(...)` support in `AuthRepository`.
+* **Built-In Offline Mock Mode:** Zero-network stateful simulation via `KurozoraKit.mock()` for Compose Previews, UI tests, and demos.
+* **Multi-Sink Logging:** Configurable console, rotating file, in-memory ring buffer, and custom `Logger` sinks with automatic auth header redaction.
 
 ## Usage
 KurozoraKit can be initialized as simply as:
@@ -44,6 +51,7 @@ KurozoraKit can be initialized as simply as:
 ```kotlin
 val kurozoraKit = KurozoraKit.Builder()
     .apiKey("your_api_key")
+    .platform(getPlatform())
     .userAgent(UserAgent(appName = "your_app_name", appID = "com.username.kurozora", platformName = "your_platform_name", platformVersion = "your_platform_version"))
     .build()
 ```
@@ -54,6 +62,7 @@ KurozoraKit allows you to set your own API endpoint. For example, if you have a 
 val kurozoraKit = KurozoraKit.Builder()
     .apiEndpoint(KurozoraApi.V1.baseUrl)
     .apiKey("your_api_key")
+    .platform(getPlatform())
     .userAgent(UserAgent(appName = "your_app_name", appID = "com.username.kurozora", platformName = "your_platform_name", platformVersion = "your_platform_version"))
     .build()
 ```
@@ -85,21 +94,33 @@ val kurozoraKit = KurozoraKit.Builder()
 ```
 An example of [AccountManager](https://github.com/Kurozora/kurozora-android/blob/master/composeApp/src/commonMain/kotlin/app/kurozora/core/settings/AccountManager.kt) can be found on the [Kurozora Android](https://github.com/Kurozora/kurozora-android) repo.
 
-After setting up KurozoraKit you can use an API by calling its own method. For example, to get the explore page data, you do the following:
+After setting up KurozoraKit you can use an API by calling its repository method. For example, to get the explore page data, you do the following:
 
 ```kotlin
 val genreId = "1"
 
-val kurozoraKit = KurozoraKit.explore()
+val exploreResponse = kurozoraKit.explore()
     .getExplore(genreId = genreId)
     .onSuccess { res ->
         // Handle success case…
     }
 ```
 
+### Offline Mock Mode
+
+For Compose Previews, instrumented/UI tests, or offline development, you can instantiate a stateful in-memory mock instance with zero network requests:
+
+```kotlin
+val mockKit = KurozoraKit.mock {
+    // Optional: configure simulated latency, error injection, 2FA, or custom routes
+}
+
+val exploreResponse = mockKit.explore().getExplore()
+```
+
 # Contributing
 
-Read the [Contributing Guide](CONTRIBUTING) to learn about reporting issues, contributing code, and more ways to contribute.
+Contributions are welcome! Feel free to open an [Issue](https://github.com/Kurozora/kurozorakit-android/issues) or submit a [Pull Request](https://github.com/Kurozora/kurozorakit-android/pulls) on GitHub.
 
 # Security
 

@@ -46,3 +46,10 @@ bin/
 .DS_Store
 # Added by code-review-graph
 .code-review-graph/
+
+# Local IDE & AI tooling
+.idea/
+.opencode.json
+AGENTS.md
+KUROZORAKIT_REFERENCE.md
+

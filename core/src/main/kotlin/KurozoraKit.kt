@@ -81,7 +81,7 @@ import kurozorakit.data.repositories.user.UserRepositoryImpl
  *
  * This class acts as a facade, providing a unified access point to all repositories and features
  * within the Kurozora ecosystem. It should be initialized using the [Builder] class to configure
- * API keys, platform details, and caching mechanisms.
+ * API keys, platform details, authentication, logging, and networking options.
  */
 class KurozoraKit private constructor(
     private val apiClient: KurozoraApiClient,
